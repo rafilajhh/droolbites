@@ -1,0 +1,233 @@
+// Droolbites — derived from the PDM (Pemweb/Figma/droolbites-pdm.dbml, v1.3).
+// Table and column names match the PDM exactly; Prisma fields use camelCase.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserRole {
+  customer
+  admin
+
+  @@map("user_role")
+}
+
+enum FulfilmentMethod {
+  delivery
+  pickup
+
+  @@map("fulfilment_method")
+}
+
+enum PaymentStatus {
+  awaiting
+  paid
+  expired
+
+  @@map("payment_status")
+}
+
+enum FulfilmentStatus {
+  pending
+  baking
+  ready_for_pickup
+  out_for_delivery
+  completed
+  cancelled
+
+  @@map("fulfilment_status")
+}
+
+enum PaymentMethod {
+  bca_va
+  bni_va
+  mandiri_va
+  bri_va
+  permata_va
+  bsi_va
+  muamalat_va
+  cimb_va
+  sinarmas_va
+  bnc_va
+  maybank_va
+  indomaret
+  alfamart
+  ovo
+  dana
+  shopeepay
+  qris
+
+  @@map("payment_method")
+}
+
+model User {
+  id           BigInt    @id @default(autoincrement())
+  fullName     String    @map("full_name") @db.VarChar(100)
+  email        String    @unique @db.VarChar(150)
+  phone        String?   @db.VarChar(20)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  role         UserRole  @default(customer)
+  address      String?   @db.VarChar(255)
+  city         String?   @db.VarChar(100)
+  postalCode   String?   @map("postal_code") @db.VarChar(10)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique @db.VarChar(50)
+  slug String @unique @db.VarChar(60)
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          BigInt    @id @default(autoincrement())
+  categoryId  Int       @map("category_id")
+  name        String    @db.VarChar(100)
+  slug        String    @unique @db.VarChar(120)
+  description String?   @db.VarChar(255)
+  imageUrl    String?   @map("image_url") @db.VarChar(255)
+  isAvailable Boolean   @default(true) @map("is_available")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+
+  category Category         @relation(fields: [categoryId], references: [id])
+  variants ProductVariant[]
+
+  @@index([categoryId])
+  @@map("products")
+}
+
+model ProductVariant {
+  id        BigInt @id @default(autoincrement())
+  productId BigInt @map("product_id")
+  name      String @db.VarChar(50)
+  price     Int
+
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@unique([productId, name])
+  @@map("product_variants")
+}
+
+model Order {
+  id               BigInt           @id @default(autoincrement())
+  orderNumber      String           @unique @map("order_number") @db.VarChar(12)
+  userId           BigInt?          @map("user_id")
+  customerName     String           @map("customer_name") @db.VarChar(100)
+  email            String           @db.VarChar(150)
+  phone            String           @db.VarChar(20)
+  fulfilmentMethod FulfilmentMethod @map("fulfilment_method")
+  shippingAddress  String?          @map("shipping_address") @db.VarChar(255)
+  shippingCity     String?          @map("shipping_city") @db.VarChar(100)
+  shippingPostal   String?          @map("shipping_postal") @db.VarChar(10)
+  subtotal         Int
+  deliveryFee      Int              @default(0) @map("delivery_fee")
+  total            Int
+  paymentStatus    PaymentStatus    @default(awaiting) @map("payment_status")
+  fulfilmentStatus FulfilmentStatus @default(pending) @map("fulfilment_status")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime?        @updatedAt @map("updated_at")
+
+  user     User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items    OrderItem[]
+  payments Payment[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+model OrderItem {
+  id        BigInt @id @default(autoincrement())
+  orderId   BigInt @map("order_id")
+  variantId BigInt @map("variant_id")
+  qty       Int    @db.SmallInt
+  unitPrice Int    @map("unit_price")
+
+  order   Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  variant ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@index([orderId])
+  @@index([variantId])
+  @@map("order_items")
+}
+
+model Payment {
+  id            BigInt        @id @default(autoincrement())
+  orderId       BigInt        @map("order_id")
+  method        PaymentMethod
+  /// Order total this payment covers (before any gateway service fee).
+  amount        Int
+  vaNumber      String?       @map("va_number") @db.VarChar(30)
+  status        PaymentStatus @default(awaiting)
+  expiresAt     DateTime?     @map("expires_at")
+  paidAt        DateTime?     @map("paid_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  /// Gateway that issued it: mock | belibayar.
+  provider      String?       @db.VarChar(20)
+  /// Our reference sent to the gateway, e.g. DB-0007-2 (order number + attempt).
+  reference     String?       @unique @db.VarChar(64)
+  transactionId String?       @map("transaction_id") @db.VarChar(64)
+  /// QRIS EMV string to render as a QR code.
+  qrContent     String?       @map("qr_content") @db.Text
+  /// E-wallet payment_url, or the QRIS image URL as a fallback.
+  payUrl        String?       @map("pay_url") @db.VarChar(500)
+  /// What the customer pays at the gateway (amount + fee when the customer bears it).
+  chargedAmount Int?          @map("charged_amount")
+  fee           Int?
+  /// merchant | customer
+  feeBearer     String?       @map("fee_bearer") @db.VarChar(10)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("payments")
+}
+
+/// One row (id = 1). Edited from Admin / Store settings.
+model StoreSettings {
+  id                    Int      @id @default(1)
+  storeName             String   @map("store_name") @db.VarChar(100)
+  city                  String   @db.VarChar(100)
+  email                 String   @db.VarChar(150)
+  phone                 String   @db.VarChar(20)
+  address               String   @db.VarChar(255)
+  pickupEnabled         Boolean  @default(true) @map("pickup_enabled")
+  deliveryEnabled       Boolean  @default(true) @map("delivery_enabled")
+  opensAt               String   @default("10:00") @map("opens_at") @db.VarChar(5)
+  closesAt              String   @default("21:00") @map("closes_at") @db.VarChar(5)
+  /// Comma-separated: mon,tue,wed,thu,fri,sat,sun
+  openDays              String   @default("mon,tue,wed,thu,fri,sat,sun") @map("open_days") @db.VarChar(40)
+  deliveryFee           Int      @default(15000) @map("delivery_fee")
+  vaEnabled             Boolean  @default(true) @map("va_enabled")
+  qrisEnabled           Boolean  @default(true) @map("qris_enabled")
+  ewalletEnabled        Boolean  @default(true) @map("ewallet_enabled")
+  /// Indomaret / Alfamart: off until the gateway enables them.
+  retailEnabled         Boolean  @default(false) @map("retail_enabled")
+  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("store_settings")
+}
+
+/// Footer "Be first to try new flavors" sign-ups. Not related to other tables.
+model NewsletterSubscriber {
+  id           BigInt   @id @default(autoincrement())
+  email        String   @unique @db.VarChar(150)
+  subscribedAt DateTime @default(now()) @map("subscribed_at")
+
+  @@map("newsletter_subscribers")
+}

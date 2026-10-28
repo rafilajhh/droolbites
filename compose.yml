@@ -1,0 +1,68 @@
+# Development: docker compose up -d                 (MySQL + Mailpit only; run `npm run dev`)
+# Local hosting: docker compose --profile app up -d --build   (applies migrations first, then starts the app)
+#                → site http://localhost:8080 (also from the LAN), mail inbox http://localhost:8025
+# MySQL and Mailpit only listen on this machine (127.0.0.1); the app port 8080 is open to the LAN.
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: droolbites_root
+      MYSQL_DATABASE: droolbites
+      MYSQL_USER: droolbites
+      MYSQL_PASSWORD: droolbites
+      TZ: UTC
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pdroolbites_root"]
+      interval: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:1025:1025"
+      - "127.0.0.1:8025:8025"
+
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      # Same profile as app, so plain `docker compose up -d` (no profile) still starts only db + mailpit.
+      migrate:
+        condition: service_completed_successfully
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://root:droolbites_root@db:3306/droolbites
+      # Links in emails: use http://<laptop-ip>:8080 when other devices on the LAN open them.
+      APP_URL: http://localhost:8080
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+    ports:
+      - "8080:3000"
+    volumes:
+      - uploads:/app/public/uploads
+
+  migrate:
+    profiles: ["app"]
+    build:
+      context: .
+      target: migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://root:droolbites_root@db:3306/droolbites
+
+volumes:
+  db_data:
+  uploads:

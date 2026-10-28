@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "title": "Design System: Droolbites",
+  "extensions": {
+    "colorMeta": {
+      "moss": { "role": "primary", "displayName": "Moss", "canonical": "#4e6424", "tonalRamp": ["#1a2410", "#2f4318", "#3c5120", "#4e6424", "#6f8442", "#93a66d", "#bccaa0", "#e1e9d3"] },
+      "moss-deep": { "role": "primary", "displayName": "Moss Deep", "canonical": "#2f4318", "tonalRamp": ["#10170a", "#1c280e", "#2f4318", "#3c5520", "#4e6c2c", "#6d8c4a", "#9ab47c", "#d3e2c0"] },
+      "mustard": { "role": "secondary", "displayName": "Mustard", "canonical": "#e2b23a", "tonalRamp": ["#4a3708", "#6e5410", "#947219", "#b88f26", "#e2b23a", "#ebc666", "#f4dc9b", "#fbebc0"] },
+      "mint": { "role": "secondary", "displayName": "Mint", "canonical": "#d6efe4", "tonalRamp": ["#2f6b54", "#4a8e72", "#78b89c", "#a5d4c0", "#c0e4d3", "#d6efe4", "#e6f6ef", "#f4fbf8"] },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#fbf6ec", "tonalRamp": ["#6b6355", "#8f8675", "#b3a995", "#d4c9b2", "#e8dfca", "#f3ead7", "#fbf6ec", "#fffdf9"] },
+      "oat": { "role": "neutral", "displayName": "Oat", "canonical": "#f3ead7", "tonalRamp": ["#5e553f", "#82775b", "#a69a78", "#c8bb97", "#dcd0b5", "#f3ead7", "#f8f2e4", "#fcf9f1"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1f2a14", "tonalRamp": ["#0b0f07", "#1f2a14", "#364226", "#4d5a3c", "#5b6650", "#7f8a74", "#aab3a2", "#d5dad0"] },
+      "crimson": { "role": "semantic", "displayName": "Crimson", "canonical": "#b0153a", "tonalRamp": ["#3a0713", "#5c0d20", "#820f2d", "#b0153a", "#cf4466", "#e07a93", "#efb0bf", "#f8dde4"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Landing hero h1 only; Bricolage 700 stepping 52/80/112px." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles and section headings, 34-52px." },
+      "title": { "displayName": "Title", "purpose": "Cart title, empty states, order-line names." },
+      "body": { "displayName": "Body", "purpose": "Manrope paragraphs, 16-17px; 15px secondary, 13px helper." },
+      "label": { "displayName": "Label", "purpose": "Plex Mono 600 for chips, badges, table headers." },
+      "button": { "displayName": "Button", "purpose": "Bricolage 600 15px, tracking 0.5px." }
+    },
+    "shadows": [
+      { "name": "hairline-bottom", "value": "inset 0 -1px 0 #4e642429", "purpose": "Row, header and drawer separators; no size change." },
+      { "name": "underline-link", "value": "inset 0 -1.25px 0 #4e6424", "purpose": "Arrow-link underline." },
+      { "name": "float-lg", "value": "0 12px 32px rgb(31 42 20 / 0.15)", "purpose": "Floating layers: dropdowns, search and add-to-cart popovers." },
+      { "name": "float-sm", "value": "0 4px 12px rgb(31 42 20 / 0.15)", "purpose": "Tighter variant for small floating layers." }
+    ],
+    "motion": [
+      { "name": "ease-out-300", "value": "300ms ease-out", "purpose": "Drawer slide and scrim fade; fades in place under reduced motion (150ms)." },
+      { "name": "header-condense", "value": "200ms", "purpose": "Sticky header height, margin and logo size on scroll." },
+      { "name": "marquee", "value": "55s linear infinite, translate3d(-50%)", "purpose": "USP strip; static grid under reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "design", "value": "1440px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Moss fill action; the default call to action.",
+      "html": "<button class=\"ds-btn-primary\">Add to cart</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#4e6424;color:#fff;padding:16px 28px;border:0;border-radius:12px;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:600;line-height:1.2;letter-spacing:.5px;transition:background-color .15s}.ds-btn-primary:hover{background:#2f4318}.ds-btn-primary:focus-visible{outline:2px solid #1f2a14;outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined companion using an inside 1.5px moss stroke.",
+      "html": "<button class=\"ds-btn-secondary\">See the menu</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;background:transparent;color:#1f2a14;padding:16px 28px;border:0;border-radius:12px;box-shadow:inset 0 0 0 1.5px #4e6424;font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:600;line-height:1.2;letter-spacing:.5px;transition:background-color .15s}.ds-btn-secondary:hover{background:#f3ead7}.ds-btn-secondary:focus-visible{outline:2px solid #1f2a14;outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White field with inside 1.25px stroke; moss 2px on focus.",
+      "html": "<input class=\"ds-input\" placeholder=\"Full name\" />",
+      "css": ".ds-input{width:240px;background:#fff;color:#1f2a14;padding:14px 16px;border:0;border-radius:12px;box-shadow:inset 0 0 0 1.25px #5b665080;font:400 16px Manrope,sans-serif;outline:none}.ds-input::placeholder{color:#5b6650}.ds-input:focus-visible{box-shadow:inset 0 0 0 2px #4e6424}"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Mono label on an oat pill.",
+      "html": "<span class=\"ds-chip\">NEW THIS WEEK</span>",
+      "css": ".ds-chip{display:inline-flex;align-items:center;background:#f3ead7;color:#1f2a14;padding:8px 14px;border-radius:999px;font:600 13px/1.3 'IBM Plex Mono',monospace}"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Dot plus label on a tinted pill (Baking tone shown).",
+      "html": "<span class=\"ds-badge\"><i class=\"ds-dot\"></i>Baking</span>",
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:8px;background:#ece4fb;color:#1f2a14;padding:6px 12px;border-radius:999px;font:600 13px/16px Manrope,sans-serif}.ds-dot{width:8px;height:8px;border-radius:50%;background:#b79bea}"
+    },
+    {
+      "name": "Option Tile (selected)",
+      "kind": "card",
+      "refersTo": "option-tile-selected",
+      "description": "Radio card: mint fill, 1.5px moss stroke when checked.",
+      "html": "<label class=\"ds-tile\">Delivery</label>",
+      "css": ".ds-tile{display:flex;width:260px;align-items:center;gap:14px;background:#d6efe4;color:#1f2a14;padding:18px 20px;border-radius:12px;box-shadow:inset 0 0 0 1.5px #4e6424;font:600 15px Manrope,sans-serif}"
+    },
+    {
+      "name": "Admin Sidebar Item",
+      "kind": "nav",
+      "refersTo": "admin-sidebar",
+      "description": "Moss sidebar nav; active item becomes a paper pill with moss text.",
+      "html": "<nav class=\"ds-side\"><a class=\"ds-side-a ds-on\">Orders</a><a class=\"ds-side-a\">Products</a></nav>",
+      "css": ".ds-side{display:flex;flex-direction:column;gap:4px;width:232px;background:#4e6424;padding:20px}.ds-side-a{display:block;color:#fff;padding:12px 14px;border-radius:12px;font:600 15px/20px Manrope,sans-serif;transition:background-color .15s}.ds-side-a:hover{background:rgba(255,255,255,.1)}.ds-on{background:#fbf6ec;color:#4e6424}"
+    },
+    {
+      "name": "Admin Card",
+      "kind": "card",
+      "refersTo": "admin-card",
+      "description": "White 20px-radius card with a 1px subtle inset stroke.",
+      "html": "<section class=\"ds-card\">Today's orders</section>",
+      "css": ".ds-card{background:#fff;color:#1f2a14;padding:24px;border-radius:20px;box-shadow:inset 0 0 0 1px #4e642429;font:600 15px Manrope,sans-serif}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Bakery Counter Paper",
+    "overview": "Droolbites is a small bakery printed on warm paper: cream background, ink-green text, one deep moss that does all the structural work, and a handful of confectionery accents (mustard, lavender, salmon, mint) that show up only as product tints, status dots and sticker-like moments. The storefront is generous and photographic. The admin is the same material, calmer and denser, with the moss moved from accent to a full-height sidebar.",
+    "keyCharacteristics": [
+      "Moss is the single structural color: primary button, sidebar, strokes, selected states.",
+      "Strokes are inset rings, never layout-affecting borders.",
+      "Three radii only: 12, 20, 999.",
+      "Flat at rest; depth comes from tonal layers and hairlines.",
+      "Display type is tight and heavy; labels are mono."
+    ],
+    "rules": [
+      { "name": "The One Structure Color Rule", "body": "Moss carries structure; accents carry only small marks and panel tints. A screen never has two competing saturated fills.", "section": "colors" },
+      { "name": "The Token-First Rule", "body": "Never hard-code a hex that has a token.", "section": "colors" },
+      { "name": "The Inverse Focus Rule", "body": "Focus ring is ink on light surfaces; any moss or photo container sets --focus-ring to white.", "section": "colors" },
+      { "name": "The Whole-Pixel Leading Rule", "body": "Line-height is written in px, the pen's multiplier rounded half-up.", "section": "typography" },
+      { "name": "The Display-Is-Bricolage Rule", "body": "Headings, buttons and brand use font-display; never a system display face.", "section": "typography" },
+      { "name": "The Hit-Slop Rule", "body": "Keep the pen's visual size and extend the hit area with after:absolute after:-inset-*.", "section": "layout" },
+      { "name": "The Hairline-Not-Border Rule", "body": "Separators are inset shadows or inset rings, so they never change a box's size.", "section": "elevation" },
+      { "name": "The Flat-Until-Floating Rule", "body": "Only layers that float above content get a drop shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reach for tokens: bg-primary, bg-card, text-muted-foreground, inset-ring-border, rounded-sm|m|pill.",
+      "Do draw strokes as inset rings or inset shadows so sizes match the design.",
+      "Do write line-height in whole px and letter-spacing in px.",
+      "Do set [--focus-ring:var(--white)] on moss and photo containers; use outline-hidden, never outline-none.",
+      "Do use cn() (tailwind-merge) so a later class wins; reuse Button/ButtonLink/Chip/Field/StatusBadge.",
+      "Do give every new animation a motion-reduce: variant.",
+      "Do keep prices as Rp plus dot thousands and product names in English."
+    ],
+    "donts": [
+      "Don't use border-* for pen strokes; it resizes the box.",
+      "Don't use rounded-s (logical corner); the 12px radius is rounded-sm.",
+      "Don't add a fourth radius or a second saturated structural color.",
+      "Don't put drop shadows on resting cards.",
+      "Don't hard-code a hex that has a token, or edit globals.css casually.",
+      "Don't shrink a control below 44px of hit area on mobile; add hit-slop instead."
+    ]
+  }
+}

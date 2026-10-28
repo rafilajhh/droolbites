@@ -1,26 +1,148 @@
-@import "tailwindcss";
+/* Only scan src/ for classes; design/ holds pen exports for reference. */
+@import "tailwindcss" source("../");
 
+/*
+ * Design tokens copied 1:1 from droolbites.pen (GetVariables).
+ * Names match the pen variables. Utilities: bg-primary, text-muted-foreground,
+ * rounded-sm / rounded-m / rounded-pill, font-display / font-body / font-mono.
+ *
+ * pen strokes are drawn INSIDE the box. Use `inset-ring-[1.5px] inset-ring-border`
+ * (not `border`) so sizes match the design exactly.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* palette */
+  --oat: #f3ead7;
+  --white: #ffffff;
+  --paper: #fbf6ec;
+  --ink: #1f2a14;
+  --mint: #d6efe4;
+  --moss: #4e6424;
+  --moss-deep: #2f4318;
+  --accent-crimson: #b0153a;
+  --accent-mustard: #e2b23a;
+  --accent-teal: #4fb89a;
+  --accent-lavender: #b79bea;
+  --accent-orange: #e07b1a;
+  --accent-magenta: #a3237e;
+  --accent-cobalt: #2e86b8;
+  --accent-lime: #a9d46a;
+  --accent-salmon: #e0907a;
+  --tint-mustard: #fbebc0;
+  --tint-lavender: #ece4fb;
+  --tint-salmon: #f8ded5;
+  --tint-lime: #e8f3d5;
+
+  /* semantic */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --muted-foreground: #5b6650;
+  --card: var(--oat);
+  --card-accent: var(--mint);
+  --primary: var(--moss);
+  --primary-hover: var(--moss-deep);
+  --primary-foreground: var(--white);
+  --border: var(--moss);
+  --border-subtle: #4e642429;
+  --surface-inverse: var(--moss);
+  --foreground-inverse: var(--white);
+  --error: var(--accent-crimson);
+  --success: #1e7a46;
+  --highlight: var(--accent-mustard);
+  /* Strokes drawn in the pen without a named variable. */
+  --border-divider: #4e642433; /* summary/timeline dividers */
+  --border-input: #5b665080; /* Form Field input stroke */
+  /* Keyboard focus ring: ink on light surfaces (≥12:1). Dark surfaces set
+     [--focus-ring:var(--white)] on their container. */
+  --focus-ring: var(--ink);
 }
 
 @theme inline {
+  --color-oat: var(--oat);
+  --color-white: var(--white);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-mint: var(--mint);
+  --color-moss: var(--moss);
+  --color-moss-deep: var(--moss-deep);
+  --color-accent-crimson: var(--accent-crimson);
+  --color-accent-mustard: var(--accent-mustard);
+  --color-accent-teal: var(--accent-teal);
+  --color-accent-lavender: var(--accent-lavender);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-magenta: var(--accent-magenta);
+  --color-accent-cobalt: var(--accent-cobalt);
+  --color-accent-lime: var(--accent-lime);
+  --color-accent-salmon: var(--accent-salmon);
+  --color-tint-mustard: var(--tint-mustard);
+  --color-tint-lavender: var(--tint-lavender);
+  --color-tint-salmon: var(--tint-salmon);
+  --color-tint-lime: var(--tint-lime);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-accent: var(--card-accent);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-surface-inverse: var(--surface-inverse);
+  --color-foreground-inverse: var(--foreground-inverse);
+  --color-error: var(--error);
+  --color-success: var(--success);
+  --color-highlight: var(--highlight);
+  --color-border-divider: var(--border-divider);
+  --color-border-input: var(--border-input);
+
+  --radius-sm: 12px; /* pen --radius-s (renamed: Tailwind v4 has a built-in logical rounded-s) */
+  --radius-m: 20px;
+  --radius-pill: 999px;
+
+  /* Landing USP strip: the track holds two identical halves, so -50% loops seamlessly. */
+  --animate-marquee: marquee 55s linear infinite; /* ~44px/s at 1440: readable */
+  @keyframes marquee {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      transform: translate3d(-50%, 0, 0);
+    }
+  }
+
+  --font-display: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
+  --font-body: var(--font-manrope), "Manrope", sans-serif;
+  --font-mono: var(--font-plex-mono), "IBM Plex Mono", monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* pen renders Bricolage Grotesque at its 96pt optical size at every size
+       (measured: text widths match exactly). Manrope / Plex Mono ignore it. */
+    font-variation-settings: "opsz" 96;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-manrope), "Manrope", sans-serif;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
+/*
+ * Reduced motion is handled per component (drawers fade instead of sliding,
+ * toggles skip their rotation) with Tailwind's motion-reduce: variant, so
+ * state changes stay visible instead of being cut to 0ms everywhere.
+ */

@@ -1,0 +1,10 @@
+node_modules
+.next
+.shots
+.git
+.env
+.env.*
+!.env.example
+public/uploads
+src/generated
+npm-debug.log*
