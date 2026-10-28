@@ -8,11 +8,12 @@ import { MenuItemCard } from "@/components/shop/menu-item-card";
 import { ProductBuy } from "@/components/shop/product-buy";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { toShopCategories, toShopProduct } from "@/components/shop/shop-product";
-import { localized, productContent, productLong } from "@/content/products";
+import { INGREDIENTS_ON_REQUEST, localized, productContent, productLong } from "@/content/products";
 import { getLocale, getMessages } from "@/i18n/server";
 import { menuMessages } from "@/i18n/messages/menu";
 import { productMessages } from "@/i18n/messages/product";
 import { getMenu, getProductBySlug } from "@/lib/catalog";
+import { getStoreSettings } from "@/lib/settings";
 
 const MAX_RELATED = 4;
 
@@ -35,12 +36,13 @@ export async function generateMetadata({ params }: PageProps<"/menu/[slug]">): P
 /** pen: Product detail (w7mQL). */
 export default async function ProductPage({ params }: PageProps<"/menu/[slug]">) {
   const { slug } = await params;
-  const [product, locale, t, m, menu] = await Promise.all([
+  const [product, locale, t, m, menu, settings] = await Promise.all([
     loadProduct(slug),
     getLocale(),
     getMessages(productMessages),
     getMessages(menuMessages),
     getMenu(),
+    getStoreSettings(),
   ]);
   if (!product) notFound();
 
@@ -66,11 +68,21 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
     ...others.filter((p) => p.categorySlug !== item.categorySlug),
   ].slice(0, MAX_RELATED);
 
-  const details: { title: string; body?: string }[] = [
-    { title: t.ingredients, body: localized(content?.ingredients, locale) },
+  const details: { title: string; body?: string; placeholder?: boolean }[] = [
+    {
+      title: t.ingredients,
+      body: localized(content?.ingredients, locale),
+      placeholder: content?.ingredients === INGREDIENTS_ON_REQUEST,
+    },
     { title: t.allergens, body: localized(content?.allergens, locale) },
     { title: t.storage, body: localized(content?.storage, locale) },
   ].filter((d) => d.body);
+  // Open the first section that says something; the ingredients placeholder only points to us.
+  const openIndex = Math.max(
+    0,
+    details.findIndex((d) => !d.placeholder),
+  );
+  const contactHref = `mailto:${settings.email}?subject=${encodeURIComponent(t.ingredientsSubject(product.name))}`;
 
   // The database has one photo per product; the pen's other three are general shop photos, described as such.
   const photos = [
@@ -123,12 +135,24 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
                 <AccordionItem
                   key={d.title}
                   question={d.title}
-                  defaultOpen={i === 0}
+                  defaultOpen={i === openIndex}
                   openStyle="minus"
                   questionClassName="text-[20px]! leading-[25px]!"
                   className="[&>summary>span:last-child]:bg-oat! [&>summary>span:last-child]:text-foreground!"
                 >
-                  {d.body}
+                  {d.placeholder && d.body?.startsWith(t.ingredientsContact) ? (
+                    <>
+                      <a
+                        href={contactHref}
+                        className="font-semibold text-foreground underline underline-offset-4 hover:no-underline"
+                      >
+                        {t.ingredientsContact}
+                      </a>
+                      {d.body.slice(t.ingredientsContact.length)}
+                    </>
+                  ) : (
+                    d.body
+                  )}
                 </AccordionItem>
               ))}
             </div>

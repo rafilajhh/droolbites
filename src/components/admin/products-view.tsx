@@ -11,7 +11,7 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
 import { categoryStyle } from "./rules";
 import { ProductsToolbar } from "./toolbars";
-import { AdminMain, Card, PageHead, smallButtonClasses, thClasses } from "./ui";
+import { AdminMain, Card, CellLabel, mobileCardRowClasses, PageHead, smallButtonClasses, thClasses } from "./ui";
 
 export type ProductsQuery = { q: string; category: string };
 
@@ -76,10 +76,13 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
         />
         <ProductsToolbar q={query.q} category={category} count={products.length} categories={categories} />
 
-        <Card className="w-full p-2">
+        <Card className="w-full p-2 max-md:bg-transparent max-md:p-0 max-md:inset-ring-0">
           <div className="relative w-full overflow-x-auto">
-            <table aria-label={t.products.title} className="w-full min-w-[820px] border-separate border-spacing-0">
-              <thead>
+            <table
+              aria-label={t.products.title}
+              className="w-full border-separate border-spacing-0 max-md:block md:min-w-[820px]"
+            >
+              <thead className="max-md:hidden">
                 <tr>
                   <th scope="col" className={cn(thClasses, "rounded-l-lg bg-background py-3 pl-4")}>
                     {c.product}
@@ -101,10 +104,14 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                   </th>
                 </tr>
               </thead>
-              <tbody className="[&_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] [&_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
+              {/* Below md each row is a stacked card like the orders list; cells carry sr-only labels. */}
+              <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground">
+                    <td
+                      colSpan={6}
+                      className="block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground md:table-cell"
+                    >
                       {t.products.empty}
                     </td>
                   </tr>
@@ -112,18 +119,24 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                   products.map((p) => {
                     const from = p.variants[0]?.price;
                     return (
-                      <tr key={p.id.toString()}>
-                        <th scope="row" className="py-3 pl-4 text-left">
+                      <tr key={p.id.toString()} className={mobileCardRowClasses}>
+                        <th
+                          scope="row"
+                          className="py-3 pr-4 pl-4 text-left max-md:order-1 max-md:min-w-0 max-md:grow max-md:basis-[calc(100%-5rem)] max-md:p-0"
+                        >
                           <span className="flex items-center gap-3">
                             <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-oat">
                               {p.imageUrl ? (
                                 <Image src={p.imageUrl} alt="" fill sizes="40px" quality={100} className="object-cover" />
                               ) : null}
                             </span>
-                            <span className="truncate text-[15px] leading-[23px] font-bold">{p.name}</span>
+                            <span className="truncate text-[15px] leading-[23px] font-bold max-md:line-clamp-2 max-md:whitespace-normal">
+                              {p.name}
+                            </span>
                           </span>
                         </th>
-                        <td className="py-3">
+                        <td className="py-3 max-md:order-3 max-md:p-0">
+                          <CellLabel>{c.category}</CellLabel>
                           <span
                             className={cn(
                               "inline-flex rounded-pill px-2.5 py-1 text-xs leading-4 font-bold",
@@ -133,25 +146,28 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                             {categoryName(p.category.slug, p.category.name, locale)}
                           </span>
                         </td>
-                        <td className="py-3 text-[15px] leading-[23px] font-medium">{p.variants.length}</td>
-                        <td className="py-3 text-[15px] leading-[23px] font-medium">
+                        <td className="py-3 text-[15px] leading-[23px] font-medium max-md:hidden">{p.variants.length}</td>
+                        <td className="py-3 text-[15px] leading-[23px] font-medium max-md:order-5 max-md:basis-full max-md:p-0 max-md:text-sm max-md:leading-[21px] max-md:text-muted-foreground">
+                          <CellLabel>{c.price}</CellLabel>
                           {from === undefined
                             ? "–"
                             : p.variants.length > 1
                               ? t.products.from(formatRupiah(from))
                               : formatRupiah(from)}
+                          <span className="md:hidden"> · {t.products.optionsCount(p.variants.length)}</span>
                         </td>
-                        <td className="py-3">
+                        <td className="py-3 max-md:order-4 max-md:p-0">
+                          <CellLabel>{c.availability}</CellLabel>
                           <StatusBadge tone={p.isAvailable ? "success" : "muted"} className="whitespace-nowrap">
                             {p.isAvailable ? t.products.available : t.products.unavailable}
                           </StatusBadge>
                         </td>
-                        <td className="py-3 pr-4 text-right">
+                        <td className="py-3 pr-4 text-right max-md:order-2 max-md:basis-[4.5rem] max-md:p-0">
                           <Link
                             href={`/admin/products/${p.id}/edit${qs}`}
                             scroll={false}
                             aria-label={t.products.editLabel(p.name)}
-                            className={smallButtonClasses}
+                            className={cn(smallButtonClasses, "relative after:absolute after:-inset-x-1 after:-inset-y-2 after:content-['']")}
                           >
                             {t.common.edit}
                           </Link>

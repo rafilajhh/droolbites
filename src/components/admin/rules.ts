@@ -25,16 +25,6 @@ export function fulfilmentOptions(order: {
   }
 }
 
-/** Dot color per fulfilment status, matching the status badge dots. */
-export const fulfilmentDot: Record<FulfilmentStatus, string> = {
-  pending: "bg-muted-foreground",
-  baking: "bg-accent-lavender",
-  ready_for_pickup: "bg-accent-teal",
-  out_for_delivery: "bg-accent-cobalt",
-  completed: "bg-success",
-  cancelled: "bg-accent-crimson",
-};
-
 /** "BCA VA", "QRIS", "DANA" — the short label in the admin payment card. */
 export function paymentMethodShort(method: PaymentMethod): string {
   const info = paymentMethodInfo[method];

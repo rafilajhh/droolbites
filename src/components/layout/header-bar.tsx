@@ -21,7 +21,8 @@ function useScrolled() {
   return scrolled;
 }
 
-const iconLink ="flex size-10 items-center justify-center rounded-pill transition-colors hover:bg-card";
+const iconLink =
+  "relative flex size-10 items-center justify-center rounded-pill transition-colors after:absolute after:-inset-0.5 after:content-[''] hover:bg-card";
 
 export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accountHref: string }) {
   const t = useMessages(commonMessages).header;
@@ -65,7 +66,7 @@ export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accou
         />
       </Link>
 
-      {/* 40px hit areas; gaps chosen so the icons sit 20px apart like the pen header. */}
+      {/* 40px icons with 44px hit areas; gaps chosen so the icons sit 20px apart like the pen header. */}
       <div className="flex flex-1 items-center justify-end gap-0.5">
         <LanguageSwitch className="mr-3 hidden sm:inline-flex" />
         <Link href="/menu?search=1" className={`${iconLink} hidden sm:flex`} aria-label={t.search}>

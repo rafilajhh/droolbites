@@ -34,7 +34,7 @@ export function ResetRequestForm() {
         />
       </Field>
       <Button type="submit" disabled={pending} className="w-full">
-        {t.reset.submit}
+        {pending ? t.reset.pending : state.sent ? t.reset.resend : t.reset.submit}
       </Button>
       <div role="status" className="empty:-mt-5">
         {state.sent ? (

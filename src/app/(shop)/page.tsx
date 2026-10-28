@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, Cookie, MapPin, QrCode, ShoppingBag, Store, Truck } from "lucide-react";
-import { formatOpeningHours } from "@/components/content/hours";
+import { directionsUrl, formatOpeningHours } from "@/components/content/hours";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { Cutout, Snapshot } from "@/components/ui/snapshot";
@@ -21,8 +21,8 @@ import { getStoreSettings } from "@/lib/settings";
 
 const eyebrow = "font-mono text-[13px] leading-[20px] font-semibold tracking-[1px] text-primary";
 const sectionTitle =
-  "font-display text-[36px] leading-[38px] font-bold tracking-[-1px] text-foreground sm:text-[44px] sm:leading-[46px] lg:text-[56px] lg:leading-[57px]";
-const sectionSub = "max-w-[560px] text-base leading-normal text-muted-foreground lg:text-lg";
+  "font-display text-[36px] leading-[38px] font-bold text-balance tracking-[-1px] text-foreground sm:text-[44px] sm:leading-[46px] lg:text-[56px] lg:leading-[57px]";
+const sectionSub = "max-w-[560px] text-pretty text-base leading-normal text-muted-foreground lg:text-lg";
 const px = "px-4 sm:px-8 lg:px-16";
 /** Mobile hero art direction: where each 0.45× copy of the hero photo is pinned, and the part it keeps. */
 const heroCorners = [
@@ -47,7 +47,7 @@ export default async function HomePage() {
   const brownieRow = menu.flatMap((c) => c.products).find((p) => p.slug === brownies?.slug);
   const newProduct = products.find((p) => productContent[p.slug]?.badge?.label.en === "New");
   const cookiesFrom = cookies.length ? Math.min(...cookies.map((p) => p.fromPrice)) : null;
-  const directions = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(settings.address)}`;
+  const directions = directionsUrl(settings);
 
   const usps = [
     { icon: Cookie, label: t.usp.fresh },
@@ -88,10 +88,10 @@ export default async function HomePage() {
             aria-hidden
           />
           <Chip className="relative bg-highlight! text-ink">{t.hero.chip}</Chip>
-          <h1 className="relative w-full font-display text-[52px] leading-[50px] font-bold tracking-[-1.5px] text-white sm:text-[80px] sm:leading-[76px] lg:text-[112px] lg:leading-[106px] lg:tracking-[-3px]">
+          <h1 className="relative w-full font-display text-balance text-[52px] leading-[50px] font-bold tracking-[-1.5px] text-white sm:text-[80px] sm:leading-[76px] lg:text-[112px] lg:leading-[106px] lg:tracking-[-3px]">
             {t.hero.title}
           </h1>
-          <p className="relative max-w-[600px] text-[17px] leading-[26px] text-white lg:text-xl lg:leading-[30px]">
+          <p className="relative max-w-[600px] text-pretty text-[17px] leading-[26px] text-white lg:text-xl lg:leading-[30px]">
             {t.hero.sub}
           </p>
           <div className="relative flex flex-wrap items-center justify-center gap-4 pt-2">
@@ -173,11 +173,11 @@ export default async function HomePage() {
               <p className={eyebrow}>{t.brownies.eyebrow}</p>
               <h2
                 id="home-brownies"
-                className="font-display text-[34px] leading-[36px] font-bold tracking-[-1px] text-foreground sm:text-[44px] sm:leading-[46px] lg:text-[52px] lg:leading-[53px]"
+                className="font-display text-[34px] leading-[36px] font-bold tracking-[-1px] text-balance text-foreground sm:text-[44px] sm:leading-[46px] lg:text-[52px] lg:leading-[53px]"
               >
                 {t.brownies.title}
               </h2>
-              <p className="text-base leading-normal text-muted-foreground lg:text-lg">
+              <p className="text-pretty text-base leading-normal text-muted-foreground lg:text-lg">
                 {productLong(brownieRow.slug, brownieRow.description, locale)}
               </p>
               <dl className="flex w-full flex-col" aria-label={t.brownies.sizes}>
@@ -252,11 +252,11 @@ export default async function HomePage() {
             <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6 lg:max-w-[540px]">
               <h2
                 id="home-story"
-                className="font-display text-[34px] leading-[36px] font-bold tracking-[-1px] text-foreground sm:text-[44px] sm:leading-[46px] lg:text-[52px] lg:leading-[53px]"
+                className="font-display text-[34px] leading-[36px] font-bold tracking-[-1px] text-balance text-foreground sm:text-[44px] sm:leading-[46px] lg:text-[52px] lg:leading-[53px]"
               >
                 {story.title}
               </h2>
-              <p className="text-base leading-normal text-muted-foreground lg:text-lg">{story.body}</p>
+              <p className="text-pretty text-base leading-normal text-muted-foreground lg:text-lg">{story.body}</p>
               <ArrowLink href="/our-story">{t.story.link}</ArrowLink>
             </div>
           </div>
@@ -343,7 +343,7 @@ export default async function HomePage() {
                 <h3 className="font-display text-[24px] leading-[28px] font-bold text-foreground lg:text-[26px] lg:leading-[30px]">
                   {step.title}
                 </h3>
-                <p className="text-base leading-normal text-muted-foreground">{step.body}</p>
+                <p className="text-pretty text-base leading-normal text-muted-foreground">{step.body}</p>
               </li>
             );
           })}
@@ -373,10 +373,10 @@ export default async function HomePage() {
           <h2 id="home-visit" className={sectionTitle}>
             {t.visit.title}
           </h2>
-          <p className="text-base leading-normal text-muted-foreground lg:text-lg">{t.visit.body(settings.address)}</p>
+          <p className="text-pretty text-base leading-normal text-muted-foreground lg:text-lg">{t.visit.body(settings.address)}</p>
           <div className="flex w-full gap-3.5 rounded-sm bg-mint p-5">
             <MapPin className="size-[22px] shrink-0 text-foreground" aria-hidden />
-            <address className="max-w-[180px] flex-1 text-base leading-normal font-semibold text-foreground not-italic">
+            <address className="flex-1 text-base leading-normal font-semibold text-foreground not-italic">
               {settings.address}
             </address>
           </div>

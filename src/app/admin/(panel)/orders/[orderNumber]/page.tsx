@@ -5,13 +5,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, CircleAlert, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
 import { StatusForm } from "@/components/admin/status-form";
-import { fulfilmentDot, fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
+import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
 import { AdminMain, Card } from "@/components/admin/ui";
 import { variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatItemCount, formatRupiah } from "@/lib/format";
-import { fulfilmentBadgeInfo, fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -73,10 +73,10 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const half = Math.ceil(lines.length / 2);
   const itemCount = order.items.reduce((sum, i) => sum + i.qty, 0);
 
+  // Same labels as the header badge, so an unpaid order's current option reads "Unpaid", not "New order".
   const options = fulfilmentOptions(order).map((status) => ({
     value: status,
-    label: fulfilmentStatusInfo[status][locale],
-    dot: fulfilmentDot[status],
+    label: fulfilmentBadgeInfo({ paymentStatus: order.paymentStatus, fulfilmentStatus: status })[locale],
   }));
   const note =
     order.paymentStatus === "paid"
@@ -130,7 +130,8 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
       ) : null}
 
       <div className="flex w-full flex-col gap-5 xl:flex-row xl:items-start">
-        <div className="flex min-w-0 flex-1 flex-col gap-5">
+        {/* Stacked (<xl) the columns dissolve so the status card can lead; xl keeps the pen's two columns. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-5 max-xl:contents">
           <Card className="flex w-full flex-col gap-3 p-6">
             <h2 className="font-display text-[22px] leading-[33px] font-bold">{o.items}</h2>
             <div className="flex w-full flex-col gap-3 md:flex-row md:gap-6">
@@ -182,11 +183,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                 {order.customerName}
               </p>
               <p className="text-sm leading-[21px] break-words text-muted-foreground">
-                <a href={`mailto:${order.email}`} className="hover:text-foreground hover:underline">
+                <a href={`mailto:${order.email}`} className="underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current">
                   {order.email}
                 </a>
                 {" · "}
-                <a href={`tel:${order.phone.replace(/\s/g, "")}`} className="hover:text-foreground hover:underline">
+                <a href={`tel:${order.phone.replace(/\s/g, "")}`} className="underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current">
                   {order.phone}
                 </a>
               </p>
@@ -194,10 +195,16 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           </div>
         </div>
 
-        <div className="flex w-full flex-col gap-5 xl:w-[360px] xl:shrink-0">
-          <Card className="flex w-full flex-col gap-4 p-6">
+        <div className="flex w-full flex-col gap-5 max-xl:contents xl:w-[360px] xl:shrink-0">
+          <Card className="flex w-full flex-col gap-4 p-6 max-xl:order-first">
             <h2 className="font-display text-xl leading-[30px] font-bold">{o.status}</h2>
-            <StatusForm orderNumber={order.orderNumber} current={order.fulfilmentStatus} options={options} note={note} />
+            <StatusForm
+              orderNumber={order.orderNumber}
+              current={order.fulfilmentStatus}
+              options={options}
+              note={note}
+              paidAmount={order.paymentStatus === "paid" ? formatRupiah(pay.amount) : undefined}
+            />
           </Card>
           <Card className="flex w-full flex-col gap-4 p-6">
             <div className="flex w-full items-center justify-between gap-3">

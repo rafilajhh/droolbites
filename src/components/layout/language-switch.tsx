@@ -44,7 +44,10 @@ export function LanguageSwitch({ className, tone = "default" }: { className?: st
             aria-pressed={active}
             onClick={() => choose(code)}
             className={cn(
-              "rounded-pill px-2 py-1.5 uppercase transition-colors",
+              // Hit-slop to 44px tall; each half also reaches 8px outward, which stays clear of the
+              // admin Sign out button (gap-2) and the header search icon (mr-3).
+              "relative rounded-pill px-2 py-1.5 uppercase transition-colors after:absolute after:-inset-y-2.5 after:content-['']",
+              code === "en" ? "after:-left-2 after:right-0" : "after:left-0 after:-right-2",
               active
                 ? tone === "inverse"
                   ? "bg-white text-foreground"

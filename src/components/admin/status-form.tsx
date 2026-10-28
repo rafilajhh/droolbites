@@ -1,13 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import { ChevronDown, Info } from "lucide-react";
+import { startTransition, useActionState, useState } from "react";
+import { Ban, ChevronDown, CircleCheck, Info } from "lucide-react";
 import { updateFulfilmentStatus, type FulfilmentState } from "@/app/actions/admin/orders";
 import { Button } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
+import { ConfirmDialog } from "./confirm-dialog";
 import { Dropdown, type DropdownOption } from "./dropdown";
 
 /** pen: Admin / Order detail → Order status card, with the Fulfilment Options popover (IPL0N). */
@@ -16,11 +17,14 @@ export function StatusForm({
   current,
   options,
   note,
+  paidAmount,
 }: {
   orderNumber: string;
   current: string;
   options: DropdownOption[];
   note: { text: string; className: string };
+  /** Set when the order is paid: cancelling it means refunding this amount. */
+  paidAmount?: string;
 }) {
   const t = useMessages(adminMessages).order;
   const [state, action, pending] = useActionState<FulfilmentState, FormData>(updateFulfilmentStatus, {
@@ -29,6 +33,8 @@ export function StatusForm({
   const [selected, setSelected] = useState(current);
   // The result message belongs to the last save; picking a new status clears it.
   const [cleared, setCleared] = useState<FulfilmentState | null>(null);
+  // Completed and Cancelled close the order for good, so saving one asks first.
+  const [confirming, setConfirming] = useState<FormData | null>(null);
   const locked = options.length <= 1;
   const value = options.find((o) => o.value === selected) ?? options[0];
   const messages: Record<FulfilmentState["status"], string> = {
@@ -39,9 +45,23 @@ export function StatusForm({
     busy: t.busy,
   };
   const message = state === cleared ? "" : messages[state.status];
+  const finalStatus = value.value === "completed" || value.value === "cancelled";
+
+  const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    if (finalStatus && value.value !== current) setConfirming(data);
+    else startTransition(() => action(data));
+  };
+  const confirm = () => {
+    const data = confirming;
+    setConfirming(null);
+    if (data) startTransition(() => action(data));
+  };
+  const cancelling = value.value === "cancelled";
 
   return (
-    <form action={action} className="flex w-full flex-col gap-4">
+    <form onSubmit={onSubmit} className="flex w-full flex-col gap-4">
       <input type="hidden" name="orderNumber" value={orderNumber} />
       <input type="hidden" name="status" value={value.value} />
       <div className="flex w-full flex-col gap-2">
@@ -85,6 +105,24 @@ export function StatusForm({
       >
         {message}
       </p>
+      <ConfirmDialog
+        open={confirming !== null}
+        onClose={() => setConfirming(null)}
+        icon={cancelling ? Ban : CircleCheck}
+        tone={cancelling ? "danger" : "neutral"}
+        title={cancelling ? t.confirmCancelTitle(orderNumber) : t.confirmCompleteTitle(orderNumber)}
+        body={
+          <>
+            <p>{cancelling ? t.confirmCancelBody : t.confirmCompleteBody}</p>
+            {cancelling && paidAmount ? (
+              <p className="font-semibold text-foreground">{t.confirmCancelRefund(paidAmount)}</p>
+            ) : null}
+          </>
+        }
+        cancelLabel={t.goBack}
+        confirmLabel={cancelling ? t.confirmCancel : t.confirmComplete}
+        onConfirm={confirm}
+      />
     </form>
   );
 }

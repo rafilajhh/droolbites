@@ -50,11 +50,11 @@ export async function AuthShell({
             className="size-16 rounded-full lg:size-24"
           />
         </Link>
-        <p className="font-display text-[28px] leading-[1.05] font-bold tracking-[-0.5px] text-white lg:text-[40px]">
+        <p className="font-display text-[28px] leading-[1.05] font-bold tracking-[-0.5px] text-white max-lg:text-balance lg:text-[40px]">
           {quote}
         </p>
       </div>
-      <div className="flex w-full flex-1 flex-col items-center justify-center pb-6 lg:min-h-[calc(100dvh-48px)] lg:pb-0">
+      <div className="flex w-full flex-1 flex-col items-center justify-start pb-6 lg:justify-center lg:min-h-[calc(100dvh-48px)] lg:pb-0">
         <main className="flex w-full max-w-[440px] flex-col gap-5">{children}</main>
       </div>
     </div>

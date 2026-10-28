@@ -41,15 +41,17 @@ export default async function NotFound() {
             </span>
             <span className={`${four} text-accent-cobalt`}>4</span>
           </div>
-          <h1 className="max-w-[900px] font-display text-[40px] leading-[1.02] font-bold tracking-[-1px] text-foreground sm:text-[64px] sm:leading-[65px] sm:tracking-[-2px]">
+          <h1 className="max-w-[900px] font-display text-balance text-[40px] leading-[1.02] font-bold tracking-[-1px] text-foreground sm:text-[64px] sm:leading-[65px] sm:tracking-[-2px]">
             {t.title}
           </h1>
-          <p className="max-w-[560px] text-[17px] leading-[1.53] text-muted-foreground sm:text-[19px] sm:leading-[29px]">
+          <p className="max-w-[560px] text-balance text-[17px] leading-[1.53] text-muted-foreground sm:text-[19px] sm:leading-[29px]">
             {t.sub}
           </p>
-          <div className="flex flex-col items-center gap-4 sm:flex-row">
-            <ButtonLink href="/menu">{t.menu}</ButtonLink>
-            <ButtonLink href="/" variant="secondary">
+          <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row">
+            <ButtonLink href="/menu" className="w-full max-w-[280px] sm:w-auto">
+              {t.menu}
+            </ButtonLink>
+            <ButtonLink href="/" variant="secondary" className="w-full max-w-[280px] sm:w-auto">
               {t.home}
             </ButtonLink>
           </div>

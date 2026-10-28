@@ -57,7 +57,7 @@ export function SignInForm({ next }: { next?: string }) {
       </div>
       {state.formError ? <FormAlert id="sign-in-alert">{t.errors[state.formError]}</FormAlert> : null}
       <Button type="submit" disabled={pending} className="w-full">
-        {t.signIn.submit}
+        {pending ? t.signIn.pending : t.signIn.submit}
       </Button>
     </form>
   );

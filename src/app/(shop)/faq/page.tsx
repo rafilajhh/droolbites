@@ -5,7 +5,10 @@ import { formatOpeningHours } from "@/components/content/hours";
 import { AccordionItem } from "@/components/ui/accordion";
 import { faqMessages, type FaqFacts } from "@/i18n/messages/pages/faq";
 import { getLocale, getMessages } from "@/i18n/server";
+import { getMenu } from "@/lib/catalog";
 import { formatRupiah } from "@/lib/format";
+import { PAYMENT_GROUPS, PRIMARY_VA_COUNT, paymentMethodInfo } from "@/lib/order-status";
+import { getPaymentOptions } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -17,14 +20,38 @@ const contactLink = "flex w-fit items-center gap-2.5 text-[15px] leading-[23px] 
 
 /** pen: FAQ (ouetk). */
 export default async function FaqPage() {
-  const [t, locale, settings] = await Promise.all([getMessages(faqMessages), getLocale(), getStoreSettings()]);
+  const [t, locale, settings, menu] = await Promise.all([
+    getMessages(faqMessages),
+    getLocale(),
+    getStoreSettings(),
+    getMenu(),
+  ]);
 
+  // Exactly what checkout offers right now: store settings plus the gateway's active channels.
+  const { methods: available } = await getPaymentOptions(settings);
+  const groups = PAYMENT_GROUPS.map((group) => ({ key: group.key, methods: group.methods.filter((m) => available.includes(m)) })).filter(
+    (group) => group.methods.length > 0,
+  );
+  const has = (key: string) => groups.some((group) => group.key === key);
   const methods: string[] = [];
-  if (settings.vaEnabled) methods.push(t.payments.va);
-  if (settings.qrisEnabled) methods.push(t.payments.qris);
-  if (settings.ewalletEnabled) methods.push(t.payments.ewallet);
-  const payments =
-    methods.length > 1 ? `${methods.slice(0, -1).join(", ")} ${t.payments.or} ${methods.at(-1)}` : (methods[0] ?? "");
+  if (has("va")) methods.push(t.payments.va);
+  if (has("qris")) methods.push(t.payments.qris);
+  if (has("ewallet")) methods.push(t.payments.ewallet);
+  const list = (items: string[], word: string) =>
+    items.length > 1 ? `${items.slice(0, -1).join(", ")} ${word} ${items.at(-1)}` : (items[0] ?? "");
+  const payments = list(methods, t.payments.or);
+
+  // Same groups and order as the checkout payment step.
+  const detail = groups.map((group) => {
+    const names = group.methods.map((m) => paymentMethodInfo[m].name.replace(/ Virtual Account$/, ""));
+    if (group.key === "ewallet") return t.paymentsDetail.ewallet(list(names, t.payments.or));
+    if (group.key === "va") return t.paymentsDetail.va(names.slice(0, PRIMARY_VA_COUNT).join(", "), names.length > PRIMARY_VA_COUNT);
+    if (group.key === "retail") return t.paymentsDetail.retail(list(names, t.payments.or));
+    return t.payments.qris;
+  });
+
+  const productsIn = (slug: string) => menu.find((c) => c.slug === slug)?.products ?? [];
+  const brownieSizes = new Set(productsIn("brownies").flatMap((p) => p.variants.map((v) => v.name)));
 
   const facts: FaqFacts = {
     address: settings.address,
@@ -32,13 +59,19 @@ export default async function FaqPage() {
     deliveryFee: formatRupiah(settings.deliveryFee),
     email: settings.email,
     payments,
+    paymentsDetail: list(detail, t.payments.or),
+    counts: {
+      cookies: productsIn("soft-cookies").length,
+      brownieSizes: brownieSizes.size,
+      tiramisu: productsIn("tiramisu").length,
+    },
   };
 
   return (
     <section className="flex w-full flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 lg:flex-row lg:gap-24 lg:px-16 lg:pt-14 lg:pb-28">
       <div className="flex w-full flex-col gap-5 lg:w-[400px] lg:shrink-0">
         <Eyebrow>{t.eyebrow}</Eyebrow>
-        <h1 className="font-display text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[64px] lg:leading-[65px] lg:tracking-[-2px]">
+        <h1 className="font-display text-balance text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[64px] lg:leading-[65px] lg:tracking-[-2px]">
           {t.title}
         </h1>
         <p className="text-lg leading-[27px] text-muted-foreground">{t.sub}</p>
@@ -67,7 +100,7 @@ export default async function FaqPage() {
                 question={item.q}
                 defaultOpen={gi === 0 && ii === 0}
                 openStyle="minus"
-                questionClassName="leading-[28px]"
+                questionClassName="leading-[28px] text-balance"
               >
                 {item.a(facts)}
               </AccordionItem>

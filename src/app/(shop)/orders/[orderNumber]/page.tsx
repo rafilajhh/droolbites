@@ -27,7 +27,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatItemCount, formatRupiah } from "@/lib/format";
 import { fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { formatAddress, getOrderForViewer, itemCount, orderDeadline, payable, shortMethodName, withOrderToken } from "@/lib/orders";
+import { cancelledByStore, formatAddress, getOrderForViewer, itemCount, orderDeadline, payable, shortMethodName, withOrderToken } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata({ params }: PageProps<"/orders/[orderNumber]">): Promise<Metadata> {
@@ -36,7 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/orders/[orderNumb
   return { title: t.title(orderNumber), robots: { index: false } };
 }
 
-type StepState = "done" | "current" | "todo";
+type StepState = "done" | "current" | "todo" | "cancelled";
 
 /** pen: Order detail (Csrk7). */
 export default async function OrderDetailPage({ params, searchParams }: PageProps<"/orders/[orderNumber]">) {
@@ -58,13 +58,22 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const payment = order.payments.find((p) => p.status === "paid") ?? order.payments[0];
   const methodName = payment ? paymentMethodInfo[payment.method].name : "";
   const paid = order.paymentStatus === "paid";
+  // Money can arrive after a store cancel; the order stays unpaid but the customer is owed a refund (admin: "Refund needed").
+  const paidSomething = paid || order.payments.some((p) => p.status === "paid");
+  // What the customer paid, not what the order recorded: a late payment still reads Paid.
+  const customerPaymentStatus = paidSomething ? "paid" : order.paymentStatus;
   // A payment that lapsed while the order is still open no longer says what the customer will pay.
   const pay = payable(order, payment?.status === "expired" ? null : payment);
   const f = order.fulfilmentStatus;
 
   // Progress: placed → payment → baking → out for delivery / ready → delivered / picked up.
   const rank = { pending: 0, baking: 1, out_for_delivery: 2, ready_for_pickup: 2, completed: 3, cancelled: -1 }[f];
-  const steps: { label: string; state: StepState; icon: LucideIcon }[] = [
+  // A cancelled order ends at a Cancelled step; the steps it will never reach are left out.
+  const steps: { label: string; state: StepState; icon: LucideIcon }[] = f === "cancelled" ? [
+    { label: t.steps.placed, state: "done", icon: Check },
+    ...(paidSomething ? [{ label: t.steps.payment, state: "done" as const, icon: Wallet }] : []),
+    { label: t.steps.cancelled, state: "cancelled", icon: CircleX },
+  ] : [
     { label: t.steps.placed, state: "done", icon: Check },
     { label: t.steps.payment, state: paid ? "done" : order.paymentStatus === "awaiting" ? "current" : "todo", icon: Wallet },
     { label: t.steps.baking, state: paid && rank > 1 ? "done" : paid && rank === 1 ? "current" : "todo", icon: Cookie },
@@ -81,12 +90,20 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
     t.placed(formatDate(order.createdAt, locale)),
     formatItemCount(itemCount(order), locale),
     delivery ? t.localDelivery : t.pickup,
-    ...(methodName ? [paid ? t.paidWith(shortMethodName(methodName)) : t.payWith(shortMethodName(methodName))] : []),
+    ...(methodName ? [paidSomething ? t.paidWith(shortMethodName(methodName)) : t.payWith(shortMethodName(methodName))] : []),
   ].join(" · ");
 
   const payHref = withOrderToken(`/checkout/pay/${orderNumber}`, token);
-  const statusCard =
-    paid && payment?.paidAt
+  // A store cancel wins over the payment state: paid or not, the order won't be made.
+  const statusCard = cancelledByStore(order) || (f === "cancelled" && paidSomething)
+    ? {
+        tone: "bg-tint-salmon",
+        icon: CircleX,
+        iconClass: "text-error",
+        title: t.cancelledTitle,
+        body: paidSomething ? t.cancelledPaidBody : t.cancelledBody,
+      }
+    : paid && payment?.paidAt
       ? {
           tone: "bg-mint",
           icon: CircleCheck,
@@ -169,13 +186,13 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
             <li
               key={step.label}
               className={cn("flex flex-col items-start gap-2 lg:flex-row lg:items-center lg:gap-3", i > 0 && "lg:flex-auto")}
-              aria-current={step.state === "current" ? "step" : undefined}
+              aria-current={step.state === "current" || step.state === "cancelled" ? "step" : undefined}
             >
               {i > 0 ? (
                 <span
                   className={cn(
                     "ml-[15px] h-4 w-0.5 lg:ml-0 lg:h-0.5 lg:w-auto lg:flex-1",
-                    step.state === "todo" ? "bg-border-divider" : "bg-primary",
+                    step.state === "todo" || step.state === "cancelled" ? "bg-border-divider" : "bg-primary",
                   )}
                   aria-hidden
                 />
@@ -220,8 +237,8 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
               {
                 label: ct.success.paymentStatus,
                 value: (
-                  <StatusBadge tone={paymentStatusInfo[order.paymentStatus].tone}>
-                    {paymentStatusInfo[order.paymentStatus][locale]}
+                  <StatusBadge tone={paymentStatusInfo[customerPaymentStatus].tone}>
+                    {paymentStatusInfo[customerPaymentStatus][locale]}
                   </StatusBadge>
                 ),
               },
@@ -282,6 +299,13 @@ function StepDot({ state, icon: Icon }: { state: StepState; icon: LucideIcon }) 
     return (
       <span className="flex size-8 shrink-0 items-center justify-center rounded-pill bg-primary text-primary-foreground">
         <Check className="size-4" aria-hidden />
+      </span>
+    );
+  }
+  if (state === "cancelled") {
+    return (
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-pill bg-tint-salmon text-error">
+        <Icon className="size-4" aria-hidden />
       </span>
     );
   }

@@ -39,7 +39,7 @@ export default async function CareersPage() {
         </div>
         <div className="flex flex-1 flex-col items-start gap-6">
           <Eyebrow>{t.eyebrow}</Eyebrow>
-          <h1 className="font-display text-[48px] leading-[1.02] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[88px] lg:leading-[90px] lg:tracking-[-2px]">
+          <h1 className="font-display text-balance text-[48px] leading-[1.02] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[88px] lg:leading-[90px] lg:tracking-[-2px]">
             {t.title}
           </h1>
           <p className="text-[17px] leading-[1.53] text-muted-foreground lg:text-[19px] lg:leading-[29px]">{t.body}</p>

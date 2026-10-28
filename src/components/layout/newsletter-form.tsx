@@ -25,6 +25,7 @@ export function NewsletterForm() {
           required
           placeholder={f.newsPlaceholder}
           aria-invalid={state.status === "invalid" || undefined}
+          aria-describedby="newsletter-msg"
           className="min-w-0 flex-1 bg-transparent text-base leading-normal text-foreground-inverse outline-hidden placeholder:text-foreground-inverse"
         />
         <button type="submit" disabled={pending} aria-label={f.newsSubmit} className="relative text-foreground-inverse after:absolute after:-inset-3 after:content-[''] disabled:opacity-50">
@@ -32,7 +33,7 @@ export function NewsletterForm() {
         </button>
       </div>
       {/* Only takes space after a submit, so the idle footer matches the pen frame. */}
-      <p className="text-[13px] leading-[20px] text-mint empty:hidden" aria-live="polite">
+      <p id="newsletter-msg" className="text-[13px] leading-[20px] text-mint empty:hidden" aria-live="polite">
         {state.status === "ok" ? f.newsThanks : state.status === "invalid" ? f.newsInvalid : ""}
       </p>
     </form>

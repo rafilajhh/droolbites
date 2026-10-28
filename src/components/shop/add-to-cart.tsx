@@ -32,7 +32,7 @@ export function AddButton({ product, className }: { product: ShopProduct; classN
           aria-haspopup={multi ? "dialog" : undefined}
           aria-busy={pending || undefined}
           className={cn(
-            "flex size-10 shrink-0 items-center justify-center rounded-pill bg-primary text-primary-foreground transition-[background-color,scale] duration-150 ease-out hover:bg-primary-hover active:scale-90 aria-disabled:cursor-wait aria-disabled:opacity-70 motion-reduce:active:scale-100",
+            "relative flex size-10 shrink-0 items-center after:absolute after:-inset-0.5 after:content-[''] justify-center rounded-pill bg-primary text-primary-foreground transition-[background-color,scale] duration-150 ease-out hover:bg-primary-hover active:scale-90 aria-disabled:cursor-wait aria-disabled:opacity-70 motion-reduce:active:scale-100",
             failed && "bg-error!",
             className,
           )}

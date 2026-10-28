@@ -14,7 +14,8 @@ export type SearchItem = { key: string; href: string; content: React.ReactNode }
 /**
  * pen: Order Search / Product Search — the toolbar search field opens a
  * popover with a live query and matching results. Enter applies the query to
- * the table (?q=); picking a result opens it.
+ * the table (?q=); picking a result opens it. A result is highlighted (and
+ * opened by Enter) only after arrow-key navigation; hover alone just tints it.
  */
 export function SearchPopover({
   label,
@@ -36,6 +37,7 @@ export function SearchPopover({
   const [text, setText] = useState(query);
   const [items, setItems] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [active, setActive] = useState(0);
   const [navigated, setNavigated] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -51,13 +53,15 @@ export function SearchPopover({
       async () => {
         if (!q) {
           setItems([]);
+          setFailed(false);
           setLoading(false);
           return;
         }
         setLoading(true);
-        const next = await fetchItems(q).catch(() => []);
+        const next = await fetchItems(q).catch(() => null);
         if (ticket !== request.current) return;
-        setItems(next);
+        setFailed(next === null);
+        setItems(next ?? []);
         setActive(0);
         setNavigated(false);
         setLoading(false);
@@ -111,9 +115,11 @@ export function SearchPopover({
       ? t.searching
       : expanded
         ? t.results(items.length)
-        : q
-          ? t.noMatches(q)
-          : "";
+        : failed
+          ? t.searchFailed
+          : q
+            ? t.noMatches(q)
+            : "";
 
   return (
     <div className="relative w-full sm:w-[320px]">
@@ -186,10 +192,12 @@ export function SearchPopover({
                   tabIndex={-1}
                   aria-selected={navigated && i === active}
                   onClick={() => setOpen(false)}
-                  onMouseEnter={() => setActive(i)}
+                  onMouseEnter={() => {
+                    if (navigated) setActive(i);
+                  }}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-sm p-2.5 transition-colors",
-                    i === active ? "bg-oat" : "hover:bg-oat",
+                    navigated && i === active ? "bg-oat" : "hover:bg-oat",
                   )}
                 >
                   {item.content}
@@ -197,8 +205,8 @@ export function SearchPopover({
               ))}
             </div>
             {q && !loading && items.length === 0 ? (
-              <p className="px-2.5 py-2 text-[13px] leading-5 text-muted-foreground">
-                {t.noMatches(q)}
+              <p className={cn("px-2.5 py-2 text-[13px] leading-5", failed ? "text-error" : "text-muted-foreground")}>
+                {failed ? t.searchFailed : t.noMatches(q)}
               </p>
             ) : null}
           </div>

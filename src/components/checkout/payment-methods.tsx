@@ -1,15 +1,20 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { PaymentOption } from "@/components/ui/choice-tiles";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import type { CheckoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
-import { PAYMENT_GROUPS, paymentMethodInfo } from "@/lib/order-status";
+import { PAYMENT_GROUPS, PRIMARY_VA_COUNT, paymentMethodInfo } from "@/lib/order-status";
 
 export type PaymentLogos = Partial<Record<PaymentMethod, string>>;
 
 /**
- * The Virtual account / Retail / E-wallet / QRIS cards with their radio tiles.
+ * The E-wallet / QRIS / Virtual account / Retail cards with their radio tiles.
  * `methods` is what the server allows right now (store settings + gateway
- * channels); a group without any of them is left out.
+ * channels); a group without any of them is left out. Banks past the pen's four
+ * stay folded until asked for, or while one of them is selected.
  */
 export function PaymentMethodGroups({
   t,
@@ -29,11 +34,16 @@ export function PaymentMethodGroups({
   const groups = PAYMENT_GROUPS.map((g) => ({ key: g.key, methods: g.methods.filter((m) => methods.includes(m)) })).filter(
     (g) => g.methods.length > 0,
   );
+  const extraBanks = groups.find((g) => g.key === "va")?.methods.slice(PRIMARY_VA_COUNT) ?? [];
+  const [showMore, setShowMore] = useState(() => selected !== null && extraBanks.includes(selected));
+
   return (
     <div className={cn("flex w-full flex-col gap-5", className)}>
       {groups.map((group) => {
         const labels = t.groups[group.key];
         const titleId = `pay-group-${group.key}`;
+        const folds = group.key === "va" && extraBanks.length > 0;
+        const shown = folds && !showMore ? group.methods.slice(0, PRIMARY_VA_COUNT) : group.methods;
         return (
           <div
             key={group.key}
@@ -47,8 +57,8 @@ export function PaymentMethodGroups({
               </h2>
               <p className="text-[13px] leading-5 text-muted-foreground">{labels.sub}</p>
             </div>
-            <div className="grid w-full gap-3 sm:grid-cols-2">
-              {group.methods.map((method) => {
+            <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2">
+              {shown.map((method) => {
                 const info = paymentMethodInfo[method];
                 return (
                   <PaymentOption
@@ -66,6 +76,21 @@ export function PaymentMethodGroups({
                 );
               })}
             </div>
+            {folds ? (
+              <button
+                type="button"
+                onClick={() => setShowMore((v) => !v)}
+                aria-expanded={showMore}
+                aria-controls={`${titleId}-options`}
+                className="flex min-h-11 w-fit items-center gap-1.5 self-center rounded-pill px-4 text-sm leading-[21px] font-semibold text-primary transition-colors hover:bg-background"
+              >
+                {showMore ? t.fewerBanks : t.moreBanks(extraBanks.length)}
+                <ChevronDown
+                  className={cn("size-4 transition-transform duration-200 motion-reduce:transition-none", showMore && "rotate-180")}
+                  aria-hidden
+                />
+              </button>
+            ) : null}
           </div>
         );
       })}

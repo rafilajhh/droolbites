@@ -460,7 +460,7 @@ try {
     const page = await open(admin, "/admin/settings");
     await settle(page);
     await page.locator("#settings-phone").fill(newPhone);
-    await page.locator("form:has(#settings-phone) button[type=submit]").click();
+    await page.locator("form:has(#settings-phone) button[type=submit]:visible").click();
     await page.locator("[role=status]").filter({ hasText: /\S/ }).first().waitFor({ timeout: 30_000 });
     await page.close();
     const row = await one("SELECT phone FROM store_settings WHERE id=1");

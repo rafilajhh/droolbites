@@ -66,7 +66,7 @@ function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: (
               type="button"
               onClick={onClose}
               aria-label={t.close}
-              className="flex size-10 shrink-0 items-center justify-center rounded-pill bg-oat transition-colors hover:bg-card-accent"
+              className="relative flex size-10 shrink-0 items-center justify-center rounded-pill bg-oat after:absolute after:-inset-0.5 after:content-[''] transition-colors hover:bg-card-accent"
             >
               <X className="size-5" aria-hidden />
             </button>

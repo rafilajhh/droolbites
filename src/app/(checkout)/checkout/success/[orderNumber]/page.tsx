@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CircleCheckBig, Cookie, House, ShoppingBag, Store, Truck } from "lucide-react";
+import { CircleCheckBig, CircleX, Cookie, House, ShoppingBag, Store, Truck } from "lucide-react";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import { FulfilmentCard, InfoGrid, StoreContact } from "@/components/checkout/order-info";
 import { OrderSummary } from "@/components/checkout/order-summary";
@@ -51,20 +51,37 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
     delivery ? { icon: Truck, ...s.steps.out } : { icon: ShoppingBag, ...s.steps.ready },
     delivery ? { icon: House, ...s.steps.delivered } : { icon: Store, ...s.steps.collected },
   ];
+  // The hero says what is true now, not only what was true at payment time.
+  const cancelled = stage === -1;
+  const hero = cancelled
+    ? { title: s.titleCancelled, sub: s.subCancelled(orderNumber) }
+    : stage === 3
+      ? { title: s.titleDone, sub: s.subDone(orderNumber) }
+      : stage === 2
+        ? delivery
+          ? { title: s.titleOut, sub: s.subOut(orderNumber) }
+          : { title: s.titleReady, sub: s.subReady(orderNumber) }
+        : { title: s.title, sub: delivery ? s.subDelivery(orderNumber) : s.subPickup(orderNumber) };
+  const HeroIcon = cancelled ? CircleX : CircleCheckBig;
 
   return (
     <>
       <CheckoutHeader step={4} />
-      <main className="flex w-full flex-1 flex-col">
+      <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <div className="flex w-full flex-col items-center gap-4 px-4 pt-12 pb-10 text-center md:px-16 md:pt-16 md:pb-12">
-          <span className="flex size-20 items-center justify-center rounded-pill bg-mint md:size-24">
-            <CircleCheckBig className="size-9 text-primary md:size-11" aria-hidden />
+          <span
+            className={cn(
+              "flex size-20 items-center justify-center rounded-pill md:size-24",
+              cancelled ? "bg-tint-salmon" : "bg-mint",
+            )}
+          >
+            <HeroIcon className={cn("size-9 md:size-11", cancelled ? "text-error" : "text-primary")} aria-hidden />
           </span>
           <h1 className="font-display text-[40px] leading-none font-bold tracking-[-1.5px] text-foreground md:text-[64px]">
-            {s.title}
+            {hero.title}
           </h1>
           <p className="text-[17px] leading-[27px] text-muted-foreground md:text-lg">
-            {delivery ? s.subDelivery(orderNumber) : s.subPickup(orderNumber)}
+            {hero.sub}
           </p>
         </div>
 
@@ -104,6 +121,7 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
               }
             />
 
+            {cancelled ? null : (
             <section
               aria-labelledby="whats-next"
               className="flex w-full flex-col gap-3.5 rounded-m bg-white p-6 inset-ring-1 inset-ring-border-subtle"
@@ -133,10 +151,11 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
                 ))}
               </ol>
             </section>
+            )}
 
             <div className="grid w-full gap-4 sm:grid-cols-2">
               <ButtonLink href={withOrderToken(`/orders/${orderNumber}`, token)}>
-                {s.track}
+                {cancelled ? s.viewOrder : s.track}
               </ButtonLink>
               <ButtonLink href="/menu" variant="secondary">
                 {s.continue}

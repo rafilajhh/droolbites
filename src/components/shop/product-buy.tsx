@@ -38,7 +38,7 @@ export function ProductBuy({
     <>
       <div className="flex w-full flex-col gap-3.5">
         <p className="font-mono text-[13px] leading-[20px] font-semibold tracking-[1px] text-primary">{eyebrow}</p>
-        <h1 className="font-display text-[44px] leading-[44px] font-bold tracking-[-1px] text-foreground sm:text-[56px] sm:leading-[56px] lg:text-[64px] lg:leading-[64px] lg:tracking-[-1.5px]">
+        <h1 className="font-display text-balance text-[44px] leading-[44px] font-bold tracking-[-1px] text-foreground sm:text-[56px] sm:leading-[56px] lg:text-[64px] lg:leading-[64px] lg:tracking-[-1.5px]">
           {product.name}
         </h1>
         <p className="flex items-end gap-2.5">
@@ -82,7 +82,7 @@ export function ProductBuy({
             className="bg-white"
           />
           <Button
-            className="min-w-[200px] flex-1 px-4 aria-disabled:cursor-wait aria-disabled:opacity-50 sm:px-7"
+            className="min-w-0 flex-1 px-4 aria-disabled:cursor-wait aria-disabled:opacity-50 sm:min-w-[200px] sm:px-7"
             aria-disabled={pending || undefined}
             aria-busy={pending || undefined}
             onClick={() => add(variant.id, qty)}

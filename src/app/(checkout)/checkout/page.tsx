@@ -63,7 +63,7 @@ export default async function CheckoutDetailsPage() {
   return (
     <>
       <CheckoutHeader step={2} />
-      <main className="flex w-full flex-1 flex-col">
+      <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <DetailsForm
           initial={initial}
           saved={saved}

@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { startTransition, useActionState, useCallback, useEffect, useId, useRef, useState } from "react";
-import { ImagePlus, Trash2, X } from "lucide-react";
+import { ImagePlus, Lock, Trash2, TriangleAlert, X } from "lucide-react";
 import { saveProduct, type ProductErrorKey, type ProductFormState } from "@/app/actions/admin/products";
 import { useModal } from "@/components/layout/shop-ui";
 import { Button, buttonClasses } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useLocale, useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
+import { ConfirmDialog } from "./confirm-dialog";
 import { DeleteDialog } from "./delete-dialog";
 import { isTrayCategory, MAX_UPLOAD_BYTES, UPLOAD_TYPES } from "./rules";
 import { Toggle } from "./ui";
@@ -69,6 +70,7 @@ export function ProductDrawer({
   const [preview, setPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<ProductErrorKey | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   // Any edit (typing, toggles, photo, adding/removing sizes) makes closing ask first.
   const dirty = useRef(false);
@@ -78,10 +80,11 @@ export function ProductDrawer({
 
   useEffect(() => () => (preview ? URL.revokeObjectURL(preview) : undefined), [preview]);
 
+  const leave = useCallback(() => router.push(closeHref, { scroll: false }), [router, closeHref]);
   const close = useCallback(() => {
-    if (dirty.current && !window.confirm(t.discardChanges)) return;
-    router.push(closeHref, { scroll: false });
-  }, [router, closeHref, t.discardChanges]);
+    if (dirty.current) setDiscarding(true);
+    else leave();
+  }, [leave]);
   // The delete dialog stacks on top while open; useModal pauses this one meanwhile.
   const panelRef = useModal(true, close);
 
@@ -335,6 +338,12 @@ export function ProductDrawer({
                   {err(errors.sizes)}
                 </p>
               ) : null}
+              {rows.some((r) => r.inUse) ? (
+                <p className="flex items-center gap-1.5 text-[13px] leading-5 text-muted-foreground">
+                  <Lock className="size-3.5 shrink-0" aria-hidden />
+                  {t.sizesLocked}
+                </p>
+              ) : null}
             </fieldset>
 
             <div className="flex w-full items-center gap-3 rounded-sm bg-mint p-4">
@@ -381,7 +390,9 @@ export function ProductDrawer({
               href={closeHref}
               scroll={false}
               onClick={(e) => {
-                if (dirty.current && !window.confirm(t.discardChanges)) e.preventDefault();
+                if (!dirty.current) return;
+                e.preventDefault();
+                setDiscarding(true);
               }}
               className={buttonClasses("secondary", "min-w-0 flex-1 px-4")}
             >
@@ -393,6 +404,17 @@ export function ProductDrawer({
           </div>
         </form>
       </div>
+
+      <ConfirmDialog
+        open={discarding}
+        onClose={() => setDiscarding(false)}
+        icon={TriangleAlert}
+        title={t.discardChanges}
+        body={t.discardBody}
+        cancelLabel={t.keepEditing}
+        confirmLabel={t.discard}
+        onConfirm={leave}
+      />
 
       {product ? (
         <DeleteDialog

@@ -83,7 +83,7 @@ export function NewPasswordForm({ token, initiallyInvalid }: { token: string; in
           />
         </Field>
         <Button type="submit" disabled={pending} className="w-full">
-          {t.newPassword.submit}
+          {pending ? t.newPassword.pending : t.newPassword.submit}
         </Button>
       </form>
       <AuthSwitch href="/sign-in" linkLabel={t.newPassword.back} />

@@ -45,18 +45,19 @@ export function Sticker({
 /** Colors measured from the pen badges (see src/lib/order-status.ts for the mapping). */
 export type StatusTone = "mustard" | "success" | "lavender" | "teal" | "cobalt" | "crimson" | "muted";
 
-const toneClasses: Record<StatusTone, { bg: string; dot: string }> = {
-  mustard: { bg: "bg-tint-mustard", dot: "bg-accent-mustard" }, // Awaiting payment
-  success: { bg: "bg-mint", dot: "bg-success" }, // Paid, Completed, Available
-  lavender: { bg: "bg-tint-lavender", dot: "bg-accent-lavender" }, // Baking
-  teal: { bg: "bg-mint", dot: "bg-accent-teal" }, // Ready for pickup
-  cobalt: { bg: "bg-mint", dot: "bg-accent-cobalt" }, // Out for delivery
-  crimson: { bg: "bg-tint-salmon", dot: "bg-accent-crimson" }, // Payment failed / expired
-  muted: { bg: "bg-oat", dot: "bg-muted-foreground" }, // New order, Cancelled, Hidden
+const toneClasses: Record<StatusTone, string> = {
+  mustard: "bg-tint-mustard", // Awaiting payment
+  success: "bg-mint", // Paid, Completed, Available
+  lavender: "bg-tint-lavender", // Baking
+  teal: "bg-mint", // Ready for pickup
+  cobalt: "bg-mint", // Out for delivery
+  crimson: "bg-tint-salmon", // Payment failed / expired
+  muted: "bg-oat", // New order, Cancelled, Hidden
 };
 
 /**
- * pen: Badge/Status (KJayI) — dot + label on a tinted pill.
+ * pen: Badge/Status (KJayI) — label on a tinted pill. The pen's status dot is
+ * left out on purpose: the site shows no status dots.
  * Pages pick the tone that matches their frame in the design.
  */
 export function StatusBadge({
@@ -68,16 +69,14 @@ export function StatusBadge({
   className?: string;
   children: React.ReactNode;
 }) {
-  const t = toneClasses[tone];
   return (
     <span
       className={cn(
-        "inline-flex w-fit items-center gap-2 rounded-pill px-3 py-1.5 text-[13px] font-semibold leading-[16px] text-foreground",
-        t.bg,
+        "inline-flex w-fit items-center rounded-pill px-3 py-1.5 text-[13px] font-semibold leading-[16px] text-foreground",
+        toneClasses[tone],
         className,
       )}
     >
-      <span className={cn("size-2 shrink-0 rounded-full", t.dot)} aria-hidden />
       {children}
     </span>
   );

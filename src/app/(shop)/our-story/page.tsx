@@ -29,7 +29,7 @@ export default async function OurStoryPage() {
       <section className="flex w-full flex-col gap-10 px-4 pt-6 pb-16 sm:px-8 lg:flex-row lg:items-center lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-24">
         <div className="flex flex-1 flex-col gap-6">
           <Eyebrow>{t.eyebrow}</Eyebrow>
-          <h1 className="font-display text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[80px] lg:leading-[82px] lg:tracking-[-2px]">
+          <h1 className="font-display text-balance text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[80px] lg:leading-[82px] lg:tracking-[-2px]">
             {t.title}
           </h1>
           <p className="text-[17px] leading-[1.53] text-muted-foreground lg:text-[19px] lg:leading-[29px]">{t.body}</p>
@@ -60,7 +60,7 @@ export default async function OurStoryPage() {
         <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:gap-16">
           <div className="flex flex-1 flex-col gap-3">
             <Eyebrow>{t.menuEyebrow}</Eyebrow>
-            <h2 className="font-display text-[40px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[56px] lg:leading-[57px]">
+            <h2 className="font-display text-balance text-[40px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[56px] lg:leading-[57px]">
               {t.menuTitle}
             </h2>
           </div>
@@ -93,7 +93,7 @@ export default async function OurStoryPage() {
       <section className="w-full px-3 pb-16 md:px-6 lg:pb-28">
         <div className="flex w-full flex-col gap-8 rounded-m bg-mint px-6 py-10 sm:p-10 lg:flex-row lg:items-center lg:gap-12 lg:p-16">
           <div className="flex flex-1 flex-col gap-3">
-            <h2 className="font-display text-[34px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[48px] lg:leading-[49px]">
+            <h2 className="font-display text-balance text-[34px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[48px] lg:leading-[49px]">
               {t.visitTitle}
             </h2>
             <p className="text-lg leading-[27px] text-muted-foreground">{t.visitBody}</p>

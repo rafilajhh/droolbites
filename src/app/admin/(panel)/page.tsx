@@ -123,7 +123,14 @@ export default async function AdminOverviewPage() {
       )}
 
       <div className="grid w-full gap-5 md:grid-cols-3">
-        <Kpi label={o.awaiting} icon={Hourglass} iconBg="bg-tint-mustard" value={String(awaiting)} sub={o.awaitingSub} />
+        <Kpi
+          label={o.awaiting}
+          icon={Hourglass}
+          iconBg="bg-tint-mustard"
+          value={String(awaiting)}
+          sub={o.awaitingSub}
+          href="/admin/orders?status=awaiting"
+        />
         <Kpi
           label={o.received}
           icon={Wallet}
@@ -198,7 +205,7 @@ export default async function AdminOverviewPage() {
                           <CellLabel>{t.orders.col.payment}</CellLabel>
                           <StatusBadge tone={payment.tone} className="whitespace-nowrap">{payment[locale]}</StatusBadge>
                         </td>
-                        <td className="py-3.5 pr-3 text-base leading-6 font-bold whitespace-nowrap max-md:order-2 max-md:ml-auto max-md:p-0">
+                        <td className="py-3.5 pr-3 text-base leading-6 font-bold whitespace-nowrap max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:p-0 max-md:text-right">
                           <CellLabel>{t.orders.col.total}</CellLabel>
                           {formatRupiah(order.total)}
                         </td>
@@ -261,15 +268,24 @@ function Kpi({
   iconBg,
   value,
   sub,
+  href,
 }: {
   label: string;
   icon: typeof Cookie;
   iconBg: string;
   value: string;
   sub: string;
+  /** Makes the whole card a link to the matching order list. */
+  href?: string;
 }) {
-  return (
-    <Card className="flex flex-col gap-4 p-6">
+  const card = (
+    <Card
+      className={cn(
+        "flex flex-col gap-4 p-6",
+        href &&
+          "h-full transition-[background-color,box-shadow] duration-150 ease-out group-hover:bg-background group-hover:inset-ring-border/50",
+      )}
+    >
       <div className="flex w-full items-center justify-between gap-3">
         <h2 className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</h2>
         <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[10px]", iconBg)}>
@@ -279,5 +295,12 @@ function Kpi({
       <p className="font-display text-[44px] leading-[44px] font-bold md:text-[32px] xl:text-[44px]">{value}</p>
       <p className="text-[13px] leading-5 text-muted-foreground">{sub}</p>
     </Card>
+  );
+  return href ? (
+    <Link href={href} className="group block rounded-m">
+      {card}
+    </Link>
+  ) : (
+    card
   );
 }

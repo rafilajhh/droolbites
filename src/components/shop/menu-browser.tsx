@@ -8,6 +8,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Cutout } from "@/components/ui/snapshot";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
+import { cn } from "@/lib/cn";
 import { CategoryFilter, type FilterOption } from "./category-filter";
 import { MenuItemCard } from "./menu-item-card";
 import { MenuSearch } from "./menu-search";
@@ -73,14 +74,17 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
     if (new URLSearchParams(window.location.search).has("search")) setMenuParams({ search: null }, "replace");
   }, [setSearchOpen]);
   const closeFilter = useCallback(() => setFilterOpen(false), [setFilterOpen]);
-  // The promo tile's button jumps back to the top and opens search. Focusing the search trigger first
-  // means focus returns there (not to the tile at the bottom) when the panel closes.
+  // The promo tile's button clears any search or category filter and jumps back to the top of the
+  // full menu. Focus moves to the toolbar so keyboard users continue from the top, not the tile.
   const toolbarRef = useRef<HTMLDivElement>(null);
-  const searchFromPromo = useCallback(() => {
+  const browseAll = useCallback(() => {
+    if (query || active) {
+      setFiltered(true);
+      setMenuParams({ q: null, category: null });
+    }
     toolbarRef.current?.querySelector("button")?.focus({ preventScroll: true });
     window.scrollTo({ top: 0 });
-    setSearchOpen(true);
-  }, [setSearchOpen]);
+  }, [query, active, setFiltered]);
   const commitSearch = useCallback(
     (q: string) => {
       setSearchOpen(false);
@@ -171,7 +175,7 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
                   {g.products.map((p) => (
                     <MenuItemCard key={p.id} product={p} />
                   ))}
-                  {showPromo ? <PromoTile onSearch={searchFromPromo} /> : null}
+                  {showPromo ? <PromoTile onBrowse={browseAll} compact={g.products.length % 2 === 1} /> : null}
                 </div>
               </section>
             );
@@ -182,31 +186,54 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
   );
 }
 
-/** "Can't decide? Mix a box." tile at the end of the menu (uQ4f5 Promo Tile). */
-function PromoTile({ onSearch }: { onSearch: () => void }) {
+/**
+ * "Can't decide? Mix a box." tile at the end of the menu (uQ4f5 Promo Tile). Below lg the grid has two
+ * columns: after an odd number of cards the tile takes the free cell (`compact`) instead of a full row,
+ * so no card is left alone on its row.
+ */
+function PromoTile({ onBrowse, compact }: { onBrowse: () => void; compact: boolean }) {
   const t = useMessages(menuMessages).promo;
   return (
-    <div className="relative col-span-2 flex min-h-[260px] flex-col justify-between gap-6 overflow-hidden rounded-m bg-primary [--focus-ring:var(--white)] p-6 lg:col-span-1 lg:min-h-0 lg:p-7">
+    <div
+      className={cn(
+        "relative col-span-2 flex min-h-[260px] flex-col justify-between gap-6 overflow-hidden rounded-m bg-primary [--focus-ring:var(--white)] p-6 lg:col-span-1 lg:min-h-0 lg:gap-6 lg:p-7",
+        compact && "col-span-1 min-h-0 gap-4 p-4 sm:p-6",
+      )}
+    >
       {/* Decorative cookie tucked into the corner, clipped by the tile. */}
-      <Cutout name="red-velvet" width={150} className="-top-10 -right-10 rotate-[-18deg] sm:-right-8" />
+      <Cutout
+        name="red-velvet"
+        width={150}
+        className={cn("-top-10 -right-10 rotate-[-18deg] sm:-right-8", compact && "max-sm:-top-12 max-sm:-right-14")}
+      />
       <Image
         src="/images/site/logo-badge.png"
         alt=""
         width={88}
         height={88}
         quality={100}
-        className="size-[72px] rounded-full object-cover lg:size-[88px]"
+        className={cn("size-[72px] rounded-full object-cover lg:size-[88px]", compact && "max-sm:size-14")}
       />
       <div className="relative flex w-full flex-col gap-3">
-        <p className="font-display text-[26px] leading-[28px] font-bold text-white lg:text-[30px] lg:leading-[32px]">
+        <p
+          className={cn(
+            "font-display text-[26px] leading-[28px] font-bold text-balance text-white lg:text-[30px] lg:leading-[32px]",
+            compact && "max-sm:text-[22px] max-sm:leading-[25px]",
+          )}
+        >
           {t.title}
         </p>
-        <p className="text-[15px] leading-[23px] text-mint">{t.body}</p>
+        <p className={cn("text-[15px] leading-[23px] text-mint", compact && "max-sm:text-sm max-sm:leading-[20px]")}>
+          {t.body}
+        </p>
       </div>
       <button
         type="button"
-        onClick={onSearch}
-        className={buttonClasses("secondary", "relative w-fit text-white! inset-ring-white! hover:bg-white/10!")}
+        onClick={onBrowse}
+        className={buttonClasses(
+          "secondary",
+          cn("relative w-fit text-white! inset-ring-white! hover:bg-white/10!", compact && "max-sm:w-full max-sm:px-3"),
+        )}
       >
         {t.cta}
       </button>

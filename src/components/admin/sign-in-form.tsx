@@ -50,7 +50,7 @@ export function AdminSignInForm({ helpEmail }: { helpEmail: string }) {
             onClick={() => setShow((v) => !v)}
             aria-label={t.showPassword}
             aria-pressed={show}
-            className="absolute top-1/2 right-1.5 flex size-10 -translate-y-1/2 items-center justify-center rounded-sm text-foreground hover:bg-card"
+            className="absolute top-1/2 right-1.5 flex size-10 -translate-y-1/2 items-center after:absolute after:-inset-0.5 after:content-[''] justify-center rounded-sm text-foreground hover:bg-card"
           >
             {show ? <EyeOff className="size-[18px]" aria-hidden /> : <Eye className="size-[18px]" aria-hidden />}
           </button>

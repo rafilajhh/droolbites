@@ -12,6 +12,8 @@ export const accountMessages = defineMessages({
       info: "Account information",
       billing: "Billing information",
       signOut: "Sign out",
+      /** Below sm the nav is a two-column grid; short labels keep each cell on one line. */
+      short: { orders: "Orders", info: "Account", billing: "Billing" },
     },
     orders: {
       title: "Order history",
@@ -45,6 +47,7 @@ export const accountMessages = defineMessages({
       sub: "The name and address used for billing.",
       name: "Billing name",
       namePlaceholder: "Enter a billing name",
+      nameHelper: "Also updates your account name.",
       country: "Country",
       countryIndonesia: "Indonesia",
       address: "Street address",
@@ -77,6 +80,7 @@ export const accountMessages = defineMessages({
       info: "Informasi akun",
       billing: "Informasi penagihan",
       signOut: "Keluar",
+      short: { orders: "Pesanan", info: "Akun", billing: "Tagihan" },
     },
     orders: {
       title: "Riwayat pesanan",
@@ -110,6 +114,7 @@ export const accountMessages = defineMessages({
       sub: "Nama dan alamat yang dipakai untuk penagihan.",
       name: "Nama penagihan",
       namePlaceholder: "Masukkan nama penagihan",
+      nameHelper: "Juga mengubah nama akunmu.",
       country: "Negara",
       countryIndonesia: "Indonesia",
       address: "Alamat jalan",

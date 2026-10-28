@@ -270,7 +270,7 @@ components:
 
 **Creative North Star: "The Bakery Counter Paper"**
 
-Droolbites is a small bakery printed on warm paper: cream background, ink-green text, one deep moss that does all the structural work, and a handful of confectionery accents (mustard, lavender, salmon, mint) that show up only as product tints, status dots and sticker-like moments. The storefront is generous and photographic. The admin is the same material, calmer and denser, with the moss moved from accent to a full-height sidebar.
+Droolbites is a small bakery printed on warm paper: cream background, ink-green text, one deep moss that does all the structural work, and a handful of confectionery accents (mustard, lavender, salmon, mint) that show up only as product tints, badge fills and sticker-like moments. The storefront is generous and photographic. The admin is the same material, calmer and denser, with the moss moved from accent to a full-height sidebar.
 
 The system is a pixel-exact port of a pen.dev design at 1440px. Below that width it collapses to one column with 44px touch targets and no horizontal scroll. Where the build and the pen disagree, the pen is the spec and the code mirrors it (strokes drawn inside the box, line-heights rounded to whole pixels, Bricolage rendered at its 96 optical size at every size).
 
@@ -292,13 +292,13 @@ A warm-paper neutral base with one deep green and a rotating confectionery accen
 - **Moss Deep** (`colors.moss-deep`): primary hover, and text on the white inverse hero button.
 
 ### Secondary
-- **Mustard** (`colors.mustard`): the highlight. Hero chip fill, cart count badge, cart item-count pill, awaiting-payment status dot. Tint-mustard is its pale badge fill.
+- **Mustard** (`colors.mustard`): the highlight. Hero chip fill, cart count badge, cart item-count pill. Tint-mustard is the awaiting-payment badge fill.
 - **Mint** (`colors.mint`): selected option tile fill, success/ready/delivery badge fill, secondary text on moss.
 
 ### Tertiary
 - **Lavender, Salmon, Lime tints** (`colors.tint-lavender`, `colors.tint-salmon`, `colors.tint-lime`): large panel fills (the brownies panel is lavender) and badge fills (baking, failed/expired).
-- **Accent set** (`colors.accent-*`): small dots and product-category swatches only (the four hero dots, status dots).
-- **Crimson** (`colors.crimson`): errors and invalid input stroke. **Success Green** (`colors.success-green`): paid/completed dot.
+- **Accent set** (`colors.accent-*`): small decorative dots and product-category swatches only (the four hero dots, category dots). Never status dots.
+- **Crimson** (`colors.crimson`): errors and invalid input stroke. **Success Green** (`colors.success-green`): success icons.
 
 ### Neutral
 - **Paper** (`colors.paper`): page background and theme-color.
@@ -372,7 +372,7 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 ### Chips, Stickers, Status Badges
 - **Chip:** pill, oat fill, Plex Mono 600 13px, 8/14px padding. Hero chip overrides to mustard.
 - **Sticker:** pill, paper fill, 1.25px moss ring, rotated -8deg.
-- **Status badge:** pill, tinted fill, 8px dot plus 13px 600 label. Tone map: mustard awaiting payment, mint with green dot paid/completed, lavender baking, mint with teal dot ready for pickup, mint with cobalt dot out for delivery, salmon with crimson dot failed/expired, oat with muted dot new/cancelled/hidden.
+- **Status badge:** pill, tinted fill, 13px 600 label, no dot (owner rule, 28 Oct 2026: the site shows no status dots anywhere, including open/closed indicators and admin status filters; the pen still draws them). Tone map: tint-mustard awaiting payment, mint paid/completed/ready/out for delivery, lavender baking, salmon failed/expired/cancelled, oat new/hidden.
 
 ### Cards / Containers
 - Storefront cards: oat fill, 20px radius, no border. Admin `Card`: white, 20px radius, 1px subtle inset ring.

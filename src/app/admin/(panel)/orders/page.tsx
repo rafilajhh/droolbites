@@ -120,7 +120,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
               {orders.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="block px-4 py-8 text-center md:table-cell text-[15px] leading-[23px] text-muted-foreground">
-                    {q || status ? t.orders.empty : t.orders.emptyAll}
+                    {q || status || needsAction ? t.orders.empty : t.orders.emptyAll}
                   </td>
                 </tr>
               ) : (
@@ -155,7 +155,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         <CellLabel>{c.payment}</CellLabel>
                         <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
                       </td>
-                      <td className={cn(cell, "pr-3 whitespace-nowrap max-md:order-2 max-md:ml-auto max-md:text-base max-md:font-bold")}>
+                      <td className={cn(cell, "pr-3 whitespace-nowrap max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:text-right max-md:text-base max-md:font-bold")}>
                         <CellLabel>{c.total}</CellLabel>
                         {formatRupiah(order.total)}
                       </td>

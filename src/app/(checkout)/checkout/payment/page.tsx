@@ -34,7 +34,7 @@ export default async function CheckoutPaymentPage() {
   return (
     <>
       <CheckoutHeader step={3} />
-      <main className="flex w-full flex-1 flex-col">
+      <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <PaymentForm
           review={{
             email: details.email,

@@ -58,10 +58,10 @@ export function OrdersToolbar({
     startTransition(() => router.push(buildUrl("/admin/orders", params)));
 
   const options: DropdownOption[] = [
-    { value: "", label: t.orders.all, dot: "bg-primary" },
-    { value: "awaiting", label: paymentStatusInfo.awaiting[locale], dot: "bg-accent-mustard" },
-    { value: "paid", label: paymentStatusInfo.paid[locale], dot: "bg-accent-teal" },
-    { value: "expired", label: paymentStatusInfo.expired[locale], dot: "bg-accent-crimson" },
+    { value: "", label: t.orders.all },
+    { value: "awaiting", label: paymentStatusInfo.awaiting[locale] },
+    { value: "paid", label: paymentStatusInfo.paid[locale] },
+    { value: "expired", label: paymentStatusInfo.expired[locale] },
   ];
   // "Needs action" is a subset of paid orders, so the payment filter reads "Paid" while it is on.
   const current = options.find((o) => o.value === (needsAction ? "paid" : status)) ?? options[0];

@@ -29,8 +29,8 @@ export function QuantityStepper({
   const sm = size === "sm";
   const btn = cn(
     "flex items-center justify-center rounded-pill transition-colors hover:bg-card disabled:opacity-40",
-    // sm: 28px button with an invisible 36px hit area.
-    sm ? "relative size-7 after:absolute after:-inset-1 after:content-['']" : "size-9",
+    // Invisible 44px hit areas: sm is a 28px button, default 36px.
+    sm ? "relative size-7 after:absolute after:-inset-2 after:content-['']" : "relative size-9 after:absolute after:-inset-1 after:content-['']",
   );
   const icon = sm ? "size-3.5" : "size-[18px]";
   return (

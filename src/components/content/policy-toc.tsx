@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
 /**
  * "On this page" list from the policy frames. Highlights the section being
- * read (oat fill + moss bar); the first one is active until the reader scrolls.
+ * read (oat fill + moss bar); the first one is active until the reader scrolls
+ * past it, the last one once the page is scrolled to the end.
  */
 export function PolicyToc({ heading, items }: { heading: string; items: { id: string; title: string }[] }) {
   const [active, setActive] = useState(items[0]?.id);
+
+  // Set by a click on the list so the clicked entry stays highlighted even when the
+  // page cannot scroll it to the top (the last sections near the page end).
+  // Cleared by the next scroll the reader starts (wheel, touch, keys).
+  const pinned = useRef<string | null>(null);
 
   useEffect(() => {
     const sections = items
@@ -16,40 +22,41 @@ export function PolicyToc({ heading, items }: { heading: string; items: { id: st
       .filter((el): el is HTMLElement => el !== null);
     if (sections.length === 0) return;
 
-    // Active band: from just under the sticky header (72px / 100px) to a third down the viewport.
-    // The first section (document order) touching the band is active; when none does
-    // (a long section spans it) the previous one stays active.
-    // A short last section never reaches the band, so once it is fully on screen
-    // (the reader hit the end of the page) it wins.
-    const visible = new Set<string>();
-    const last = sections[sections.length - 1];
-    let lastFullyVisible = false;
+    // Scroll spy: at the very end of the page the last section wins (a short last
+    // section never reaches the line); otherwise the last section whose top has
+    // passed the active line (160px down, or a third of a short viewport) is
+    // active, and the first one while the reader is still above it.
+    let frame = 0;
     const update = () => {
-      const current = lastFullyVisible ? last : sections.find((section) => visible.has(section.id));
-      if (current) setActive(current.id);
+      frame = 0;
+      if (pinned.current) return;
+      const doc = document.documentElement;
+      const atBottom = window.scrollY + window.innerHeight >= doc.scrollHeight - 2;
+      const line = Math.min(window.innerHeight / 3, 160);
+      let current = sections[0];
+      if (atBottom) current = sections[sections.length - 1];
+      else for (const section of sections) if (section.getBoundingClientRect().top <= line) current = section;
+      setActive(current.id);
     };
-    const band = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        update();
-      },
-      { rootMargin: "-110px 0px -66% 0px" },
-    );
-    const end = new IntersectionObserver(
-      ([entry]) => {
-        lastFullyVisible = entry.intersectionRatio >= 0.99;
-        update();
-      },
-      { threshold: [0.99] },
-    );
-    for (const section of sections) band.observe(section);
-    end.observe(last);
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    const unpin = () => {
+      pinned.current = null;
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    window.addEventListener("wheel", unpin, { passive: true });
+    window.addEventListener("touchstart", unpin, { passive: true });
+    window.addEventListener("keydown", unpin);
     return () => {
-      band.disconnect();
-      end.disconnect();
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("wheel", unpin);
+      window.removeEventListener("touchstart", unpin);
+      window.removeEventListener("keydown", unpin);
     };
   }, [items]);
 
@@ -63,7 +70,10 @@ export function PolicyToc({ heading, items }: { heading: string; items: { id: st
             key={item.id}
             href={`#${item.id}`}
             aria-current={isActive ? "location" : undefined}
-            onClick={() => setActive(item.id)}
+            onClick={() => {
+              pinned.current = item.id;
+              setActive(item.id);
+            }}
             className={cn(
               "flex items-center gap-2.5 rounded-sm px-3.5 py-2.5 text-[15px] leading-[23px] text-foreground transition-colors",
               isActive ? "bg-card font-bold" : "font-medium hover:bg-card/60",

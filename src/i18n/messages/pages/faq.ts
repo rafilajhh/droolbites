@@ -1,13 +1,21 @@
 import { defineMessages } from "../../config";
 
-/** Store facts the answers quote, read from the store settings. */
+/** Store facts the answers quote, read from the store settings and the catalog. */
 export type FaqFacts = {
   address: string;
   hours: string;
   deliveryFee: string;
   email: string;
   payments: string;
+  /** Every enabled payment method with its brands, e.g. "e-wallets (DANA, OVO or ShopeePay), QRIS or …". */
+  paymentsDetail: string;
+  counts: { cookies: number; brownieSizes: number; tiramisu: number };
 };
+
+const EN_WORDS = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const ID_WORDS = ["tanpa", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh"];
+const enWord = (n: number) => EN_WORDS[n] ?? String(n);
+const idWord = (n: number) => ID_WORDS[n] ?? String(n);
 
 /** pen: FAQ (ouetk). Only the first answer is drawn; the rest follow how the shop works. */
 export const faqMessages = defineMessages({
@@ -20,13 +28,19 @@ export const faqMessages = defineMessages({
     sub: "About our desserts, ordering, and visiting the store.",
     contactTitle: "Still hungry for answers?",
     payments: { va: "bank virtual account", qris: "QRIS", ewallet: "e-wallets", or: "or" },
+    paymentsDetail: {
+      ewallet: (brands: string) => `e-wallets (${brands})`,
+      va: (banks: string, more: boolean) => `bank virtual accounts (${banks}${more ? " and more" : ""})`,
+      retail: (stores: string) => `cash at ${stores}`,
+    },
     groups: [
       {
         label: "BEFORE YOU ORDER",
         items: [
           {
             q: "What does Droolbites sell?",
-            a: () => "We offer four soft cookie flavors, fudgy brownies in four sizes, and two types of tiramisu.",
+            a: ({ counts: c }: FaqFacts) =>
+              `We offer ${enWord(c.cookies)} soft cookie ${c.cookies === 1 ? "flavor" : "flavors"}, fudgy brownies in ${enWord(c.brownieSizes)} ${c.brownieSizes === 1 ? "size" : "sizes"}, and ${enWord(c.tiramisu)} ${c.tiramisu === 1 ? "type" : "types"} of tiramisu.`,
           },
           {
             q: "Which cookie flavors can I choose?",
@@ -50,12 +64,21 @@ export const faqMessages = defineMessages({
         items: [
           {
             q: "Where is the store?",
-            a: (f: FaqFacts) => `You'll find us at ${f.address}. Opening hours: ${f.hours}.`,
+            a: (f: FaqFacts) => `You'll find us at ${f.address}. Opening hours: ${f.hours} WIB.`,
           },
           {
             q: "Can I choose delivery or store pickup?",
             a: (f: FaqFacts) =>
               `Yes. Choose delivery (a flat ${f.deliveryFee} fee) or free store pickup at checkout. You can check out as a guest or sign in to follow your orders in your account. Pay by ${f.payments}.`,
+          },
+          {
+            q: "How can I pay?",
+            a: (f: FaqFacts) =>
+              `Pay online at checkout with ${f.paymentsDetail}. The payment instructions appear right after you place your order.`,
+          },
+          {
+            q: "When are you open?",
+            a: (f: FaqFacts) => `${f.hours} WIB. Store pickup orders can be collected during these hours.`,
           },
         ],
       },
@@ -85,13 +108,19 @@ export const faqMessages = defineMessages({
     sub: "Seputar dessert kami, cara pesan, dan berkunjung ke toko.",
     contactTitle: "Masih penasaran?",
     payments: { va: "virtual account bank", qris: "QRIS", ewallet: "e-wallet", or: "atau" },
+    paymentsDetail: {
+      ewallet: (brands: string) => `e-wallet (${brands})`,
+      va: (banks: string, more: boolean) => `virtual account bank (${banks}${more ? " dan lainnya" : ""})`,
+      retail: (stores: string) => `tunai di ${stores}`,
+    },
     groups: [
       {
         label: "SEBELUM PESAN",
         items: [
           {
             q: "Droolbites jual apa saja?",
-            a: () => "Kami punya empat rasa soft cookies, brownies fudgy dalam empat ukuran, dan dua jenis tiramisu.",
+            a: ({ counts: c }: FaqFacts) =>
+              `Kami punya ${idWord(c.cookies)} rasa soft cookies, brownies fudgy dalam ${idWord(c.brownieSizes)} ukuran, dan ${idWord(c.tiramisu)} jenis tiramisu.`,
           },
           {
             q: "Rasa cookies apa saja yang bisa dipilih?",
@@ -115,12 +144,21 @@ export const faqMessages = defineMessages({
         items: [
           {
             q: "Di mana tokonya?",
-            a: (f: FaqFacts) => `Kamu bisa menemukan kami di ${f.address}. Jam buka: ${f.hours}.`,
+            a: (f: FaqFacts) => `Kamu bisa menemukan kami di ${f.address}. Jam buka: ${f.hours} WIB.`,
           },
           {
             q: "Bisa pilih dikirim atau ambil di toko?",
             a: (f: FaqFacts) =>
               `Bisa. Pilih pengiriman (ongkir tetap ${f.deliveryFee}) atau ambil di toko gratis saat checkout. Kamu bisa checkout sebagai tamu atau masuk ke akun untuk memantau pesanan. Bayar lewat ${f.payments}.`,
+          },
+          {
+            q: "Bisa bayar pakai apa?",
+            a: (f: FaqFacts) =>
+              `Bayar online saat checkout lewat ${f.paymentsDetail}. Petunjuk pembayarannya langsung muncul setelah kamu membuat pesanan.`,
+          },
+          {
+            q: "Jam berapa tokonya buka?",
+            a: (f: FaqFacts) => `${f.hours} WIB. Pesanan ambil di toko bisa diambil selama jam buka tersebut.`,
           },
         ],
       },

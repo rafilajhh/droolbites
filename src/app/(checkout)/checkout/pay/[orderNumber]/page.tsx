@@ -76,7 +76,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   const layout = (title: string, sub: string, body: React.ReactNode) => (
     <>
       <CheckoutHeader step={3} />
-      <main className="flex w-full flex-1 flex-col">
+      <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <div className="flex w-full flex-col gap-8 px-4 pt-8 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24">
           <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
             <div className="flex flex-col items-start gap-2.5 pb-2">
@@ -214,11 +214,14 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         </div>
 
         {live.vaNumber ? (
-          <div className="flex w-full flex-wrap items-center gap-4 px-5 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:flex-nowrap sm:px-6">
-            {/* Below sm the number keeps one line (smaller type) and Copy wraps underneath. */}
-            <div className="flex min-w-0 shrink grow basis-full flex-col gap-1 sm:basis-0">
+          <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:px-6">
+            {/* Same layout as the Amount row: Copy stays on the right; below sm the number wraps only if it must. */}
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
               <p className="text-[13px] leading-5 text-muted-foreground">{info.kind === "retail" ? p.paymentCode : p.vaNumber}</p>
-              <p className="font-mono text-xl leading-[35px] font-semibold tracking-[0.5px] whitespace-nowrap text-foreground sm:text-[32px] sm:tracking-[1px]">
+              <p
+                id="pay-va-number"
+                className="font-mono text-lg leading-[30px] font-semibold text-balance break-words text-foreground sm:text-[32px] sm:leading-[35px] sm:tracking-[1px] sm:whitespace-nowrap"
+              >
                 {live.vaNumber}
               </p>
             </div>
@@ -226,7 +229,9 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
               value={live.vaNumber.replace(/\s/g, "")}
               label={p.copy}
               copiedLabel={p.copied}
+              failedLabel={p.copyFailed}
               ariaLabel={info.kind === "retail" ? p.copyCode : p.copyVa}
+              selectId="pay-va-number"
             />
           </div>
         ) : info.kind === "qris" && (qrSvg || live.payUrl) ? (
@@ -262,17 +267,26 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
           </div>
         ) : null}
 
-        <div className="flex w-full items-center gap-4 px-5 py-5 sm:px-6">
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-5 sm:px-6">
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <p className="text-[13px] leading-5 text-muted-foreground">{p.amount}</p>
-            <p className="font-display text-[28px] leading-[31px] font-bold text-foreground">{amount}</p>
+            <p id="pay-amount" className="font-display text-[28px] leading-[31px] font-bold text-foreground">
+              {amount}
+            </p>
             {pay.serviceFee > 0 ? (
               <p className="text-[13px] leading-5 text-muted-foreground">
                 {p.serviceFee} {formatRupiah(pay.serviceFee)}
               </p>
             ) : null}
           </div>
-          <CopyButton value={String(pay.amount)} label={p.copy} copiedLabel={p.copied} ariaLabel={p.copyAmount} />
+          <CopyButton
+            value={String(pay.amount)}
+            label={p.copy}
+            copiedLabel={p.copied}
+            failedLabel={p.copyFailed}
+            ariaLabel={p.copyAmount}
+            selectId="pay-amount"
+          />
         </div>
       </section>
 

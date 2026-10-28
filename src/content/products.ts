@@ -22,7 +22,11 @@ const COOKIE_STORAGE: Text = {
   en: "Best on the day. Keeps for 3 days in an airtight jar at room temperature; warm for 10 seconds to bring back the soft middle.",
   id: "Paling enak di hari yang sama. Tahan 3 hari di toples kedap udara pada suhu ruang; hangatkan 10 detik agar bagian tengahnya lembut lagi.",
 };
-const INGREDIENTS: Text = {
+/**
+ * Placeholder until the kitchen lists the ingredients. The product page links its
+ * "Contact us" and opens the first section with real content instead of this one.
+ */
+export const INGREDIENTS_ON_REQUEST: Text = {
   en: "Contact us to confirm the full ingredient list for this flavor.",
   id: "Hubungi kami untuk memastikan daftar lengkap bahan rasa ini.",
 };
@@ -42,7 +46,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "Our classic: a thick, buttery dough loaded with dark chocolate chunks, baked until the edges turn golden and the middle stays soft and gooey.",
       id: "Andalan kami: adonan butter yang tebal, penuh potongan cokelat hitam, dipanggang sampai pinggirnya keemasan dan bagian tengahnya tetap lembut dan lumer.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: COOKIE_ALLERGENS,
     storage: COOKIE_STORAGE,
   },
@@ -55,7 +59,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "For serious chocolate people: a dark cocoa dough folded with chocolate chunks, baked just long enough to keep the center fudgy.",
       id: "Untuk pencinta cokelat sejati: adonan kakao pekat dengan potongan cokelat, dipanggang secukupnya agar bagian tengahnya tetap fudgy.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: COOKIE_ALLERGENS,
     storage: COOKIE_STORAGE,
   },
@@ -69,7 +73,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "A soft red velvet dough with a hint of cocoa, studded with white chocolate pieces that melt into the warm middle.",
       id: "Adonan red velvet yang lembut dengan sentuhan kakao, bertabur potongan cokelat putih yang meleleh di bagian tengahnya.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: COOKIE_ALLERGENS,
     storage: COOKIE_STORAGE,
   },
@@ -82,7 +86,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "Golden vanilla dough with sweet white chocolate and roasted almonds for a little crunch in every bite.",
       id: "Adonan vanila keemasan dengan cokelat putih yang manis dan almon panggang untuk sensasi renyah di setiap gigitan.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: {
       en: "Contains wheat, egg, milk, soy and almonds (tree nuts).",
       id: "Mengandung gandum, telur, susu, kedelai dan almon (kacang pohon).",
@@ -98,7 +102,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "The same crackly-top, fudgy chocolate brownie in four tray sizes. Pick the one that fits your table.",
       id: "Brownies cokelat fudgy dengan permukaan renyah yang sama dalam empat ukuran loyang. Pilih yang pas untuk mejamu.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: {
       en: "Contains wheat, egg, milk and soy.",
       id: "Mengandung gandum, telur, susu dan kedelai.",
@@ -117,7 +121,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "Coffee-soaked sponge layered with mascarpone cream, chilled overnight and finished with a thick dusting of cocoa.",
       id: "Bolu yang direndam kopi, berlapis krim mascarpone, didinginkan semalaman lalu ditaburi kakao yang tebal.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: {
       en: "Contains wheat, egg and milk. Contains caffeine.",
       id: "Mengandung gandum, telur dan susu. Mengandung kafein.",
@@ -137,7 +141,7 @@ export const productContent: Record<string, ProductContent> = {
       en: "Matcha-soaked sponge layered with mascarpone cream, chilled overnight and finished with a bright layer of matcha.",
       id: "Bolu yang direndam matcha, berlapis krim mascarpone, didinginkan semalaman lalu ditutup lapisan matcha.",
     },
-    ingredients: INGREDIENTS,
+    ingredients: INGREDIENTS_ON_REQUEST,
     allergens: {
       en: "Contains wheat, egg and milk. Matcha contains caffeine.",
       id: "Mengandung gandum, telur dan susu. Matcha mengandung kafein.",

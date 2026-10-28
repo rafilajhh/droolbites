@@ -179,8 +179,11 @@ function Dropdown({
                   >
                     {o.name}
                   </span>
-                  <span className="font-mono text-xs leading-[18px] text-muted-foreground">{o.count}</span>
-                  {isActive ? <Check className="size-[18px] shrink-0 text-primary" aria-hidden /> : null}
+                  <span className="min-w-[2ch] text-right font-mono text-xs leading-[18px] text-muted-foreground tabular-nums">
+                    {o.count}
+                  </span>
+                  {/* Every row keeps the check's slot so the counts line up. */}
+                  <Check className={cn("size-[18px] shrink-0 text-primary", !isActive && "invisible")} aria-hidden />
                 </a>
               </li>
             );

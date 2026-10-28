@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
+import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { paymentMethodInfo } from "@/lib/order-status";
 import { OrderSummary, type SummaryLine } from "./order-summary";
@@ -33,11 +34,36 @@ export function PaymentForm({
   const p = t.payment;
   const [state, formAction, pending] = useActionState(placeOrder, initialState);
   const [method, setMethod] = useState<PaymentMethod | null>(defaultMethod);
-  const errorRef = useRef<HTMLParagraphElement>(null);
+  // Picking another method answers a "choose a method" error, so that attempt's error goes away.
+  const [answeredAttempt, setAnsweredAttempt] = useState(0);
+  const chooseMethod = (next: PaymentMethod) => {
+    setMethod(next);
+    setAnsweredAttempt(state.attempt);
+  };
+  const methodError = state.error === "payment" || state.error === "paymentUnavailable";
+  const error = methodError && answeredAttempt === state.attempt ? undefined : state.error;
+  // The error renders twice (in the mobile PAY bar and in the desktop card); CSS shows one,
+  // so only that copy is announced. Focus whichever copy is on screen.
+  const mobileErrorRef = useRef<HTMLParagraphElement>(null);
+  const desktopErrorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    if (state.error) errorRef.current?.focus();
+    if (!state.error) return;
+    const visible = [mobileErrorRef.current, desktopErrorRef.current].find((el) => el && el.getClientRects().length > 0);
+    visible?.focus();
   }, [state]);
+
+  const errorText = error ? (
+    <>
+      {t.errors[error]}{" "}
+      {error === "cartChanged" ? (
+        <Link href="/menu" className="font-bold underline">
+          {t.header.back}
+        </Link>
+      ) : null}
+    </>
+  ) : null;
+  const errorClass = "rounded-sm bg-tint-salmon px-4 py-3 text-sm leading-normal text-foreground outline-hidden";
 
   const delivery = review.fulfilment === "delivery";
   const rows = [
@@ -53,7 +79,11 @@ export function PaymentForm({
   return (
     <form
       action={formAction}
-      className="flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(9rem+env(safe-area-inset-bottom))] md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24"
+      className={cn(
+        "flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(9rem+env(safe-area-inset-bottom))] md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24",
+        // Room for the error that joins the pinned PAY bar below lg.
+        error && "pb-[calc(16rem+env(safe-area-inset-bottom))]",
+      )}
     >
       <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
         <div className="flex flex-col gap-2 pb-3">
@@ -84,7 +114,7 @@ export function PaymentForm({
         </dl>
 
         {defaultMethod ? (
-          <PaymentMethodGroups t={p} methods={methods} logos={logos} selected={method} onSelect={setMethod} />
+          <PaymentMethodGroups t={p} methods={methods} logos={logos} selected={method} onSelect={chooseMethod} />
         ) : (
           <p className="rounded-m bg-white p-6 text-[15px] leading-normal text-muted-foreground inset-ring-1 inset-ring-border-subtle">
             {p.none}
@@ -92,17 +122,25 @@ export function PaymentForm({
         )}
       </div>
 
-      {/* Below lg the PAY button lives in a bar pinned to the bottom of the screen (the in-flow one is hidden). */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-4 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:hidden">
-        <p className="flex min-w-0 flex-1 flex-col">
-          <span className="text-[13px] leading-5 text-muted-foreground">{p.payingWith}</span>
-          <span className="truncate text-sm leading-[21px] font-bold text-foreground">
-            {method ? paymentMethodInfo[method].name : "—"}
-          </span>
-        </p>
-        <Button type="submit" className="shrink-0 px-5" disabled={pending || !method}>
-          {pending ? p.placing : p.pay(formatRupiah(summary.total))}
-        </Button>
+      {/* Below lg the PAY button lives in a bar pinned to the bottom of the screen (the in-flow one is hidden),
+          and a failed attempt's error sits right above it. */}
+      <div className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-3 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:hidden">
+        {errorText ? (
+          <p ref={mobileErrorRef} tabIndex={-1} role="alert" className={errorClass}>
+            {errorText}
+          </p>
+        ) : null}
+        <div className="flex items-center gap-4">
+          <p className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[13px] leading-5 text-muted-foreground">{p.payingWith}</span>
+            <span className="truncate text-sm leading-[21px] font-bold text-foreground">
+              {method ? paymentMethodInfo[method].name : "—"}
+            </span>
+          </p>
+          <Button type="submit" className="shrink-0 px-5" disabled={pending || !method}>
+            {pending ? p.placing : p.pay(formatRupiah(summary.total))}
+          </Button>
+        </div>
       </div>
 
       <div className="flex w-full flex-col gap-4 lg:w-[440px] lg:shrink-0">
@@ -116,25 +154,16 @@ export function PaymentForm({
           total={summary.total}
         />
         <div className="flex w-full flex-col gap-3 rounded-m bg-white p-6 inset-ring-1 inset-ring-border-subtle">
-          <div className="flex w-full items-center justify-between gap-3 text-sm leading-[21px]">
+          {/* Below lg the pinned bar already names the chosen method. */}
+          <div className="hidden w-full items-center justify-between gap-3 text-sm leading-[21px] lg:flex">
             <span className="text-muted-foreground">{p.payingWith}</span>
             <span className="text-right font-bold text-foreground" aria-live="polite">
               {method ? paymentMethodInfo[method].name : "—"}
             </span>
           </div>
-          {state.error ? (
-            <p
-              ref={errorRef}
-              tabIndex={-1}
-              role="alert"
-              className="rounded-sm bg-tint-salmon px-4 py-3 text-sm leading-normal text-foreground outline-hidden"
-            >
-              {t.errors[state.error]}{" "}
-              {state.error === "cartChanged" ? (
-                <Link href="/menu" className="font-bold underline">
-                  {t.header.back}
-                </Link>
-              ) : null}
+          {errorText ? (
+            <p ref={desktopErrorRef} tabIndex={-1} role="alert" className={cn(errorClass, "hidden lg:block")}>
+              {errorText}
             </p>
           ) : null}
           <Button type="submit" className="hidden w-full lg:inline-flex" disabled={pending || !method}>

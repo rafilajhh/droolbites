@@ -31,16 +31,16 @@ export function AccountNav() {
     return () => observer.disconnect();
   }, []);
 
-  const links: { id: SectionId; label: string; Icon: typeof Receipt }[] = [
-    { id: "order-history", label: t.orders, Icon: Receipt },
-    { id: "account-information", label: t.info, Icon: User },
-    { id: "billing-information", label: t.billing, Icon: MapPin },
+  const links: { id: SectionId; label: string; short: string; Icon: typeof Receipt }[] = [
+    { id: "order-history", label: t.orders, short: t.short.orders, Icon: Receipt },
+    { id: "account-information", label: t.info, short: t.short.info, Icon: User },
+    { id: "billing-information", label: t.billing, short: t.short.billing, Icon: MapPin },
   ];
 
   return (
     <nav aria-label={t.label} className="w-full shrink-0 lg:sticky lg:top-6 lg:w-[260px]">
       <ul className="grid grid-cols-2 gap-1 lg:flex lg:flex-col">
-        {links.map(({ id, label, Icon }) => {
+        {links.map(({ id, label, short, Icon }) => {
           const current = active === id;
           return (
             <li key={id}>
@@ -51,7 +51,10 @@ export function AccountNav() {
                 className={cn(itemClass, current ? "bg-card font-bold" : "font-medium")}
               >
                 <Icon className={cn("size-5 shrink-0", current ? "text-primary" : "text-foreground")} aria-hidden />
-                {label}
+                <span className="sm:hidden" aria-hidden>
+                  {short}
+                </span>
+                <span className="max-sm:sr-only">{label}</span>
               </a>
             </li>
           );

@@ -96,10 +96,17 @@ export async function Footer() {
             <p className="max-w-[360px] text-base leading-normal text-foreground-inverse">{f.tagline}</p>
             {/* pen rounds text boxes up to whole pixels: 15px × 1.5 → 23px. */}
             <div className="flex flex-col gap-1 text-[15px] leading-[23px] text-mint">
-              <a href={`mailto:${settings.email}`} className="w-fit hover:text-white">
+              {/* Hit-slop toward 44px; the two lines split the 4px gap between them so the areas never overlap. */}
+              <a
+                href={`mailto:${settings.email}`}
+                className="relative w-fit after:absolute after:-inset-x-2 after:-top-[11px] after:-bottom-0.5 after:content-[''] hover:text-white"
+              >
                 {settings.email}
               </a>
-              <a href={`tel:${settings.phone.replace(/\s/g, "")}`} className="w-fit hover:text-white">
+              <a
+                href={`tel:${settings.phone.replace(/\s/g, "")}`}
+                className="relative w-fit after:absolute after:-inset-x-2 after:-top-0.5 after:-bottom-[11px] after:content-[''] hover:text-white"
+              >
                 {settings.phone}
               </a>
             </div>

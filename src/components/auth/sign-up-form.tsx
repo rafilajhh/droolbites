@@ -80,7 +80,7 @@ export function SignUpForm({ next }: { next?: string }) {
       </Field>
       {state.formError ? <FormAlert id="sign-up-alert">{t.errors[state.formError]}</FormAlert> : null}
       <Button type="submit" disabled={pending} className="w-full">
-        {t.signUp.submit}
+        {pending ? t.signUp.pending : t.signUp.submit}
       </Button>
     </form>
   );

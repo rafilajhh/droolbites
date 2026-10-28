@@ -26,6 +26,7 @@ function AccountInput({
   name,
   label,
   error,
+  helper,
   className,
   defaultValue,
   ...props
@@ -33,6 +34,7 @@ function AccountInput({
   name: string;
   label: string;
   error?: string;
+  helper?: string;
   defaultValue: string;
 }) {
   useEffect(() => {
@@ -41,13 +43,13 @@ function AccountInput({
     if (input instanceof HTMLInputElement && input !== document.activeElement) input.value = defaultValue;
   }, [name, defaultValue]);
   return (
-    <Field label={label} htmlFor={name} error={error} className={className}>
+    <Field label={label} htmlFor={name} error={error} helper={helper} className={className}>
       <TextInput
         defaultValue={defaultValue}
         id={name}
         name={name}
         aria-invalid={Boolean(error) || undefined}
-        aria-describedby={describedBy(name, { error })}
+        aria-describedby={describedBy(name, { error, helper })}
         {...props}
       />
     </Field>
@@ -164,6 +166,7 @@ export function BillingForm({
           required
           maxLength={100}
           placeholder={t.billing.namePlaceholder}
+          helper={t.billing.nameHelper}
           defaultValue={state.values?.billingName ?? billingName}
           error={err("billingName")}
         />

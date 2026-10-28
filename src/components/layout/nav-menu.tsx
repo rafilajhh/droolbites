@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, X } from "lucide-react";
+import { ArrowUpRight, Search, X } from "lucide-react";
 import { useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { buttonClasses } from "@/components/ui/button";
@@ -95,15 +95,33 @@ export function NavMenu({ accountHref, email }: { accountHref: string; email: st
         </div>
 
         <div className="mt-10 flex w-full flex-col gap-4">
-          <LanguageSwitch className="self-start sm:hidden" />
+          {/* The header hides language and search below sm, so the drawer carries them there. */}
+          <div className="flex w-full items-center justify-between gap-4 sm:hidden">
+            <LanguageSwitch />
+            <Link
+              href="/menu?search=1"
+              onClick={close}
+              className="relative flex items-center gap-2 text-[15px] leading-normal font-semibold text-foreground after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] hover:text-primary"
+            >
+              <Search className="size-[18px] shrink-0" aria-hidden />
+              {t.search}
+            </Link>
+          </div>
           <Link href="/menu" onClick={close} className={buttonClasses("primary", "w-full")}>
             {t.orderNow}
           </Link>
           <div className="flex w-full flex-wrap justify-between gap-2 text-[15px] leading-normal">
-            <Link href={accountHref} onClick={close} className="font-semibold text-foreground hover:text-primary">
+            <Link
+              href={accountHref}
+              onClick={close}
+              className="relative font-semibold text-foreground after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] hover:text-primary"
+            >
               {t.account}
             </Link>
-            <a href={`mailto:${email}`} className="text-muted-foreground hover:text-foreground">
+            <a
+              href={`mailto:${email}`}
+              className="relative text-muted-foreground after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] hover:text-foreground"
+            >
               {email}
             </a>
           </div>

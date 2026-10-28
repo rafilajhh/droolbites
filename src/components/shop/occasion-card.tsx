@@ -34,7 +34,7 @@ export function OccasionCard({
       <h3 className="pt-1 font-display text-[24px] leading-[27px] font-medium text-foreground lg:text-[28px] lg:leading-[31px]">
         {title}
       </h3>
-      <p className="text-base leading-normal text-foreground">{body}</p>
+      <p className="text-pretty text-base leading-normal text-foreground">{body}</p>
       <ArrowLink href={href}>{linkLabel}</ArrowLink>
     </article>
   );

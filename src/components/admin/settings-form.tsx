@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useEffect, useRef, useState } from "react";
-import { Store, Truck } from "lucide-react";
+import { Check, Store, Truck } from "lucide-react";
 import {
   saveStoreSettings,
   type SettingsErrorKey,
@@ -74,6 +74,8 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
     pickup && delivery ? t.previewBoth : delivery ? t.previewDelivery : pickup ? t.previewPickup : t.previewNone;
   const feedback =
     state.status === "saved" ? t.saved : state.status === "error" ? (err("form") ?? t.fix) : "";
+  const message = pending ? "" : feedback;
+  const messageTone = state.status === "saved" ? "text-success" : "text-error";
 
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-6">
@@ -81,14 +83,15 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         title={t.title}
         sub={t.sub}
         action={
-          <div className="flex flex-wrap items-center gap-4">
+          // Below lg the save button lives in the sticky bar at the bottom; the status stays here for screen readers.
+          <div className="flex flex-wrap items-center gap-4 max-lg:contents">
             <p
               role="status"
-              className={cn("text-sm leading-[21px] font-semibold", state.status === "saved" ? "text-success" : "text-error")}
+              className={cn(message ? "text-sm leading-[21px] font-semibold max-lg:sr-only" : "sr-only", messageTone)}
             >
-              {pending ? "" : feedback}
+              {message}
             </p>
-            <Button type="submit" disabled={pending}>
+            <Button type="submit" disabled={pending} className="max-lg:hidden">
               {pending ? t.saving : t.save}
             </Button>
           </div>
@@ -255,8 +258,8 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
                     defaultChecked={values.openDays.includes(day)}
                     className="peer absolute inset-0 cursor-pointer opacity-0"
                   />
-                  <span className="inline-flex items-center gap-2 rounded-pill bg-oat px-3 py-1.5 text-[13px] leading-4 font-semibold text-muted-foreground transition-colors peer-checked:bg-mint peer-checked:text-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-highlight peer-checked:[&>span]:bg-success">
-                    <span aria-hidden className="size-2 rounded-full bg-muted-foreground/50" />
+                  <span className="inline-flex items-center gap-1 rounded-pill bg-oat px-3 py-1.5 text-[13px] leading-4 font-semibold text-muted-foreground transition-colors peer-checked:bg-mint peer-checked:text-foreground peer-checked:[&>svg]:block peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-highlight">
+                    <Check className="hidden size-3.5 shrink-0 stroke-[2.5]" aria-hidden />
                     {t.days[day]}
                   </span>
                 </label>
@@ -300,6 +303,15 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             </p>
           ) : null}
         </Card>
+      </div>
+
+      <div className="sticky bottom-0 z-20 -mx-4 -mb-6 flex items-center gap-3 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] sm:-mx-6 sm:px-6 lg:hidden">
+        <p aria-hidden className={cn("min-w-0 flex-1 text-sm leading-[21px] font-semibold", messageTone)}>
+          {message}
+        </p>
+        <Button type="submit" disabled={pending} className="shrink-0">
+          {pending ? t.saving : t.save}
+        </Button>
       </div>
     </form>
   );

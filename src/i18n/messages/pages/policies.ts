@@ -1,7 +1,7 @@
 import { defineMessages } from "../../config";
 
-/** Contact details quoted in the policy text, read from the store settings. */
-export type PolicyContact = { email: string; phone: string };
+/** Store facts quoted in the policy text, read from the store settings. */
+export type PolicyContact = { email: string; phone: string; address: string; hours: string; deliveryFee: string };
 
 /** pen: Shipping policy (MInKs), Privacy policy (T4tsh), Returns & refunds (C9zhg6). */
 export const policyMessages = defineMessages({
@@ -16,20 +16,20 @@ export const policyMessages = defineMessages({
         {
           id: "delivery-availability",
           title: "Delivery availability",
-          body: () =>
-            "Enter your delivery address at checkout to see the available delivery options and fees. Availability depends on the address and the selected service. Check the options before placing your order.",
+          body: (c: PolicyContact) =>
+            `We deliver anywhere in Surabaya for a flat ${c.deliveryFee} per order. Choose local delivery at checkout and enter an address in Surabaya; the fee is added to your order summary before you pay.`,
         },
         {
           id: "store-pickup",
           title: "Store pickup",
-          body: () =>
-            "Choose store pickup at checkout to collect your order in Surabaya. Review the pickup address in your order details. Contact us before visiting if you need to confirm collection arrangements.",
+          body: (c: PolicyContact) =>
+            `Store pickup is free. Choose it at checkout and collect your order at ${c.address}. Opening hours: ${c.hours}\u00a0WIB. Your order page shows when it is ready for pickup.`,
         },
         {
           id: "delivery-fees-and-timing",
           title: "Delivery fees and timing",
-          body: () =>
-            "Review the delivery fee and any timing information shown for your selected option before completing payment. Contact us if you need to check whether an order can arrive by a particular date or time.",
+          body: (c: PolicyContact) =>
+            `Local delivery costs ${c.deliveryFee} per order and store pickup costs nothing. We prepare orders during opening hours (${c.hours}\u00a0WIB), and your order page shows when yours is out for delivery. Contact us if you need an order by a particular date or time.`,
         },
         {
           id: "changes-to-your-order",
@@ -132,20 +132,20 @@ export const policyMessages = defineMessages({
         {
           id: "delivery-availability",
           title: "Ketersediaan pengiriman",
-          body: () =>
-            "Masukkan alamat pengiriman saat checkout untuk melihat pilihan pengiriman dan ongkosnya. Ketersediaan bergantung pada alamat dan layanan yang dipilih. Cek pilihannya sebelum membuat pesanan.",
+          body: (c: PolicyContact) =>
+            `Kami mengantar ke seluruh Surabaya dengan ongkir tetap ${c.deliveryFee} per pesanan. Pilih pengiriman lokal saat checkout dan isi alamat di Surabaya; ongkirnya masuk ke ringkasan pesanan sebelum kamu bayar.`,
         },
         {
           id: "store-pickup",
           title: "Ambil di toko",
-          body: () =>
-            "Pilih ambil di toko saat checkout untuk mengambil pesananmu di Surabaya. Cek alamat pengambilan di detail pesanan. Hubungi kami sebelum datang jika perlu memastikan pengaturan pengambilan.",
+          body: (c: PolicyContact) =>
+            `Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di ${c.address}. Jam buka: ${c.hours}\u00a0WIB. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil.`,
         },
         {
           id: "delivery-fees-and-timing",
           title: "Ongkos kirim dan waktu",
-          body: () =>
-            "Cek ongkos kirim dan info waktu yang tampil untuk pilihanmu sebelum menyelesaikan pembayaran. Hubungi kami jika ingin memastikan pesanan bisa tiba pada tanggal atau jam tertentu.",
+          body: (c: PolicyContact) =>
+            `Pengiriman lokal dikenai ${c.deliveryFee} per pesanan, sedangkan ambil di toko gratis. Kami menyiapkan pesanan selama jam buka (${c.hours}\u00a0WIB), dan halaman pesananmu akan menunjukkan kapan pesanan sedang diantar. Hubungi kami jika butuh pesanan tiba pada tanggal atau jam tertentu.`,
         },
         {
           id: "changes-to-your-order",

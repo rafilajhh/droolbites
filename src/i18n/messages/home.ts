@@ -21,7 +21,7 @@ export const homeMessages = defineMessages({
       fresh: "Baked fresh daily",
       delivery: "Delivery across Surabaya",
       pickup: "Pickup at Jl. Palem Sememi",
-      pay: "Pay with QRIS or transfer",
+      pay: "Pay by QRIS, e-wallet or transfer",
     },
     cookies: {
       eyebrow: "SOFT COOKIES",
@@ -77,7 +77,7 @@ export const homeMessages = defineMessages({
         { title: "Delivery or pickup", body: `Delivery ${fee} anywhere in Surabaya · pickup is free.` },
         {
           title: "Pay your way",
-          body: "Pay securely with QRIS or bank transfer, then track your order from your account.",
+          body: "Pay securely with QRIS, e-wallets or bank transfer, then track your order from your account.",
         },
       ],
     },
@@ -96,7 +96,7 @@ export const homeMessages = defineMessages({
   },
   id: {
     hero: {
-      chip: "Dipanggang segar setiap hari di Surabaya",
+      chip: "Dipanggang segar tiap hari",
       title: "Sekali gigit, bikin ketagihan.",
       sub: "Cookies tebal yang lembut di tengah, brownies fudgy dan tiramisu yang creamy — dibuat dalam batch kecil untuk diantar atau diambil.",
       order: "PESAN SEKARANG",
@@ -110,7 +110,7 @@ export const homeMessages = defineMessages({
       fresh: "Dipanggang segar tiap hari",
       delivery: "Antar ke seluruh Surabaya",
       pickup: "Ambil di Jl. Palem Sememi",
-      pay: "Bayar pakai QRIS atau transfer",
+      pay: "Bayar pakai QRIS, e-wallet atau transfer",
     },
     cookies: {
       eyebrow: "SOFT COOKIES",
@@ -165,7 +165,7 @@ export const homeMessages = defineMessages({
         { title: "Diantar atau ambil", body: `Ongkir ${fee} se-Surabaya · pickup gratis.` },
         {
           title: "Bayar sesukamu",
-          body: "Bayar dengan aman lewat QRIS atau transfer bank, lalu pantau pesananmu dari akunmu.",
+          body: "Bayar dengan aman lewat QRIS, e-wallet atau transfer bank, lalu pantau pesananmu dari akunmu.",
         },
       ],
     },

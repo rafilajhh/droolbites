@@ -12,6 +12,7 @@ export const commonMessages = defineMessages({
     },
     header: {
       openMenu: "Open menu",
+      skipToContent: "Skip to content",
       home: "Droolbites home",
       search: "Search the menu",
       account: "My account",
@@ -30,6 +31,7 @@ export const commonMessages = defineMessages({
       faq: "FAQ",
       orderNow: "ORDER NOW",
       account: "Sign in / My account",
+      search: "Search the menu",
     },
     cart: {
       title: "Your cart",
@@ -84,6 +86,7 @@ export const commonMessages = defineMessages({
     },
     header: {
       openMenu: "Buka menu",
+      skipToContent: "Langsung ke konten",
       home: "Beranda Droolbites",
       search: "Cari di menu",
       account: "Akun saya",
@@ -102,6 +105,7 @@ export const commonMessages = defineMessages({
       faq: "FAQ",
       orderNow: "PESAN SEKARANG",
       account: "Masuk / Akun saya",
+      search: "Cari di menu",
     },
     cart: {
       title: "Keranjangmu",

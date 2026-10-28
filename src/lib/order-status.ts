@@ -54,13 +54,20 @@ export const paymentMethodInfo: Record<PaymentMethod, MethodInfo> = {
   qris: { name: "QRIS", kind: "qris", channel: null, mark: "QRIS", markClass: "bg-white text-ink inset-ring-1 inset-ring-border-subtle" },
 };
 
-/** Payment groups in checkout order (Checkout · Payment and the change-method form). */
+/**
+ * Payment groups in checkout order (Checkout · Payment and the change-method form):
+ * E-wallet, QRIS, Virtual account as in the pen (D75ET6), then Retail, which the pen
+ * doesn't draw. The first PRIMARY_VA_COUNT banks are the pen's four; the rest sit
+ * behind "More banks".
+ */
 export const PAYMENT_GROUPS = [
-  { key: "va", methods: ["bca_va", "bni_va", "mandiri_va", "bri_va", "permata_va", "bsi_va", "muamalat_va", "cimb_va", "sinarmas_va", "bnc_va", "maybank_va"] },
-  { key: "retail", methods: ["indomaret", "alfamart"] },
-  { key: "ewallet", methods: ["ovo", "dana", "shopeepay"] },
+  { key: "ewallet", methods: ["dana", "ovo", "shopeepay"] },
   { key: "qris", methods: ["qris"] },
+  { key: "va", methods: ["bca_va", "mandiri_va", "bni_va", "bri_va", "permata_va", "bsi_va", "cimb_va", "bnc_va", "maybank_va", "muamalat_va", "sinarmas_va"] },
+  { key: "retail", methods: ["indomaret", "alfamart"] },
 ] as const satisfies readonly { key: PaymentKind; methods: readonly PaymentMethod[] }[];
+
+export const PRIMARY_VA_COUNT = 4;
 
 /** Store settings switches per group. */
 export function paymentKindEnabled(

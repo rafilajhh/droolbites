@@ -4,11 +4,12 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-export type DropdownOption = { value: string; label: string; dot: string };
+/** `dot`: category color only; status options carry no dot. */
+export type DropdownOption = { value: string; label: string; dot?: string };
 
 /** Floating panel look shared by the admin dropdowns and search popovers. */
 export const popoverClasses =
-  "absolute z-50 flex flex-col gap-0.5 rounded-m bg-white p-2 shadow-[0_12px_32px_rgb(31_42_20_/_0.15)] inset-ring-1 inset-ring-border-subtle";
+  "absolute z-50 flex flex-col gap-0.5 rounded-m bg-white p-2 shadow-[0_12px_32px_color-mix(in_srgb,var(--ink)_15%,transparent)] inset-ring-1 inset-ring-border-subtle";
 
 /**
  * The faint ink scrim behind an open dropdown (pen: Scrim, ink 8%). Pressing it
@@ -23,7 +24,7 @@ export function Scrim({ onClick }: { onClick: () => void }) {
 
 /**
  * pen: Payment Filter / Category Filter / Fulfilment Options — a listbox
- * popover with a colored dot per option and a check on the selected one.
+ * popover with an optional category dot per option and a check on the selected one.
  * `trigger` renders the button face; the button itself handles a11y. Its
  * accessible name carries the current value: "${label}: ${current}", or the
  * `labelledBy` element followed by the button's own text.
@@ -137,7 +138,7 @@ export function Dropdown({
                     !selected && i === active && "bg-background",
                   )}
                 >
-                  <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", o.dot)} />
+                  {o.dot ? <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", o.dot)} /> : null}
                   <span className="flex-1">{o.label}</span>
                   {selected ? <Check className="size-[18px] shrink-0 text-primary" aria-hidden /> : null}
                 </li>

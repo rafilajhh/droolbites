@@ -5,7 +5,6 @@ import { Eyebrow } from "@/components/content/eyebrow";
 import { directionsUrl, formatOpeningHours } from "@/components/content/hours";
 import { locationMessages } from "@/i18n/messages/pages/location";
 import { getLocale, getMessages } from "@/i18n/server";
-import { cn } from "@/lib/cn";
 import { getStoreSettings, isOpenNow } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -26,7 +25,7 @@ export default async function LocationPage() {
     <>
       <section className="flex w-full flex-col gap-4 px-4 pt-6 pb-8 sm:px-8 lg:px-16 lg:pt-12 lg:pb-10">
         <Eyebrow>{t.eyebrow}</Eyebrow>
-        <h1 className="font-display text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[80px] lg:leading-[82px] lg:tracking-[-2px]">
+        <h1 className="font-display text-balance text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[80px] lg:leading-[82px] lg:tracking-[-2px]">
           {t.title(settings.city)}
         </h1>
       </section>
@@ -78,9 +77,8 @@ export default async function LocationPage() {
               <h2 className="text-base leading-6 font-bold text-foreground">{t.pickupTitle}</h2>
               <p className="text-[15px] leading-[23px] text-muted-foreground">{t.pickupBody}</p>
               <p className="flex flex-wrap items-center gap-x-2 text-[13px] leading-5 font-semibold text-foreground">
-                <span className={cn("size-2 rounded-full", open ? "bg-success" : "bg-accent-crimson")} aria-hidden />
                 <span>{open ? t.openNow : t.closedNow}</span>
-                <span className="font-normal text-muted-foreground">· {formatOpeningHours(settings, locale)}</span>
+                <span className="font-normal text-muted-foreground">· {formatOpeningHours(settings, locale)} WIB</span>
               </p>
             </div>
           </div>

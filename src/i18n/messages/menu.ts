@@ -79,7 +79,7 @@ export const menuMessages = defineMessages({
     promo: {
       title: "Can't decide? Mix a box.",
       body: "Add any cookies, brownies and tiramisu to one order.",
-      cta: "SEARCH THE MENU",
+      cta: "BROWSE EVERYTHING",
     },
     empty: {
       title: (q: string) => `No desserts match “${q}”.`,
@@ -135,7 +135,7 @@ export const menuMessages = defineMessages({
     promo: {
       title: "Bingung pilih? Campur saja.",
       body: "Masukkan cookies, brownies dan tiramisu ke satu pesanan.",
-      cta: "CARI DI MENU",
+      cta: "LIHAT SEMUA",
     },
     empty: {
       title: (q: string) => `Tidak ada dessert yang cocok dengan “${q}”.`,

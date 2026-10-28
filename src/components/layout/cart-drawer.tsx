@@ -7,6 +7,7 @@ import { setCartQty, removeFromCart } from "@/app/actions/cart";
 import { useLocale, useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { variantLabel } from "@/content/products";
+import { lineMeta } from "@/components/checkout/order-summary";
 import { buttonClasses } from "@/components/ui/button";
 import { OrderLine, SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -95,7 +96,7 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
             type="button"
             onClick={close}
             aria-label={t.close}
-            className="flex size-10 items-center justify-center rounded-pill bg-oat transition-colors hover:bg-card-accent"
+            className="relative flex size-10 items-center justify-center rounded-pill bg-oat after:absolute after:-inset-0.5 after:content-[''] transition-colors hover:bg-card-accent"
           >
             <X className="size-5" aria-hidden />
           </button>
@@ -119,7 +120,7 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                 >
                   <OrderLine
                     name={line.productName}
-                    meta={variantLabel(line.variantName, line.categorySlug, locale)}
+                    meta={lineMeta(line.qty, variantLabel(line.variantName, line.categorySlug, locale))}
                     price={formatRupiah(line.lineTotal)}
                     imageUrl={line.imageUrl}
                   />

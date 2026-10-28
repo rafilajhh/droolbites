@@ -84,7 +84,7 @@ export function Cutout({ name, width, className }: { name: CutoutName; width: nu
       draggable={false}
       style={{ width, height: "auto" }}
       className={cn(
-        "pointer-events-none absolute drop-shadow-[0_10px_12px_rgb(31_42_20/0.22)] select-none",
+        "pointer-events-none absolute drop-shadow-[0_10px_12px_color-mix(in_srgb,var(--ink)_22%,transparent)] select-none",
         className,
       )}
     />
