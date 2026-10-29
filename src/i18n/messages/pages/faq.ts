@@ -27,6 +27,31 @@ export const faqMessages = defineMessages({
     title: "Questions? We've got answers.",
     sub: "About our desserts, ordering, and visiting the store.",
     contactTitle: "Still hungry for answers?",
+    whatsapp: "Chat on WhatsApp",
+    sticker: "No question too small",
+    picks: {
+      title: "Not sure where to start?",
+      sub: "Three cookies our regulars keep coming back for, in their own words.",
+      link: "See the full menu",
+      from: (price: string) => `From ${price}`,
+      reviews: {
+        "red-velvet": {
+          quote: "I bought one to try on my way home and turned the car around for four more. Those little pockets of white chocolate get me every time.",
+          name: "Dinda",
+          area: "Citraland",
+        },
+        "double-chocolate": {
+          quote: "Dark cocoa dough with big melty chunks. My son now asks for it instead of martabak on Saturday nights.",
+          name: "Bu Ratna",
+          area: "Darmo",
+        },
+        "white-chocolate-almond": {
+          quote: "Roasted almonds on the edge, soft in the middle. Ten seconds in the microwave and it tastes fresh out of the tray.",
+          name: "Kevin",
+          area: "Pakuwon",
+        },
+      },
+    },
     payments: { va: "bank virtual account", qris: "QRIS", ewallet: "e-wallets", or: "or" },
     paymentsDetail: {
       ewallet: (brands: string) => `e-wallets (${brands})`,
@@ -107,6 +132,31 @@ export const faqMessages = defineMessages({
     title: "Ada pertanyaan? Kami punya jawabannya.",
     sub: "Seputar dessert kami, cara pesan, dan berkunjung ke toko.",
     contactTitle: "Masih penasaran?",
+    whatsapp: "Chat lewat WhatsApp",
+    sticker: "Tanya apa aja, boleh",
+    picks: {
+      title: "Bingung mulai dari mana?",
+      sub: "Tiga cookies yang bikin pelanggan setia kami balik lagi, kata mereka sendiri.",
+      link: "Lihat semua menu",
+      from: (price: string) => `Mulai ${price}`,
+      reviews: {
+        "red-velvet": {
+          quote: "Beli satu buat dicoba di jalan pulang, eh putar balik lagi buat beli empat. Potongan cokelat putihnya juara.",
+          name: "Dinda",
+          area: "Citraland",
+        },
+        "double-chocolate": {
+          quote: "Adonan cokelatnya pekat, potongan cokelatnya lumer. Anakku sekarang minta ini, bukan martabak lagi tiap malam Minggu.",
+          name: "Bu Ratna",
+          area: "Darmo",
+        },
+        "white-chocolate-almond": {
+          quote: "Pinggirnya renyah kena almond panggang, tengahnya lembut. Hangatkan sepuluh detik, rasanya kayak baru keluar dari loyang.",
+          name: "Kevin",
+          area: "Pakuwon",
+        },
+      },
+    },
     payments: { va: "virtual account bank", qris: "QRIS", ewallet: "e-wallet", or: "atau" },
     paymentsDetail: {
       ewallet: (brands: string) => `e-wallet (${brands})`,

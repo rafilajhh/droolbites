@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Store, Truck } from "lucide-react";
+import { Star, Store, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -21,11 +21,14 @@ export function ProductBuy({
   eyebrow,
   description,
   unit,
+  rating,
 }: {
   product: ShopProduct;
   eyebrow: string;
   description: string;
   unit: string;
+  /** Illustrative rating, already formatted for the locale; links to the reviews further down. */
+  rating?: { value: string; count: number };
 }) {
   const t = useMessages(productMessages);
   const [variantId, setVariantId] = useState(product.variants[0].id);
@@ -47,6 +50,23 @@ export function ProductBuy({
           </span>
           {unit ? <span className="text-[15px] leading-[23px] text-muted-foreground">{unit}</span> : null}
         </p>
+        {rating ? (
+          <a
+            href="#reviews"
+            className="group relative flex w-fit items-center gap-2 text-[15px] leading-[23px] text-foreground after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-['']"
+          >
+            <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
+            <span className="sr-only">{t.rating.rated} </span>
+            <span className="font-bold">{rating.value}</span>
+            <span className="sr-only"> {t.rating.outOf}</span>
+            <span aria-hidden className="text-muted-foreground">
+              ·
+            </span>
+            <span className="font-semibold underline decoration-border underline-offset-4 group-hover:no-underline">
+              {t.rating.count(rating.count)}
+            </span>
+          </a>
+        ) : null}
       </div>
 
       <p className="text-base leading-[24px] text-muted-foreground lg:text-lg lg:leading-[27px]">{description}</p>
@@ -87,7 +107,12 @@ export function ProductBuy({
             aria-busy={pending || undefined}
             onClick={() => add(variant.id, qty)}
           >
-            {t.addToCart(formatRupiah(variant.price * qty))}
+            {/* One inline run so the button's flex gap does not split the label. */}
+            <span>
+              {t.addToCart.verb}
+              <span className="max-[1439px]:sr-only">{t.addToCart.rest}</span>
+              {` · ${formatRupiah(variant.price * qty)}`}
+            </span>
           </Button>
         </div>
         {failed ? (

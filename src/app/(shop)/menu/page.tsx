@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { OrderSteps } from "@/components/product/order-steps";
 import { MenuBrowser } from "@/components/shop/menu-browser";
 import { toShopCategories } from "@/components/shop/shop-product";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -32,6 +33,10 @@ export default async function MenuPage() {
       </div>
       <Suspense>
         <MenuBrowser categories={categories} />
+      </Suspense>
+      {/* The payment step waits on the gateway; never let it hold up the page. */}
+      <Suspense fallback={null}>
+        <OrderSteps />
       </Suspense>
     </div>
   );

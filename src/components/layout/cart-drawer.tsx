@@ -1,8 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useOptimistic, useRef, useState, useTransition } from "react";
-import { X } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { setCartQty, removeFromCart } from "@/app/actions/cart";
 import { useLocale, useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
@@ -17,6 +18,13 @@ import type { Cart } from "@/lib/cart";
 import { useModal, useShopUI } from "./shop-ui";
 
 type Line = Cart["lines"][number];
+
+/** Empty-cart shortcuts into the menu, tinted like the Our Story category tiles. */
+const emptyPicks = [
+  { key: "cookies", href: "/menu?category=soft-cookies", image: "/images/products/red-velvet.png", bg: "bg-tint-mustard" },
+  { key: "brownies", href: "/menu/fudgy-brownies", image: "/images/products/fudgy-brownies.png", bg: "bg-tint-lavender" },
+  { key: "tiramisu", href: "/menu?category=tiramisu", image: "/images/products/matcha-tiramisu.png", bg: "bg-tint-salmon" },
+] as const;
 
 /** pen: Cart drawer (wSMRO) → Cart Drawer (My6z7), 480px from the right. */
 export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: number }) {
@@ -103,12 +111,50 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
         </div>
 
         {lines.length === 0 ? (
-          <div className="flex flex-1 flex-col items-start justify-center gap-4 px-5 sm:px-7">
-            <p className="font-display text-[28px] leading-[1.1] font-semibold">{t.emptyTitle}</p>
-            <p className="max-w-[340px] text-base leading-normal text-muted-foreground">{t.emptyBody}</p>
-            <Link href="/menu" onClick={close} className={buttonClasses("primary", "mt-2")}>
-              {t.emptyCta}
-            </Link>
+          <div className="flex min-h-0 flex-1 flex-col gap-10 overflow-y-auto px-5 py-8 sm:px-7 sm:py-10">
+            <div className="flex flex-col items-start gap-4">
+              <span className="relative mb-2 size-[112px] shrink-0 -rotate-6 overflow-hidden rounded-pill bg-oat" aria-hidden>
+                <Image src="/images/products/chocolate-chunk.png" alt="" fill sizes="112px" className="object-cover" />
+              </span>
+              <p className="font-display text-[28px] leading-[1.1] font-semibold">{t.emptyTitle}</p>
+              <p className="max-w-[340px] text-base leading-normal text-muted-foreground">{t.emptyBody}</p>
+              <Link href="/menu" onClick={close} className={buttonClasses("primary", "mt-2")}>
+                {t.emptyCta}
+              </Link>
+            </div>
+            <section aria-labelledby="cart-picks" className="flex flex-col gap-3">
+              <h3 id="cart-picks" className="font-display text-[17px] leading-[21px] font-semibold text-foreground">
+                {t.picksTitle}
+              </h3>
+              <ul className="flex flex-col gap-2.5">
+                {emptyPicks.map((pick) => (
+                  <li key={pick.key}>
+                    <Link
+                      href={pick.href}
+                      onClick={close}
+                      className={cn(
+                        "group/pick flex items-center gap-4 rounded-sm p-2.5 pr-4 inset-ring-1 inset-ring-transparent transition-shadow hover:inset-ring-border",
+                        pick.bg,
+                      )}
+                    >
+                      <span className="relative size-16 shrink-0 overflow-hidden rounded-sm bg-oat">
+                        <Image src={pick.image} alt="" fill sizes="64px" className="object-cover" />
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <span className="font-display text-[17px] leading-[21px] font-semibold text-foreground">
+                          {t.picks[pick.key].name}
+                        </span>
+                        <span className="text-[13px] leading-[18px] text-muted-foreground">{t.picks[pick.key].sub}</span>
+                      </span>
+                      <ArrowRight
+                        className="size-[18px] shrink-0 text-foreground transition-transform duration-200 group-hover/pick:translate-x-0.5 motion-reduce:transition-none"
+                        aria-hidden
+                      />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
         ) : (
           <>

@@ -20,10 +20,16 @@ export function AccountNav() {
 
   useEffect(() => {
     const sections = ACCOUNT_SECTIONS.map((id) => document.getElementById(id)).filter((el): el is HTMLElement => !!el);
+    // The observer only reports sections whose state changed, so keep the full set and pick the topmost.
+    const inView = new Set<SectionId>();
     const observer = new IntersectionObserver(
       (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-        if (visible[0]) setActive(visible[0].target.id as SectionId);
+        for (const e of entries) {
+          if (e.isIntersecting) inView.add(e.target.id as SectionId);
+          else inView.delete(e.target.id as SectionId);
+        }
+        const top = ACCOUNT_SECTIONS.find((id) => inView.has(id));
+        if (top) setActive(top);
       },
       { rootMargin: "-20% 0px -55% 0px" },
     );
@@ -38,7 +44,7 @@ export function AccountNav() {
   ];
 
   return (
-    <nav aria-label={t.label} className="w-full shrink-0 lg:sticky lg:top-6 lg:w-[260px]">
+    <nav aria-label={t.label} className="w-full">
       <ul className="grid grid-cols-2 gap-1 lg:flex lg:flex-col">
         {links.map(({ id, label, short, Icon }) => {
           const current = active === id;

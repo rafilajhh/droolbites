@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AuthHead, AuthSwitch } from "@/components/auth/auth-bits";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { SignUpForm } from "@/components/auth/sign-up-form";
+import { SignUpPerks } from "@/components/auth/sign-up-perks";
 import { getMessages } from "@/i18n/server";
 import { authMessages } from "@/i18n/messages/auth";
 import { safeNext } from "@/lib/auth";
@@ -22,6 +23,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
   return (
     <AuthShell photo="gift-box" quote={t.signUp.quote}>
       <AuthHead eyebrow={t.signUp.eyebrow} title={t.signUp.title} sub={t.signUp.sub} />
+      <SignUpPerks label={t.signUp.perksLabel} perks={t.signUp.perks} />
       <SignUpForm next={nextPath} />
       <AuthSwitch text={t.signUp.switchText} linkLabel={t.signUp.switchLink} href={signInHref} />
     </AuthShell>

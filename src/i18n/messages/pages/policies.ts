@@ -1,17 +1,45 @@
 import { defineMessages } from "../../config";
 
 /** Store facts quoted in the policy text, read from the store settings. */
-export type PolicyContact = { email: string; phone: string; address: string; hours: string; deliveryFee: string };
+export type PolicyContact = {
+  email: string;
+  phone: string;
+  address: string;
+  hours: string;
+  deliveryFee: string;
+  /** Opening time, e.g. "10:00". */
+  opensAt: string;
+  /** Last call for pickup orders: 30 minutes before closing, e.g. "20:30". */
+  pickupCutoff: string;
+};
 
 /** pen: Shipping policy (MInKs), Privacy policy (T4tsh), Returns & refunds (C9zhg6). */
 export const policyMessages = defineMessages({
   en: {
     eyebrow: "POLICIES",
     contents: "ON THIS PAGE",
+    updated: (date: string) => `Last updated ${date}`,
+    glance: "At a glance",
+    help: {
+      title: "Still need help?",
+      body: "Send us your order number and a quick note about what happened. While the shop is open we usually reply within the hour, and most fixes are sorted the same day.",
+      whatsapp: "Chat on WhatsApp",
+      email: "Email us",
+      call: "Prefer a call?",
+      hours: (hours: string) => `${hours} WIB`,
+      more: "More help",
+      faq: "Read the FAQ",
+    },
     shipping: {
       title: "Shipping policy",
       sub: "Delivery, store pickup and help with your order.",
       metaDescription: "How Droolbites delivery and store pickup work, delivery fees, order changes and getting help.",
+      glance: (c: PolicyContact) => [
+        { title: `${c.deliveryFee} flat`, body: "Delivery anywhere in Surabaya, whatever the size of your order." },
+        { title: "Free pickup", body: `Collect at our Sememi counter. Pickup orders close at ${c.pickupCutoff}\u00a0WIB.` },
+        { title: "Reply within the hour", body: "On WhatsApp or email, while the shop is open." },
+      ],
+      sticker: "Sealed for the ride",
       sections: [
         {
           id: "delivery-availability",
@@ -23,7 +51,7 @@ export const policyMessages = defineMessages({
           id: "store-pickup",
           title: "Store pickup",
           body: (c: PolicyContact) =>
-            `Store pickup is free. Choose it at checkout and collect your order at ${c.address}. Opening hours: ${c.hours}\u00a0WIB. Your order page shows when it is ready for pickup.`,
+            `Store pickup is free. Choose it at checkout and collect your order at ${c.address}. Opening hours: ${c.hours}\u00a0WIB. Pickup orders close at ${c.pickupCutoff}\u00a0WIB, 30 minutes before closing, so the last boxes are still packed with care; anything ordered later is ready from ${c.opensAt} on the next opening day. Your order page shows when it is ready for pickup.`,
         },
         {
           id: "delivery-fees-and-timing",
@@ -38,10 +66,11 @@ export const policyMessages = defineMessages({
             "If you need to change the delivery address or collection arrangements, contact us as soon as possible with your order number. Changes depend on whether the order has already been prepared or handed to the delivery service.",
         },
         {
-          id: "problems-with-an-order",
-          title: "Problems with an order",
-          body: (c: PolicyContact) =>
-            `If your order is damaged, incomplete, different from what you ordered, or delayed, email ${c.email} or call ${c.phone}. Include your order number, a description of the issue and photos where relevant so we can review it and advise on the next steps.`,
+          id: "if-something-goes-wrong",
+          title: "If something goes wrong",
+          body: () =>
+            "Damaged, missing or late? How to report it, and how we replace or refund an order, is all on our returns & refunds page.",
+          link: { href: "/returns-refunds", label: "Go to returns & refunds" },
         },
       ],
     },
@@ -49,6 +78,12 @@ export const policyMessages = defineMessages({
       title: "Privacy policy",
       sub: "How your account and order information is used.",
       metaDescription: "What information Droolbites collects, why we use it, who we share it with and your choices.",
+      glance: () => [
+        { title: "Only what an order needs", body: "Your name, contact details, address and what you ordered. That's it." },
+        { title: "Never sold", body: "We don't sell or rent your details to anyone, ever." },
+        { title: "Deleted on request", body: "Email us and we remove your account, keeping only the records the law requires." },
+      ],
+      sticker: "Your details stay here",
       sections: [
         {
           id: "information-we-collect",
@@ -87,16 +122,39 @@ export const policyMessages = defineMessages({
       sub: "How to request help with an order, a cancellation or a refund.",
       metaDescription: "How to report a problem with a Droolbites order, change or cancel it, and how refunds work.",
       history: "VIEW ORDER HISTORY",
+      glance: () => [
+        { title: "Report within 24 hours", body: "Send a photo and your order number within 24 hours of delivery or pickup." },
+        { title: "Replaced or refunded", body: "If we got it wrong, we bake it again or give your money back." },
+        { title: "Back to how you paid", body: "Refunds go back through the method you paid with." },
+      ],
+      sticker: "We'll make it right",
+      steps: {
+        title: "How to report a problem",
+        items: [
+          {
+            title: "Snap a photo",
+            body: "Photograph the item and its packaging, and find the order number on your confirmation (it looks like DB-0001).",
+          },
+          {
+            title: "Message us",
+            body: "WhatsApp or email us within 24 hours of delivery or pickup. While the shop is open, we reply within the hour.",
+          },
+          {
+            title: "We make it right",
+            body: "Once we've checked it, we bake a replacement or refund you through your original payment method.",
+          },
+        ],
+      },
       sections: [
         {
           id: "problems-with-an-order",
           title: "Problems with an order",
           body: () =>
-            "If an item is damaged, missing or different from what you ordered, contact us with your order number and a description of the problem. Include clear photos where relevant.",
+            "If an item is damaged, missing or different from what you ordered, contact us within 24 hours with your order number and a description of the problem. Include clear photos where relevant.",
         },
         {
-          id: "request-a-review",
-          title: "Request a review",
+          id: "ask-us-to-check-it",
+          title: "Ask us to check it",
           body: (c: PolicyContact) =>
             `Email ${c.email} or call ${c.phone}. Keep the product and packaging while we review the issue so we can ask for further details if needed.`,
         },
@@ -124,10 +182,28 @@ export const policyMessages = defineMessages({
   id: {
     eyebrow: "KEBIJAKAN",
     contents: "DI HALAMAN INI",
+    updated: (date: string) => `Terakhir diperbarui ${date}`,
+    glance: "Sekilas",
+    help: {
+      title: "Masih butuh bantuan?",
+      body: "Kirim nomor pesanan dan sedikit cerita soal masalahnya. Selama toko buka, biasanya kami balas dalam satu jam, dan kebanyakan masalah beres di hari yang sama.",
+      whatsapp: "Chat lewat WhatsApp",
+      email: "Kirim email",
+      call: "Lebih suka telepon?",
+      hours: (hours: string) => `${hours} WIB`,
+      more: "Bantuan lain",
+      faq: "Baca FAQ",
+    },
     shipping: {
       title: "Kebijakan pengiriman",
       sub: "Pengiriman, ambil di toko dan bantuan untuk pesananmu.",
       metaDescription: "Cara kerja pengiriman dan ambil di toko Droolbites, ongkos kirim, perubahan pesanan dan bantuan.",
+      glance: (c: PolicyContact) => [
+        { title: `Ongkir ${c.deliveryFee}`, body: "Flat ke seluruh Surabaya, berapa pun jumlah pesananmu." },
+        { title: "Ambil di toko gratis", body: `Ambil di toko kami di Sememi. Pesanan ambil di toko ditutup pukul ${c.pickupCutoff}\u00a0WIB.` },
+        { title: "Dibalas dalam sejam", body: "Lewat WhatsApp atau email, selama toko buka." },
+      ],
+      sticker: "Aman sampai tujuan",
       sections: [
         {
           id: "delivery-availability",
@@ -139,7 +215,7 @@ export const policyMessages = defineMessages({
           id: "store-pickup",
           title: "Ambil di toko",
           body: (c: PolicyContact) =>
-            `Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di ${c.address}. Jam buka: ${c.hours}\u00a0WIB. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil.`,
+            `Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di ${c.address}. Jam buka: ${c.hours}\u00a0WIB. Pesanan ambil di toko ditutup pukul ${c.pickupCutoff}\u00a0WIB, 30 menit sebelum toko tutup, supaya kotak terakhir tetap dikemas dengan rapi; pesanan setelah itu siap diambil mulai pukul ${c.opensAt} di hari buka berikutnya. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil.`,
         },
         {
           id: "delivery-fees-and-timing",
@@ -154,10 +230,11 @@ export const policyMessages = defineMessages({
             "Jika perlu mengubah alamat pengiriman atau pengaturan pengambilan, hubungi kami secepatnya dengan menyertakan nomor pesanan. Perubahan bergantung pada apakah pesanan sudah disiapkan atau sudah diserahkan ke layanan pengiriman.",
         },
         {
-          id: "problems-with-an-order",
-          title: "Masalah dengan pesanan",
-          body: (c: PolicyContact) =>
-            `Jika pesananmu rusak, tidak lengkap, berbeda dari yang dipesan, atau terlambat, email ${c.email} atau telepon ${c.phone}. Sertakan nomor pesanan, penjelasan masalahnya dan foto bila perlu agar kami bisa memeriksanya dan memberi tahu langkah selanjutnya.`,
+          id: "if-something-goes-wrong",
+          title: "Kalau ada yang tidak beres",
+          body: () =>
+            "Pesanan rusak, kurang atau telat? Cara melaporkannya, juga soal ganti baru dan refund, semuanya ada di halaman retur & refund.",
+          link: { href: "/returns-refunds", label: "Buka retur & refund" },
         },
       ],
     },
@@ -166,6 +243,12 @@ export const policyMessages = defineMessages({
       sub: "Bagaimana informasi akun dan pesananmu digunakan.",
       metaDescription:
         "Informasi apa yang dikumpulkan Droolbites, untuk apa kami menggunakannya, dengan siapa dibagikan dan pilihanmu.",
+      glance: () => [
+        { title: "Secukupnya untuk pesanan", body: "Nama, kontak, alamat dan apa yang kamu pesan. Itu saja." },
+        { title: "Tidak pernah dijual", body: "Datamu tidak kami jual atau sewakan ke siapa pun." },
+        { title: "Dihapus kalau diminta", body: "Email kami, akunmu kami hapus, kecuali catatan yang wajib disimpan menurut hukum." },
+      ],
+      sticker: "Datamu aman di sini",
       sections: [
         {
           id: "information-we-collect",
@@ -204,16 +287,39 @@ export const policyMessages = defineMessages({
       sub: "Cara meminta bantuan untuk pesanan, pembatalan atau refund.",
       metaDescription: "Cara melaporkan masalah pesanan Droolbites, mengubah atau membatalkannya, dan cara kerja refund.",
       history: "LIHAT RIWAYAT PESANAN",
+      glance: () => [
+        { title: "Lapor dalam 24 jam", body: "Kirim foto dan nomor pesanan dalam 24 jam setelah pesanan diantar atau diambil." },
+        { title: "Diganti atau di-refund", body: "Kalau kami yang salah, kami buatkan lagi atau uangmu kembali." },
+        { title: "Kembali ke cara bayarmu", body: "Refund dikembalikan lewat metode yang kamu pakai untuk bayar." },
+      ],
+      sticker: "Kami bereskan, janji",
+      steps: {
+        title: "Cara melaporkan masalah",
+        items: [
+          {
+            title: "Foto dulu",
+            body: "Foto produk dan kemasannya, lalu cari nomor pesanan di konfirmasimu (formatnya seperti DB-0001).",
+          },
+          {
+            title: "Kabari kami",
+            body: "WhatsApp atau email kami dalam 24 jam setelah pesanan diantar atau diambil. Selama toko buka, kami balas dalam satu jam.",
+          },
+          {
+            title: "Kami bereskan",
+            body: "Setelah kami cek, kami buatkan pengganti atau refund lewat metode pembayaran awalmu.",
+          },
+        ],
+      },
       sections: [
         {
           id: "problems-with-an-order",
           title: "Masalah dengan pesanan",
           body: () =>
-            "Jika ada item yang rusak, kurang atau berbeda dari yang dipesan, hubungi kami dengan menyertakan nomor pesanan dan penjelasan masalahnya. Sertakan foto yang jelas bila perlu.",
+            "Jika ada item yang rusak, kurang atau berbeda dari yang dipesan, hubungi kami dalam 24 jam dengan menyertakan nomor pesanan dan penjelasan masalahnya. Sertakan foto yang jelas bila perlu.",
         },
         {
-          id: "request-a-review",
-          title: "Ajukan pemeriksaan",
+          id: "ask-us-to-check-it",
+          title: "Minta kami periksa",
           body: (c: PolicyContact) =>
             `Email ${c.email} atau telepon ${c.phone}. Simpan produk dan kemasannya selama kami memeriksa masalahnya, agar kami bisa meminta detail tambahan bila perlu.`,
         },

@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Clock, Cookie, MapPin, QrCode, ShoppingBag, Store, Truck } from "lucide-react";
+import { Clock, Cookie, MapPin, QrCode, ShoppingBag, Star, Store, Truck } from "lucide-react";
 import { directionsUrl, formatOpeningHours } from "@/components/content/hours";
+import { ReviewBand } from "@/components/home/review-band";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { Cutout, Snapshot } from "@/components/ui/snapshot";
@@ -50,6 +51,7 @@ export default async function HomePage() {
   const directions = directionsUrl(settings);
 
   const usps = [
+    { icon: Star, label: t.usp.rating },
     { icon: Cookie, label: t.usp.fresh },
     { icon: Truck, label: t.usp.delivery },
     { icon: Store, label: t.usp.pickup },
@@ -349,6 +351,9 @@ export default async function HomePage() {
           })}
         </ol>
       </section>
+
+      {/* Reviews (illustrative) */}
+      <ReviewBand t={t.reviews} products={products} city={settings.city} />
 
       {/* Visit */}
       <section

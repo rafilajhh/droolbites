@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { ChevronRight } from "lucide-react";
 import { AccordionItem } from "@/components/ui/accordion";
 import { ArrowLink } from "@/components/ui/button";
+import { galleryPhotos } from "@/components/product/gallery-photos";
+import { OrderSteps } from "@/components/product/order-steps";
+import { ProductReviews } from "@/components/product/product-reviews";
+import { formatRating, productRatings } from "@/components/product/reviews";
 import { MenuItemCard } from "@/components/shop/menu-item-card";
 import { ProductBuy } from "@/components/shop/product-buy";
 import { ProductGallery } from "@/components/shop/product-gallery";
@@ -84,13 +89,8 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
   );
   const contactHref = `mailto:${settings.email}?subject=${encodeURIComponent(t.ingredientsSubject(product.name))}`;
 
-  // The database has one photo per product; the pen's other three are general shop photos, described as such.
-  const photos = [
-    { src: item.imageUrl, alt: t.photos.product(item.name) },
-    { src: "/images/site/hero-cookies.png", alt: t.photos.stack },
-    { src: "/images/site/gift-box.png", alt: t.photos.gift },
-    { src: "/images/site/party-spread.png", alt: t.photos.party },
-  ];
+  const photos = galleryPhotos(item, t.photos);
+  const rating = productRatings[product.slug];
 
   return (
     <div className="mx-auto flex w-full max-w-[1440px] flex-col">
@@ -128,6 +128,7 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
             eyebrow={t.eyebrow[item.categorySlug] ?? item.categoryName.toUpperCase()}
             description={productLong(product.slug, product.description, locale)}
             unit={unit}
+            rating={rating ? { value: formatRating(rating.value, locale), count: rating.count } : undefined}
           />
           {details.length ? (
             <div className="flex w-full flex-col">
@@ -160,6 +161,8 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
         </div>
       </div>
 
+      <ProductReviews slug={product.slug} />
+
       {related.length ? (
         <section
           aria-labelledby="also-like"
@@ -181,6 +184,11 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
           </div>
         </section>
       ) : null}
+
+      {/* The payment step waits on the gateway; never let it hold up the page. */}
+      <Suspense fallback={null}>
+        <OrderSteps />
+      </Suspense>
     </div>
   );
 }

@@ -15,6 +15,16 @@ export const accountMessages = defineMessages({
       /** Below sm the nav is a two-column grid; short labels keep each cell on one line. */
       short: { orders: "Orders", info: "Account", billing: "Billing" },
     },
+    stats: {
+      title: "Your sweet stats",
+      summary: (orders: number, desserts: number) =>
+        `${orders} ${orders === 1 ? "order" : "orders"} · ${desserts} ${desserts === 1 ? "dessert" : "desserts"} so far`,
+      favorite: "Your favorite",
+      again: "Order it again",
+      emptyTitle: "Your first box is waiting.",
+      emptyBody: "Your orders, desserts and favorite flavor will show up here.",
+      emptyCta: "Pick your desserts",
+    },
     orders: {
       title: "Order history",
       sub: "Orders placed with your account.",
@@ -81,6 +91,15 @@ export const accountMessages = defineMessages({
       billing: "Informasi penagihan",
       signOut: "Keluar",
       short: { orders: "Pesanan", info: "Akun", billing: "Tagihan" },
+    },
+    stats: {
+      title: "Jejak manismu",
+      summary: (orders: number, desserts: number) => `${orders} pesanan · ${desserts} dessert sejauh ini`,
+      favorite: "Favoritmu",
+      again: "Pesan lagi",
+      emptyTitle: "Kotak pertamamu menunggu.",
+      emptyBody: "Pesanan, jumlah dessert dan rasa favoritmu akan muncul di sini.",
+      emptyCta: "Pilih dessert",
     },
     orders: {
       title: "Riwayat pesanan",

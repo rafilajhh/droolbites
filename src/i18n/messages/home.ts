@@ -18,6 +18,7 @@ export const homeMessages = defineMessages({
     usp: {
       label: "Why Droolbites",
       pause: "Pause scrolling",
+      rating: "4.8 on Google Maps · 300+ reviews",
       fresh: "Baked fresh daily",
       delivery: "Delivery across Surabaya",
       pickup: "Pickup at Jl. Palem Sememi",
@@ -81,6 +82,31 @@ export const homeMessages = defineMessages({
         },
       ],
     },
+    reviews: {
+      title: "One try, and they're back for more.",
+      rating: "4.8 on Google Maps · 300+ reviews",
+      more: "More reviews",
+      try: (name: string) => `Try the ${name}`,
+      // Illustrative quotes, in the order of the band: featured first.
+      items: [
+        {
+          quote:
+            "My niece wanted Red Velvet cookies instead of a birthday cake. I ordered thirty, they arrived still warm, and now I'm her favorite uncle.",
+          name: "Om Hendra",
+          area: "Sambikerep",
+        },
+        {
+          quote: "Double Chocolate is my overtime fuel. Two of those with a coffee and the night shift goes by faster.",
+          name: "Bayu",
+          area: "Tandes",
+        },
+        {
+          quote: "The almonds actually crunch and the middle stays gooey. I always tuck one in my bag for the ride home.",
+          name: "Laras",
+          area: "Manukan",
+        },
+      ],
+    },
     visit: {
       eyebrow: "VISIT US",
       title: "Come say hi in Surabaya.",
@@ -107,6 +133,7 @@ export const homeMessages = defineMessages({
     usp: {
       label: "Kenapa Droolbites",
       pause: "Jeda teks berjalan",
+      rating: "4,8 di Google Maps · 300+ ulasan",
       fresh: "Dipanggang segar tiap hari",
       delivery: "Antar ke seluruh Surabaya",
       pickup: "Ambil di Jl. Palem Sememi",
@@ -166,6 +193,30 @@ export const homeMessages = defineMessages({
         {
           title: "Bayar sesukamu",
           body: "Bayar dengan aman lewat QRIS, e-wallet atau transfer bank, lalu pantau pesananmu dari akunmu.",
+        },
+      ],
+    },
+    reviews: {
+      title: "Sekali coba, pasti balik lagi.",
+      rating: "4,8 di Google Maps · 300+ ulasan",
+      more: "Ulasan lainnya",
+      try: (name: string) => `Coba ${name}`,
+      items: [
+        {
+          quote:
+            "Keponakan saya minta cookies Red Velvet buat ganti kue ultah. Saya pesan tiga puluh, datangnya masih hangat, sekarang saya jadi om kesayangan.",
+          name: "Om Hendra",
+          area: "Sambikerep",
+        },
+        {
+          quote: "Double Chocolate itu bensin lemburku. Dua biji plus kopi, shift malam berasa lebih cepat.",
+          name: "Bayu",
+          area: "Tandes",
+        },
+        {
+          quote: "Almondnya beneran renyah, tengahnya tetap lumer. Selalu kuselipin satu di tas buat camilan di jalan pulang.",
+          name: "Laras",
+          area: "Manukan",
         },
       ],
     },

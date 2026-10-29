@@ -49,7 +49,7 @@ A small, focused menu baked fresh daily in Surabaya, with delivery across the ci
 
 - Product photos and logo in the design (pen frame "Image assets", Figma frame "Image assets").
 - Demo orders: DB-0001 (Alya Rahmawati, 18 Oct 2026, local delivery, paid, Baking, Rp85.000) and DB-0000 (2 Oct 2026, store pickup, paid, Completed, Rp60.000).
-- No real testimonials, reviews, sales figures, or press exist; do not fabricate them.
+- No real testimonials, reviews, sales figures, or press exist. The owner allowed illustrative dummy content on 29 Oct 2026 (sample reviews, perks, roles, directions, numbers) so thin pages don't feel empty; keep it plausible for a small Surabaya bakery and consistent with the real store data above.
 
 ## Product Principles
 

@@ -7,9 +7,76 @@ import { useMessages } from "@/i18n/client";
 import { productMessages } from "@/i18n/messages/product";
 import { cn } from "@/lib/cn";
 
-export type GalleryPhoto = { src: string; alt: string };
+/**
+ * `zoom` crops into the photo (a close-up, or the product's corner of a lifestyle shot).
+ * `plate` shows a transparent cut-out on a tinted panel (a bg-tint-* class).
+ */
+export type GalleryPhoto = {
+  src: string;
+  alt: string;
+  zoom?: { scale: number; origin: string; position?: string };
+  plate?: string;
+};
 
-/** pen: product detail Gallery — 640px main photo and four 150px thumbnails. */
+/** One photo filling its frame; the main view and the thumbnails share it. */
+function GalleryImage({
+  photo,
+  alt,
+  sizes,
+  priority,
+}: {
+  photo: GalleryPhoto;
+  alt: string;
+  sizes: string;
+  priority?: boolean;
+}) {
+  if (photo.plate) {
+    return (
+      <span className={cn("absolute inset-0 flex items-center justify-center", photo.plate)}>
+        <span className="relative size-[74%] -rotate-[8deg]">
+          <Image
+            src={photo.src}
+            alt={alt}
+            fill
+            priority={priority}
+            quality={100}
+            sizes={sizes}
+            className="object-contain drop-shadow-[0_10px_12px_color-mix(in_srgb,var(--ink)_22%,transparent)]"
+          />
+        </span>
+      </span>
+    );
+  }
+  return (
+    <Image
+      src={photo.src}
+      alt={alt}
+      fill
+      priority={priority}
+      quality={100}
+      sizes={sizes}
+      className="object-cover"
+      style={
+        photo.zoom
+          ? {
+              scale: String(photo.zoom.scale),
+              transformOrigin: photo.zoom.origin,
+              objectPosition: photo.zoom.position,
+            }
+          : undefined
+      }
+    />
+  );
+}
+
+/** Thumbnail row by photo count; static classes so Tailwind sees them. Each thumb keeps a 150px-tall shape at 680px. */
+const thumbGrid: Partial<Record<number, { cols: string; aspect: string }>> = {
+  2: { cols: "grid-cols-2", aspect: "aspect-[332/150]" },
+  3: { cols: "grid-cols-3", aspect: "aspect-[217/150]" },
+  4: { cols: "grid-cols-4", aspect: "aspect-[158/150]" },
+};
+
+/** pen: product detail Gallery — 640px main photo and up to four 150px thumbnails. */
 export function ProductGallery({
   photos,
   badge,
@@ -20,6 +87,7 @@ export function ProductGallery({
   const t = useMessages(productMessages);
   const [index, setIndex] = useState(0);
   const current = photos[index];
+  const thumbs = thumbGrid[photos.length] ?? thumbGrid[4]!;
 
   return (
     <section
@@ -28,15 +96,12 @@ export function ProductGallery({
     >
       <div className="relative w-full">
         <div className="relative aspect-[680/640] w-full overflow-hidden rounded-m bg-oat">
-          <Image
-            key={current.src}
-            src={current.src}
+          <GalleryImage
+            key={index}
+            photo={current}
             alt={current.alt}
-            fill
             priority={index === 0}
-            quality={100}
             sizes="(min-width: 1280px) 680px, (min-width: 1024px) 560px, 100vw"
-            className="object-cover"
           />
         </div>
         {badge && index === 0 ? (
@@ -51,7 +116,8 @@ export function ProductGallery({
           </Sticker>
         ) : null}
       </div>
-      <div className="grid w-full grid-cols-4 gap-3 sm:gap-4">
+      {/* Two to four thumbnails, one column each, so the row always spans the photo. */}
+      <div className={cn("grid w-full gap-3 sm:gap-4", thumbs.cols)}>
         {photos.map((photo, i) => (
           <button
             key={i}
@@ -60,18 +126,12 @@ export function ProductGallery({
             aria-label={t.showPhoto(photo.alt)}
             aria-pressed={i === index}
             className={cn(
-              "relative aspect-[158/150] w-full overflow-hidden rounded-sm bg-oat transition-opacity hover:opacity-90",
+              "relative w-full overflow-hidden rounded-sm bg-oat transition-opacity hover:opacity-90",
+              thumbs.aspect,
               i === index && "after:absolute after:inset-0 after:rounded-sm after:inset-ring-2 after:inset-ring-border",
             )}
           >
-            <Image
-              src={photo.src}
-              alt=""
-              fill
-              quality={100}
-              sizes="(min-width: 1280px) 158px, 25vw"
-              className="object-cover"
-            />
+            <GalleryImage photo={photo} alt="" sizes="(min-width: 1280px) 220px, 33vw" />
           </button>
         ))}
       </div>

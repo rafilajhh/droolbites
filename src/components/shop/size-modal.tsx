@@ -104,7 +104,11 @@ function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: (
               aria-busy={pending || undefined}
               onClick={() => add(variant.id, qty, onClose)}
             >
-              {t.addToCart(formatRupiah(variant.price * qty))}
+              <span>
+                {t.addVerb}
+                <span className="max-sm:sr-only">{t.addRest}</span>
+                {` · ${formatRupiah(variant.price * qty)}`}
+              </span>
             </Button>
           </div>
           {failed ? (

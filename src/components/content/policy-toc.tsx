@@ -61,7 +61,7 @@ export function PolicyToc({ heading, items }: { heading: string; items: { id: st
   }, [items]);
 
   return (
-    <nav aria-label={heading} className="flex w-full flex-col gap-1.5 lg:sticky lg:top-8 lg:w-[300px] lg:shrink-0 lg:self-start">
+    <nav aria-label={heading} className="flex w-full flex-col gap-1.5 lg:sticky lg:top-24 lg:w-[300px] lg:shrink-0 lg:self-start">
       <p className="font-mono text-xs leading-[18px] font-semibold tracking-[1px] text-muted-foreground">{heading}</p>
       {items.map((item) => {
         const isActive = item.id === active;

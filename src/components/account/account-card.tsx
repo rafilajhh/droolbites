@@ -14,7 +14,7 @@ export function AccountCard({
     <section
       id={id}
       aria-labelledby={`${id}-title`}
-      className="flex w-full scroll-mt-6 flex-col gap-6 rounded-m bg-white p-5 inset-ring-1 inset-ring-border-subtle sm:p-8"
+      className="flex w-full scroll-mt-[88px] flex-col gap-6 rounded-m bg-white p-5 inset-ring-1 inset-ring-border-subtle sm:p-8"
     >
       <div className="flex flex-col gap-1">
         <h2 id={`${id}-title`} className="font-display text-[28px] leading-[31px] font-bold text-foreground">
