@@ -83,22 +83,16 @@ async function main() {
       return u.fullName;
     });
 
-    await check("Existing password customer with the same email (any case) gets linked; password kept", async () => {
+    await check("Existing customer with the same email (any case) is NOT linked (pre-hijacking guard)", async () => {
       const existing = await prisma.user.create({
         data: { fullName: "Linked Customer", email: `linkme-${RUN}@example.test`, passwordHash: "$2b$10$keepThisHashUnchangedForTheTestxxxxxxxxxxxxxxxxxxxxxx", role: "customer" },
       });
       created.push(existing.id);
       const r = await linkGoogleAccount(prisma, claims({ sub: `g-${RUN}-link`, email: `LinkMe-${RUN}@Example.test` }));
-      assert(r.ok && !r.created && r.userId === existing.id, `got ${r.ok ? r.userId : r.reason}`);
+      assert(!r.ok && r.reason === "exists", JSON.stringify(r, (_, v) => (typeof v === "bigint" ? v.toString() : v)));
       const u = await prisma.user.findUniqueOrThrow({ where: { id: existing.id } });
-      assert(u.googleId === `g-${RUN}-link` && u.passwordHash === existing.passwordHash, `${u.googleId} ${u.passwordHash}`);
-      return `user ${u.id} linked`;
-    });
-
-    await check("A different Google account with that linked customer's email is refused (no takeover)", async () => {
-      const r = await linkGoogleAccount(prisma, claims({ sub: `g-${RUN}-other`, email: `linkme-${RUN}@example.test` }));
-      assert(!r.ok && r.reason === "conflict", JSON.stringify(r, (_, v) => (typeof v === "bigint" ? v.toString() : v)));
-      return "conflict";
+      assert(u.googleId === null && u.passwordHash === existing.passwordHash, `${u.googleId} ${u.passwordHash}`);
+      return `user ${u.id} untouched`;
     });
 
     await check("Admin email is refused and the admin row is not changed", async () => {

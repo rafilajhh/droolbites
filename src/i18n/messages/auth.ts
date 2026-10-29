@@ -39,6 +39,7 @@ export const authMessages = defineMessages({
       errors: {
         google: "We couldn't sign you in with Google. Try again, or use your email and password.",
         google_admin: "This email belongs to a store admin. Admins sign in with their password on the admin sign-in page.",
+        google_exists: "An account with this email already exists. Sign in with your email and password instead.",
         google_cancelled: "Google sign-in was cancelled. Try again, or use your email and password.",
       },
     },
@@ -140,6 +141,7 @@ export const authMessages = defineMessages({
       errors: {
         google: "Gagal masuk dengan Google. Coba lagi, atau pakai email dan kata sandi.",
         google_admin: "Email ini milik admin toko. Admin masuk dengan kata sandi lewat halaman masuk admin.",
+        google_exists: "Email ini sudah punya akun. Masuk pakai email dan kata sandi ya.",
         google_cancelled: "Masuk dengan Google dibatalkan. Coba lagi, atau pakai email dan kata sandi.",
       },
     },

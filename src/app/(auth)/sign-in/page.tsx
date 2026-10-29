@@ -23,7 +23,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
   const signUpHref = nextPath ? `/sign-up?next=${encodeURIComponent(nextPath)}` : "/sign-up";
   const googleHref = nextPath ? `/auth/google?next=${encodeURIComponent(nextPath)}` : "/auth/google";
   // Set by /auth/google/callback; only known codes are shown.
-  const googleError = error === "google" || error === "google_admin" || error === "google_cancelled" ? t.google.errors[error] : null;
+  const googleError = error === "google" || error === "google_admin" || error === "google_exists" || error === "google_cancelled" ? t.google.errors[error] : null;
 
   return (
     <AuthShell photo="hero-cookies" quote={t.signIn.quote}>

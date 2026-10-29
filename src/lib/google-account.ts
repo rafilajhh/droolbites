@@ -11,7 +11,7 @@ export type GoogleClaims = { sub: string; email: string; name: string | null };
 
 export type GoogleLinkResult =
   | { ok: true; userId: bigint; created: boolean }
-  | { ok: false; reason: "admin" | "conflict" };
+  | { ok: false; reason: "admin" | "exists" };
 
 const ISSUERS = new Set(["accounts.google.com", "https://accounts.google.com"]);
 const FULL_NAME_MAX = 100; // users.full_name
@@ -37,9 +37,11 @@ export function parseGoogleClaims(raw: unknown, clientId: string, now = Date.now
 }
 
 /**
- * Finds the user for a Google sign-in: by Google id first, then by email (a
- * customer gets linked; an admin is refused because admins sign in with their
- * password at /admin/sign-in), otherwise creates a customer without a password.
+ * Finds the user for a Google sign-in by Google id, otherwise creates a customer
+ * without a password. An email that already has an account is never linked:
+ * sign-up and profile edits don't verify addresses, so that row may belong to
+ * someone else (account pre-hijacking). Its owner signs in with the password;
+ * admins always use /admin/sign-in.
  */
 export async function linkGoogleAccount(prisma: PrismaClient, claims: GoogleClaims): Promise<GoogleLinkResult> {
   const select = { id: true, role: true, googleId: true } as const;
@@ -48,13 +50,7 @@ export async function linkGoogleAccount(prisma: PrismaClient, claims: GoogleClai
   if (byGoogle) return byGoogle.role === "admin" ? { ok: false, reason: "admin" } : { ok: true, userId: byGoogle.id, created: false };
 
   const byEmail = await prisma.user.findUnique({ where: { email: claims.email }, select });
-  if (byEmail) {
-    if (byEmail.role === "admin") return { ok: false, reason: "admin" };
-    // Already linked to a different Google account: do not let a second one take it over.
-    if (byEmail.googleId) return { ok: false, reason: "conflict" };
-    await prisma.user.update({ where: { id: byEmail.id }, data: { googleId: claims.sub } });
-    return { ok: true, userId: byEmail.id, created: false };
-  }
+  if (byEmail) return { ok: false, reason: byEmail.role === "admin" ? "admin" : "exists" };
 
   const fullName = (claims.name ?? claims.email.split("@")[0]).slice(0, FULL_NAME_MAX).trim() || claims.email.slice(0, FULL_NAME_MAX);
   try {

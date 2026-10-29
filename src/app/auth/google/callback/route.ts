@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   for (const name of Object.values(GOOGLE_COOKIES)) jar.delete({ name, path: GOOGLE_COOKIE_OPTIONS.path });
 
   const go = (location: string) => new Response(null, { status: 302, headers: { Location: location, "Cache-Control": "no-store" } });
-  const fail = (error: "google" | "google_admin" | "google_cancelled") =>
+  const fail = (error: "google" | "google_admin" | "google_exists" | "google_cancelled") =>
     go(`/sign-in?error=${error}${next !== "/account" ? `&next=${encodeURIComponent(next)}` : ""}`);
 
   const client = googleClient();
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
   } catch {
     return fail("google");
   }
-  if (!result.ok) return fail(result.reason === "admin" ? "google_admin" : "google");
+  if (!result.ok) return fail(result.reason === "admin" ? "google_admin" : "google_exists");
 
   await createSession({ userId: result.userId.toString(), role: "customer" });
   return go(next);
