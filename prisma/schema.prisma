@@ -70,8 +70,10 @@ model User {
   fullName     String    @map("full_name") @db.VarChar(100)
   email        String    @unique @db.VarChar(150)
   phone        String?   @db.VarChar(20)
-  passwordHash String    @map("password_hash") @db.VarChar(255)
-  role         UserRole  @default(customer)
+  // Null for accounts created with "Continue with Google" until a password is set via reset.
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  googleId     String?   @unique @map("google_id") @db.VarChar(255)
+  role        UserRole  @default(customer)
   address      String?   @db.VarChar(255)
   city         String?   @db.VarChar(100)
   postalCode   String?   @map("postal_code") @db.VarChar(10)

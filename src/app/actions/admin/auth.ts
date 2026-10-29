@@ -32,7 +32,7 @@ export async function adminSignIn(_prev: AdminSignInState, formData: FormData): 
     select: { id: true, role: true, passwordHash: true },
   });
   const ok = await bcrypt.compare(parsed.data.password, user?.passwordHash ?? DUMMY_HASH);
-  if (!user || !ok || user.role !== "admin") {
+  if (!user?.passwordHash || !ok || user.role !== "admin") {
     recordSignInFailure(ip, parsed.data.email);
     return { error: "invalid", email };
   }

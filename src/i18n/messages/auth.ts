@@ -33,6 +33,15 @@ export const authMessages = defineMessages({
       generic: "Something went wrong. Please try again.",
       tooManyAttempts: "Too many attempts. Try again in a few minutes.",
     },
+    google: {
+      continue: "CONTINUE WITH GOOGLE",
+      or: "or",
+      errors: {
+        google: "We couldn't sign you in with Google. Try again, or use your email and password.",
+        google_admin: "This email belongs to a store admin. Admins sign in with their password on the admin sign-in page.",
+        google_cancelled: "Google sign-in was cancelled. Try again, or use your email and password.",
+      },
+    },
     signIn: {
       metaTitle: "Sign in",
       quote: "Soft centers are waiting for you.",
@@ -124,6 +133,15 @@ export const authMessages = defineMessages({
       invalidLogin: "Email atau kata sandi salah.",
       generic: "Ada yang salah. Coba lagi, ya.",
       tooManyAttempts: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi, ya.",
+    },
+    google: {
+      continue: "LANJUT DENGAN GOOGLE",
+      or: "atau",
+      errors: {
+        google: "Gagal masuk dengan Google. Coba lagi, atau pakai email dan kata sandi.",
+        google_admin: "Email ini milik admin toko. Admin masuk dengan kata sandi lewat halaman masuk admin.",
+        google_cancelled: "Masuk dengan Google dibatalkan. Coba lagi, atau pakai email dan kata sandi.",
+      },
     },
     signIn: {
       metaTitle: "Masuk",

@@ -47,6 +47,9 @@ services:
       APP_URL: http://localhost:8080
       SMTP_HOST: mailpit
       SMTP_PORT: "1025"
+      # "Continue with Google": empty hides the button. Redirect URI http://localhost:8080/auth/google/callback.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
       - "8080:3000"
     volumes:

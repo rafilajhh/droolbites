@@ -73,8 +73,9 @@ export async function signIn(_prev: AuthState, formData: FormData): Promise<Auth
     where: { email },
     select: { id: true, role: true, passwordHash: true },
   });
+  // Unknown email or a Google-only account (no password): compare anyway so timing matches, then fail.
   const ok = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
-  if (!user || !ok) {
+  if (!user?.passwordHash || !ok) {
     recordSignInFailure(ip, email);
     return { formError: "invalidLogin", values: { email }, attempt };
   }

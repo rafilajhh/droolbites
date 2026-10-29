@@ -604,6 +604,66 @@ try {
     return `${links.size} unique internal links OK`;
   });
 
+  // ============================================================ US-008 Continue with Google
+  // Adaptive: the dev server's env decides whether Google is configured (GOOGLE_CLIENT_ID + SECRET).
+  const googleStart = await fetch(BASE + "/auth/google?next=%2Fcheckout", { redirect: "manual" });
+  const googleLocation = googleStart.headers.get("location") ?? "";
+  const googleOn = googleLocation.startsWith("https://accounts.google.com/");
+  await check("US-008.1", `Google ${googleOn ? "configured" : "not configured"}: /auth/google ${googleOn ? "-> Google (code, PKCE S256, openid email profile, callback, state) + oauth cookies" : "-> /sign-in"}`, async () => {
+    assert(googleStart.status >= 300 && googleStart.status < 400, `status ${googleStart.status}`);
+    if (!googleOn) {
+      assert(new URL(googleLocation, BASE).pathname === "/sign-in", `location ${googleLocation}`);
+      return googleLocation;
+    }
+    const u = new URL(googleLocation);
+    const p = u.searchParams;
+    const scopes = (p.get("scope") ?? "").split(" ");
+    assert(p.get("response_type") === "code", `response_type ${p.get("response_type")}`);
+    assert(p.get("code_challenge_method") === "S256" && p.get("code_challenge"), "no PKCE S256");
+    assert(["openid", "email", "profile"].every((s) => scopes.includes(s)), `scope ${p.get("scope")}`);
+    assert(p.get("redirect_uri") === `${BASE}/auth/google/callback`, `redirect_uri ${p.get("redirect_uri")}`);
+    const state = p.get("state");
+    assert(state && p.get("client_id"), "no state / client_id");
+    const cookies = googleStart.headers.getSetCookie();
+    const jar = Object.fromEntries(cookies.map((c) => [c.split("=")[0], c]));
+    assert(jar.g_oauth_state?.startsWith(`g_oauth_state=${state};`), "state cookie != state param");
+    assert(jar.g_oauth_verifier && jar.g_oauth_next?.startsWith("g_oauth_next=%2Fcheckout;"), "verifier/next cookies missing");
+    assert(cookies.every((c) => /HttpOnly/i.test(c) && /SameSite=lax/i.test(c) && /Path=\/auth\/google/i.test(c) && /Max-Age=600/i.test(c)), cookies.join(" | "));
+    return `${u.origin}${u.pathname} scope="${p.get("scope")}" redirect_uri=${p.get("redirect_uri")}`;
+  });
+
+  for (const route of ["/sign-in?next=%2Fcheckout", "/sign-up?next=%2Fcheckout"]) {
+    await check("US-008.2", `${route.split("?")[0]} ${googleOn ? "shows" : "hides"} the Continue with Google button`, async () => {
+      const r = await get(route);
+      assert(r.status === 200, `status ${r.status}`);
+      const hrefs = [...r.text.matchAll(/href="(\/auth\/google[^"]*)"/g)].map((m) => m[1].replace(/&amp;/g, "&"));
+      if (!googleOn) {
+        assert(hrefs.length === 0, `button present: ${hrefs.join(", ")}`);
+        return "hidden";
+      }
+      assert(hrefs.length === 1 && hrefs[0] === "/auth/google?next=%2Fcheckout", `hrefs ${JSON.stringify(hrefs)}`);
+      assert(/CONTINUE WITH GOOGLE/.test(r.text), "label missing");
+      return hrefs[0];
+    });
+  }
+
+  await check("US-008.3", "/auth/google/callback?state=x&code=y without oauth cookies -> /sign-in?error=google (cancel -> google_cancelled, alert shown)", async () => {
+    const r = await fetch(BASE + "/auth/google/callback?state=x&code=y", { redirect: "manual" });
+    const loc = new URL(r.headers.get("location") ?? "", BASE);
+    if (!googleOn) {
+      assert(loc.pathname === "/sign-in", `location ${loc}`);
+      return `${loc.pathname}${loc.search}`;
+    }
+    assert(loc.pathname === "/sign-in" && loc.searchParams.get("error") === "google", `location ${loc.pathname}${loc.search}`);
+    assert(!(r.headers.get("set-cookie") ?? "").includes("db_session=ey"), "a session was created");
+    const cancel = await fetch(BASE + "/auth/google/callback?error=access_denied&state=x", { redirect: "manual" });
+    const cancelLoc = new URL(cancel.headers.get("location") ?? "", BASE);
+    assert(cancelLoc.searchParams.get("error") === "google_cancelled", `cancel -> ${cancelLoc.pathname}${cancelLoc.search}`);
+    const page = await get(`${cancelLoc.pathname}${cancelLoc.search}`);
+    assert(/role="alert"[^>]*>Google sign-in was cancelled/.test(page.text), "cancel alert not shown");
+    return `${loc.pathname}${loc.search}; cancel -> ${cancelLoc.search}`;
+  });
+
   const consoleRoutes = [
     ["/", guest], ["/menu", guest], ["/menu/chocolate-chunk", guest], ["/our-story", guest], ["/location", guest], ["/faq", guest],
     ["/sign-in", await newCtx()], ["/account", alya], ["/admin", admin],
