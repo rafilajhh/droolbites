@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { formatOpeningHours } from "@/components/content/hours";
 import { getLocale, getMessages } from "@/i18n/server";
 import { commonMessages } from "@/i18n/messages/common";
@@ -27,16 +26,6 @@ export async function AnnouncementBar() {
             {a.hours(formatOpeningHours(settings, locale))}
           </span>
         </span>
-        <Link
-          href="/menu"
-          className="group relative inline-flex items-center gap-1 underline decoration-white/60 decoration-1 underline-offset-[3px] after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:decoration-white"
-        >
-          {a.cta}
-          <ArrowRight
-            className="size-3.5 transition-transform duration-200 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none"
-            aria-hidden
-          />
-        </Link>
       </p>
     </aside>
   );

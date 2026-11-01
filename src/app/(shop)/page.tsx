@@ -68,9 +68,9 @@ export default async function HomePage() {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col">
       {/* Hero */}
       <section className="w-full px-3 pb-3 sm:px-6 sm:pb-6">
+        {/* A full-bleed panel with content over the photo: no photoFrame ring, its own edge is enough. */}
         <div className={cn(
-            photoFrame,
-            "flex min-h-[620px] w-full flex-col items-center justify-center gap-6 [--focus-ring:var(--white)] px-5 py-16 text-center sm:gap-7 lg:h-[720px] lg:px-40 lg:py-0",
+            "relative flex min-h-[620px] overflow-hidden rounded-m w-full flex-col items-center justify-center gap-6 [--focus-ring:var(--white)] px-5 py-16 text-center sm:gap-7 lg:h-[720px] lg:px-40 lg:py-0",
           )}>
           <Image
             src="/images/site/hero-background.png"

@@ -8,7 +8,6 @@ export const commonMessages = defineMessages({
       fresh: "Baked fresh every morning in Surabaya",
       hoursLabel: "Hours:",
       hours: (hours: string) => `${hours} WIB`,
-      cta: "See the menu",
     },
     header: {
       openMenu: "Open menu",
@@ -88,7 +87,6 @@ export const commonMessages = defineMessages({
       fresh: "Dipanggang segar setiap pagi di Surabaya",
       hoursLabel: "Jam buka:",
       hours: (hours: string) => `${hours} WIB`,
-      cta: "Lihat menu",
     },
     header: {
       openMenu: "Buka menu",
