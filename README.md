@@ -49,7 +49,31 @@ Other devices on the same Wi-Fi can open `http://<laptop-ip>:8080` (only the app
 
 Sign-in and password-reset rate limits key on the client IP only when `TRUST_PROXY=1` (set it when the app runs behind one reverse proxy that sets `X-Real-IP` / `X-Forwarded-For`, e.g. nginx on a VPS). Without it those headers are ignored, since anyone can fake them, and limits apply per email address plus one shared bucket for all clients.
 
+## Deploy (VPS)
+
+Production runs on a VPS behind the host's nginx (HTTPS via certbot) at https://droolbites.biz.id: MySQL and the app run in Docker, the app listens only on `127.0.0.1:3010` and MySQL has no host port. Step-by-step guide (Bahasa Indonesia): [docs/deploy-vps.md](docs/deploy-vps.md).
+
+```bash
+cp .env.production.example .env                                    # fill in secrets (openssl rand ...)
+docker compose -f compose.yml -f compose.prod.yml up -d --build    # db + migrations + app
+docker compose -f compose.yml -f compose.prod.yml run --rm -e ADMIN_EMAIL -e ADMIN_PASSWORD \
+  migrate npx tsx prisma/seed-production.ts                         # menu, store settings, one admin
+# then install deploy/nginx/droolbites.conf and get the certificate (see the guide)
+```
+
+| File | Purpose |
+|---|---|
+| `compose.prod.yml` | Production override: secrets from `.env`, no MySQL/Mailpit ports, `TRUST_PROXY=1`, app on `127.0.0.1:3010` |
+| `deploy/nginx/droolbites.conf` | nginx site: HTTP → HTTPS, `www` → apex, security headers, proxy to the app |
+| `.env.production.example` | Production env template (no real values) |
+| `prisma/seed-production.ts` | Idempotent seed: catalog (`prisma/catalog.ts`, shared with the demo seed), store settings, one admin from `ADMIN_EMAIL` / `ADMIN_PASSWORD` |
+| `scripts/backup-db.sh` | `mysqldump` to `backups/`, keeps the newest 14 |
+
+Email is optional: with `SMTP_HOST` empty the app sends no email (one warning in the log) and everything else keeps working.
+
 ## Accounts and demo data
+
+Demo seed only (`npm run db:seed`), for local development. Never run it in production: it wipes the database and creates these well-known passwords.
 
 | Who | Email | Password |
 |---|---|---|
@@ -99,7 +123,14 @@ FAKE_BELIBAYAR_SECRET=local-secret node scripts/fake-belibayar.mjs     # http://
 | `npm run db:up` | Start MySQL + Mailpit |
 | `npm run db:migrate` | Create a new migration from schema changes |
 | `npm run db:seed` | Reset demo data |
+| `node scripts/e2e.mjs` | End-to-end run against the dev server on :3000 (needs `PAYMENT_PROVIDER=mock`) |
+| `npx tsx scripts/google-auth.test.ts` | Unit tests for Google sign-in claims and account linking |
+| `npx tsx scripts/check-cn.ts` | Sanity check for the `cn()` class merger |
+| `node scripts/fake-belibayar.mjs` | Local stand-in for the Belibayar API (see [Payments](#payments)) |
 | `node scripts/shot.mjs <route> --ref <penFrameId>` | Screenshot a page and diff it against the pen frame |
+| `node scripts/diff-all.mjs` | Diff every pen frame listed in `scripts/frames.json`, report in `.shots/report.md` |
+| `node scripts/session-token.mjs` / `mint.mjs` | Signed cookies and tokens for screenshots of signed-in states |
+| `bash scripts/backup-db.sh` | Production database backup (VPS) |
 
 ## Project layout
 
@@ -112,8 +143,9 @@ src/components       ui/ (pen design-system components), layout/, and one folder
 src/i18n             language setup and EN/ID messages per area
 src/lib              database, session, cart, catalog, settings, payments, mail
 src/content          product copy the database does not store
-prisma               schema, migrations, seed
-docs                 build conventions
+prisma               schema, migrations, demo + production seeds, shared catalog
+docs                 build conventions, VPS deploy guide
+deploy               nginx site for the VPS
 ```
 
 See `docs/ui-conventions.md` for how pages are built from the design.

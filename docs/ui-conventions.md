@@ -6,7 +6,7 @@ The pen file is the binding visual spec. At 1440px wide every page must match it
 
 | What | Where |
 |---|---|
-| Live pen file (read with the pencil MCP `execute` tool) | `C:/Users/Lenovo/OneDrive/Dokumen/Kuliah/Semester 3/Pemweb/Figma/droolbites.pen` |
+| Live pen file (read with the pencil MCP `execute` tool) | `droolbites.pen`, kept outside the repo in the course folder (`Pemweb/Figma/`) |
 | 1x PNG of each frame | `../droolbites-design/ref/<frameId>.png` |
 | HTML + Tailwind export of each frame (exact px values, `data-pencil-name`/`data-pencil-id` attributes) | `../droolbites-design/html/<frameId>.html` |
 | Plain list of every visible text per frame | `../droolbites-design/texts/<frameId>.txt` |
