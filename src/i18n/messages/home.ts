@@ -59,6 +59,12 @@ export const homeMessages = defineMessages({
         link: "Order for a crowd",
         alt: "A party table with brownie trays, cookies and tiramisu",
       },
+      kitchen: {
+        title: "Fresh from our kitchen",
+        body: "Every batch is scooped, baked and packed by hand in our Surabaya kitchen each morning.",
+        link: "Read our story",
+        alt: "Two bakers scooping cookie dough in the Droolbites kitchen",
+      },
     },
     reviews: {
       title: "One try, and they're back for more.",
@@ -146,6 +152,12 @@ export const homeMessages = defineMessages({
         body: "Loyang brownies dan sepiring cookies untuk ulang tahun, arisan dan rehat kantor.",
         link: "Pesan untuk rombongan",
         alt: "Meja pesta dengan loyang brownies, cookies dan tiramisu",
+      },
+      kitchen: {
+        title: "Segar dari dapur kami",
+        body: "Setiap batch disendok, dipanggang dan dikemas dengan tangan di dapur kami di Surabaya setiap pagi.",
+        link: "Baca cerita kami",
+        alt: "Dua baker menyendok adonan cookies di dapur Droolbites",
       },
     },
     reviews: {

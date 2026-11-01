@@ -26,7 +26,7 @@ export async function ProductReviews({ slug }: { slug: string }) {
         <h2 id="reviews-title" className="type-section font-display text-balance font-bold text-foreground">
           {t.reviews.title}
         </h2>
-        <Sticker className="mt-2 ml-1 gap-2">
+        <Sticker className="mt-2 ml-1 rotate-0 gap-2">
           <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
           <span className="sr-only">{t.rating.rated} </span>
           {formatRating(rating.value, locale)}

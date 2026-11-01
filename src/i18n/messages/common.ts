@@ -5,6 +5,7 @@ export const commonMessages = defineMessages({
   en: {
     announce: {
       label: "Store news",
+      fresh: "Baked fresh every morning in Surabaya",
       hoursLabel: "Hours:",
       hours: (hours: string) => `${hours} WIB`,
     },
@@ -83,6 +84,7 @@ export const commonMessages = defineMessages({
   id: {
     announce: {
       label: "Info toko",
+      fresh: "Dipanggang segar setiap pagi di Surabaya",
       hoursLabel: "Jam buka:",
       hours: (hours: string) => `${hours} WIB`,
     },

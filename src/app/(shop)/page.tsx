@@ -242,7 +242,7 @@ export default async function HomePage() {
       {/* Occasions */}
       <section className={cn("section-y flex w-full flex-col gap-6 lg:gap-8", px)} aria-labelledby="home-occasions">
         <SectionHead id="home-occasions" eyebrowText={t.occasions.eyebrow} title={t.occasions.title} />
-        <div className="grid w-full grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-2">
+        <div className="grid w-full grid-cols-1 gap-x-6 gap-y-8 md:grid-cols-3">
           <OccasionCard
             image="/images/site/gift-box.png"
             alt={t.occasions.gifting.alt}
@@ -258,6 +258,14 @@ export default async function HomePage() {
             body={t.occasions.gatherings.body}
             href="/menu?category=brownies"
             linkLabel={t.occasions.gatherings.link}
+          />
+          <OccasionCard
+            image="/images/site/story-bakers.png"
+            alt={t.occasions.kitchen.alt}
+            title={t.occasions.kitchen.title}
+            body={t.occasions.kitchen.body}
+            href="/our-story"
+            linkLabel={t.occasions.kitchen.link}
           />
         </div>
       </section>
