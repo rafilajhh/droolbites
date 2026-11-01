@@ -196,7 +196,7 @@ export default async function OurStoryPage() {
               <dd className="flex items-center gap-2 font-display text-[52px] leading-none font-bold tracking-[-1px] text-foreground-inverse lg:text-[64px]">
                 {stat.value}
                 {i === numbers.length - 1 ? (
-                  <Star className="size-8 fill-accent-mustard text-accent-mustard lg:size-10" aria-hidden />
+                  <Star className="size-8 fill-highlight text-highlight lg:size-10" aria-hidden />
                 ) : null}
               </dd>
             </div>

@@ -9,21 +9,21 @@ colors:
   muted-ink: "#5b6650"
   moss: "#4e6424"
   moss-deep: "#2f4318"
-  mint: "#d6efe4"
-  crimson: "#b0153a"
+  mint: "#d5efe3"
+  crimson: "#aa052d"
   success-green: "#1e7a46"
-  mustard: "#e2b23a"
-  tint-mustard: "#fbebc0"
-  tint-lavender: "#ece4fb"
-  tint-salmon: "#f8ded5"
-  tint-lime: "#e8f3d5"
-  accent-teal: "#4fb89a"
-  accent-lavender: "#b79bea"
-  accent-orange: "#e07b1a"
-  accent-magenta: "#a3237e"
-  accent-cobalt: "#2e86b8"
-  accent-lime: "#a9d46a"
-  accent-salmon: "#e0907a"
+  mustard: "#d6a20e"
+  tint-mustard: "#fcebbe"
+  tint-lavender: "#e9e4ff"
+  tint-salmon: "#f9ded4"
+  tint-lime: "#e9f3d4"
+  accent-teal: "#3cae8b"
+  accent-lavender: "#9c88ea"
+  accent-orange: "#c67a0b"
+  accent-magenta: "#a11a79"
+  accent-cobalt: "#2b78a8"
+  accent-lime: "#a3c85b"
+  accent-salmon: "#d9876d"
   stroke-subtle: "#4e642429"
   stroke-divider: "#4e642433"
   stroke-input: "#5b665080"
@@ -285,14 +285,14 @@ Surfaces: landing (Persuade: sticky compact header, rounded hero photo panel wit
 
 ## Colors
 
-A warm-paper neutral base with one deep green and a rotating confectionery accent set.
+A warm-paper neutral base with one deep green and a rotating confectionery accent set. Every saturated color comes from the logo badge: moss is the badge background (`#4e6424`, exact), and each accent is one of the paper-cut letters (D magenta, R crimson, O teal, O salmon, L lavender, B mustard, I cobalt, E lime, S orange), sampled from `public/images/site/logo-badge.png` on 1 Nov 2026. New colors must come from the logo too.
 
 ### Primary
 - **Moss** (`colors.moss`): primary buttons, admin sidebar, all full strokes, active nav text, switch-on state.
 - **Moss Deep** (`colors.moss-deep`): primary hover, and text on the white inverse hero button.
 
 ### Secondary
-- **Mustard** (`colors.mustard`): the highlight. Hero chip fill, cart count badge, cart item-count pill. Tint-mustard is the awaiting-payment badge fill.
+- **Mustard** (`colors.mustard`, the logo's B): the highlight. The `--highlight` token is the same mustard 2% lighter (`#dda81e`) so mustard icons on moss keep 3:1. Hero chip fill, cart count badge, cart item-count pill. Tint-mustard is the awaiting-payment badge fill.
 - **Mint** (`colors.mint`): selected option tile fill, success/ready/delivery badge fill, secondary text on moss.
 
 ### Tertiary

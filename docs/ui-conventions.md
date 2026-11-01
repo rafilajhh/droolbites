@@ -23,7 +23,7 @@ The pen file is read-only for this work. Never call Insert/Update/Delete/Replace
 
 ## Tokens (src/app/globals.css)
 
-- Colors: `bg-background` (paper #FBF6EC), `text-foreground` (ink #1F2A14), `text-muted-foreground` (#5B6650), `bg-card` (oat #F3EAD7), `bg-card-accent` / `bg-mint` (#D6EFE4), `bg-primary` (moss #4E6424), `hover:bg-primary-hover`, `text-primary-foreground`, `inset-ring-border` (moss), `inset-ring-border-subtle` (#4E642429), `bg-surface-inverse`, `text-foreground-inverse`, `text-error`, `text-success`, `bg-highlight` (mustard), plus `accent-*` and `tint-*` palette (`bg-tint-lavender`, `bg-accent-teal`, …), `bg-oat`, `bg-white`, `text-ink`.
+- Colors: `bg-background` (paper #FBF6EC), `text-foreground` (ink #1F2A14), `text-muted-foreground` (#5B6650), `bg-card` (oat #F3EAD7), `bg-card-accent` / `bg-mint` (#D5EFE3), `bg-primary` (moss #4E6424), `hover:bg-primary-hover`, `text-primary-foreground`, `inset-ring-border` (moss), `inset-ring-border-subtle` (#4E642429), `bg-surface-inverse`, `text-foreground-inverse`, `text-error`, `text-success`, `bg-highlight` (mustard), plus `accent-*` and `tint-*` palette (`bg-tint-lavender`, `bg-accent-teal`, …), `bg-oat`, `bg-white`, `text-ink`.
 - Strokes the pen draws without a variable: `inset-ring-border-input` (#5B665080, form inputs) and `bg-border-divider` / `var(--border-divider)` (#4E642433, summary and timeline dividers).
 - Radius: `rounded-sm` 12 (the pen calls it `--radius-s`; Tailwind v4's own `rounded-s` is a logical start-corner utility, so never use it), `rounded-m` 20, `rounded-pill` 999.
 - Fonts: `font-display` (Bricolage Grotesque, rendered at `opsz` 96 like the pen), `font-body` (Manrope, the default), `font-mono` (IBM Plex Mono 600, also italic).

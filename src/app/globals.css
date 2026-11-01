@@ -15,22 +15,25 @@
   --white: #ffffff;
   --paper: #fbf6ec;
   --ink: #1f2a14;
-  --mint: #d6efe4;
+  --mint: #d5efe3;
   --moss: #4e6424;
   --moss-deep: #2f4318;
-  --accent-crimson: #b0153a;
-  --accent-mustard: #e2b23a;
-  --accent-teal: #4fb89a;
-  --accent-lavender: #b79bea;
-  --accent-orange: #e07b1a;
-  --accent-magenta: #a3237e;
-  --accent-cobalt: #2e86b8;
-  --accent-lime: #a9d46a;
-  --accent-salmon: #e0907a;
-  --tint-mustard: #fbebc0;
-  --tint-lavender: #ece4fb;
-  --tint-salmon: #f8ded5;
-  --tint-lime: #e8f3d5;
+  /* Accents are the letter colors of the logo badge (public/images/site/logo-badge.png),
+     sampled per letter: D magenta, R crimson, O teal, O salmon, L lavender, B mustard,
+     I cobalt, E lime, S orange. Tints keep their lightness and take each accent's hue. */
+  --accent-crimson: #aa052d;
+  --accent-mustard: #d6a20e;
+  --accent-teal: #3cae8b;
+  --accent-lavender: #9c88ea;
+  --accent-orange: #c67a0b;
+  --accent-magenta: #a11a79;
+  --accent-cobalt: #2b78a8;
+  --accent-lime: #a3c85b;
+  --accent-salmon: #d9876d;
+  --tint-mustard: #fcebbe;
+  --tint-lavender: #e9e4ff;
+  --tint-salmon: #f9ded4;
+  --tint-lime: #e9f3d4;
 
   /* semantic */
   --background: var(--paper);
@@ -47,7 +50,8 @@
   --foreground-inverse: var(--white);
   --error: var(--accent-crimson);
   --success: #1e7a46;
-  --highlight: var(--accent-mustard);
+  /* The logo's mustard nudged up 2% lightness so mustard icons on moss keep 3:1. */
+  --highlight: #dda81e;
   /* Strokes drawn in the pen without a named variable. */
   --border-divider: #4e642433; /* summary/timeline dividers */
   --border-input: #5b665080; /* Form Field input stroke */

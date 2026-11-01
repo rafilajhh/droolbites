@@ -6,12 +6,12 @@
     "colorMeta": {
       "moss": { "role": "primary", "displayName": "Moss", "canonical": "#4e6424", "tonalRamp": ["#1a2410", "#2f4318", "#3c5120", "#4e6424", "#6f8442", "#93a66d", "#bccaa0", "#e1e9d3"] },
       "moss-deep": { "role": "primary", "displayName": "Moss Deep", "canonical": "#2f4318", "tonalRamp": ["#10170a", "#1c280e", "#2f4318", "#3c5520", "#4e6c2c", "#6d8c4a", "#9ab47c", "#d3e2c0"] },
-      "mustard": { "role": "secondary", "displayName": "Mustard", "canonical": "#e2b23a", "tonalRamp": ["#4a3708", "#6e5410", "#947219", "#b88f26", "#e2b23a", "#ebc666", "#f4dc9b", "#fbebc0"] },
-      "mint": { "role": "secondary", "displayName": "Mint", "canonical": "#d6efe4", "tonalRamp": ["#2f6b54", "#4a8e72", "#78b89c", "#a5d4c0", "#c0e4d3", "#d6efe4", "#e6f6ef", "#f4fbf8"] },
+      "mustard": { "role": "secondary", "displayName": "Mustard", "canonical": "#d6a20e", "tonalRamp": ["#4a3708", "#6e5410", "#947219", "#b88f26", "#d6a20e", "#ebc666", "#f4dc9b", "#fcebbe"] },
+      "mint": { "role": "secondary", "displayName": "Mint", "canonical": "#d5efe3", "tonalRamp": ["#2f6b54", "#4a8e72", "#78b89c", "#a5d4c0", "#c0e4d3", "#d5efe3", "#e6f6ef", "#f4fbf8"] },
       "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#fbf6ec", "tonalRamp": ["#6b6355", "#8f8675", "#b3a995", "#d4c9b2", "#e8dfca", "#f3ead7", "#fbf6ec", "#fffdf9"] },
       "oat": { "role": "neutral", "displayName": "Oat", "canonical": "#f3ead7", "tonalRamp": ["#5e553f", "#82775b", "#a69a78", "#c8bb97", "#dcd0b5", "#f3ead7", "#f8f2e4", "#fcf9f1"] },
       "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#1f2a14", "tonalRamp": ["#0b0f07", "#1f2a14", "#364226", "#4d5a3c", "#5b6650", "#7f8a74", "#aab3a2", "#d5dad0"] },
-      "crimson": { "role": "semantic", "displayName": "Crimson", "canonical": "#b0153a", "tonalRamp": ["#3a0713", "#5c0d20", "#820f2d", "#b0153a", "#cf4466", "#e07a93", "#efb0bf", "#f8dde4"] }
+      "crimson": { "role": "semantic", "displayName": "Crimson", "canonical": "#aa052d", "tonalRamp": ["#3a0713", "#5c0d20", "#820f2d", "#aa052d", "#cf4466", "#e07a93", "#efb0bf", "#f8dde4"] }
     },
     "typographyMeta": {
       "display": { "displayName": "Display", "purpose": "Landing hero h1 only; Bricolage 700 stepping 52/80/112px." },
@@ -78,7 +78,7 @@
       "refersTo": "status-badge",
       "description": "Dot plus label on a tinted pill (Baking tone shown).",
       "html": "<span class=\"ds-badge\"><i class=\"ds-dot\"></i>Baking</span>",
-      "css": ".ds-badge{display:inline-flex;align-items:center;gap:8px;background:#ece4fb;color:#1f2a14;padding:6px 12px;border-radius:999px;font:600 13px/16px Manrope,sans-serif}.ds-dot{width:8px;height:8px;border-radius:50%;background:#b79bea}"
+      "css": ".ds-badge{display:inline-flex;align-items:center;gap:8px;background:#e9e4ff;color:#1f2a14;padding:6px 12px;border-radius:999px;font:600 13px/16px Manrope,sans-serif}.ds-dot{width:8px;height:8px;border-radius:50%;background:#9c88ea}"
     },
     {
       "name": "Option Tile (selected)",
@@ -86,7 +86,7 @@
       "refersTo": "option-tile-selected",
       "description": "Radio card: mint fill, 1.5px moss stroke when checked.",
       "html": "<label class=\"ds-tile\">Delivery</label>",
-      "css": ".ds-tile{display:flex;width:260px;align-items:center;gap:14px;background:#d6efe4;color:#1f2a14;padding:18px 20px;border-radius:12px;box-shadow:inset 0 0 0 1.5px #4e6424;font:600 15px Manrope,sans-serif}"
+      "css": ".ds-tile{display:flex;width:260px;align-items:center;gap:14px;background:#d5efe3;color:#1f2a14;padding:18px 20px;border-radius:12px;box-shadow:inset 0 0 0 1.5px #4e6424;font:600 15px Manrope,sans-serif}"
     },
     {
       "name": "Admin Sidebar Item",
