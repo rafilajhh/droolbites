@@ -32,7 +32,6 @@ export const homeMessages = defineMessages({
       eyebrow: "FUDGY BROWNIES",
       title: "Brownies for sharing. Or not.",
       sizes: "Tray sizes and prices",
-      cta: "CHOOSE A SIZE",
     },
     tiramisu: {
       eyebrow: "TIRAMISU",
@@ -126,7 +125,6 @@ export const homeMessages = defineMessages({
       eyebrow: "FUDGY BROWNIES",
       title: "Brownies buat berbagi. Atau tidak.",
       sizes: "Ukuran loyang dan harga",
-      cta: "PILIH UKURAN",
     },
     tiramisu: {
       eyebrow: "TIRAMISU",

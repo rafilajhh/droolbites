@@ -2,16 +2,16 @@ import Image from "next/image";
 import Link from "next/link";
 import { MapPin, QrCode, Store, Truck } from "lucide-react";
 import { directionsUrl } from "@/components/content/hours";
+import { BrowniePicker } from "@/components/home/brownie-picker";
 import { ReviewBand } from "@/components/home/review-band";
 import { Chip } from "@/components/ui/badges";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { Cutout, Snapshot, photoFrame } from "@/components/ui/snapshot";
-import { SizePickerButton } from "@/components/shop/add-to-cart";
 import { MenuItemCard } from "@/components/shop/menu-item-card";
 import { OccasionCard } from "@/components/shop/occasion-card";
 import { toShopCategories } from "@/components/shop/shop-product";
 import { UspMarquee } from "@/components/shop/usp-marquee";
-import { brownieServingsShort, productContent, productLong } from "@/content/products";
+import { productContent, productLong } from "@/content/products";
 import { getLocale, getMessages } from "@/i18n/server";
 import { homeMessages } from "@/i18n/messages/home";
 import { storyMessages } from "@/i18n/messages/pages/story";
@@ -142,17 +142,15 @@ export default async function HomePage() {
       {brownies && brownieRow ? (
         <section className="w-full px-3 sm:px-6" aria-labelledby="home-brownies">
           <div className="panel-y flex w-full flex-col items-center gap-6 rounded-m bg-tint-lavender px-5 sm:px-10 lg:flex-row lg:gap-16 lg:px-16">
-            <div className="relative aspect-[560/500] w-full max-w-[560px] shrink-0">
-              <div className={cn(photoFrame, "absolute top-[6%] left-[3.5714%] h-[88%] w-[92.857%] bg-oat")}>
-                <Image
-                  src={brownies.imageUrl}
-                  alt={t.browniesAlt}
-                  fill
-                  quality={100}
-                  sizes="(min-width: 1024px) 520px, 90vw"
-                  className="object-cover"
-                />
-              </div>
+            <div className={cn(photoFrame, "aspect-[560/500] w-full max-w-[560px] shrink-0 bg-oat")}>
+              <Image
+                src={brownies.imageUrl}
+                alt={t.browniesAlt}
+                fill
+                quality={100}
+                sizes="(min-width: 1024px) 560px, 90vw"
+                className="object-cover"
+              />
             </div>
             <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6">
               <p className={eyebrow}>{t.brownies.eyebrow}</p>
@@ -162,28 +160,7 @@ export default async function HomePage() {
               <p className="text-pretty text-base leading-normal text-muted-foreground lg:text-lg">
                 {productLong(brownieRow.slug, brownieRow.description, locale)}
               </p>
-              <dl className="flex w-full flex-col" aria-label={t.brownies.sizes}>
-                {brownies.variants.map((v) => {
-                  const serves = brownieServingsShort[v.name]?.[locale];
-                  return (
-                    <div
-                      key={v.id}
-                      className="flex w-full items-center gap-4 py-4 shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--border)_20%,transparent)]"
-                    >
-                      <dt className="flex-1 font-display text-lg leading-[22px] font-semibold whitespace-nowrap text-foreground lg:text-xl lg:leading-[24px]">
-                        {v.name}
-                      </dt>
-                      {serves ? <dd className="text-sm leading-normal text-muted-foreground">{serves}</dd> : null}
-                      <dd className="w-[92px] text-right text-base leading-normal font-bold text-foreground lg:w-[110px]">
-                        {formatRupiah(v.price)}
-                      </dd>
-                    </div>
-                  );
-                })}
-              </dl>
-              <SizePickerButton product={brownies} className={buttonClasses("primary")}>
-                {t.brownies.cta}
-              </SizePickerButton>
+              <BrowniePicker product={brownies} legend={t.brownies.sizes} />
             </div>
           </div>
         </section>
