@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowUpRight, Search, X } from "lucide-react";
+import { ArrowRight, Search, X } from "lucide-react";
 import { useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { buttonClasses } from "@/components/ui/button";
@@ -85,8 +85,8 @@ export function NavMenu({ accountHref, email }: { accountHref: string; email: st
                 >
                   {link.label}
                 </span>
-                <ArrowUpRight
-                  className="size-[26px] shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-0"
+                <ArrowRight
+                  className="size-[26px] shrink-0 transition-transform group-hover:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
                   aria-hidden
                 />
               </Link>

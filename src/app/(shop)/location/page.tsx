@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Clock, Landmark, MapPin, Motorbike, Quote, Smartphone, Star } from "lucide-react";
+import { Landmark, MapPin, Motorbike, Quote, Smartphone, Star } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
 import { directionsUrl, formatOpeningHours, halfHourBefore } from "@/components/content/hours";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink, buttonClasses } from "@/components/ui/button";
-import { Cutout, Snapshot, photoFrame } from "@/components/ui/snapshot";
+import { Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { locationMessages } from "@/i18n/messages/pages/location";
 import { getLocale, getMessages } from "@/i18n/server";
 import { cn } from "@/lib/cn";
@@ -51,7 +51,7 @@ export default async function LocationPage() {
       </section>
 
       <section className="flex w-full flex-col gap-6 px-4 sm:px-8 lg:flex-row lg:px-16">
-        <div className={cn(photoFrame, "aspect-[4/3] w-full lg:flex-1")}>
+        <div className={cn(photoFrame, "aspect-[4/3] w-full lg:aspect-auto lg:min-h-[420px] lg:flex-1")}>
           <Image
             src="/images/site/store-front.png"
             alt={t.imageAlt}
@@ -64,9 +64,9 @@ export default async function LocationPage() {
         </div>
 
         <div className="flex w-full flex-col lg:w-[440px] lg:shrink-0">
-          <div className="flex flex-1 flex-col gap-5 rounded-m bg-surface-inverse [--focus-ring:var(--white)] p-6 sm:p-8">
+          <div className="flex flex-col gap-5 rounded-m bg-surface-inverse [--focus-ring:var(--white)] p-6 sm:p-8">
             <MapPin className="size-8 text-highlight" aria-hidden />
-            <h2 className="font-display text-[28px] leading-[31px] font-bold text-foreground-inverse lg:text-[32px] lg:leading-[35px]">
+            <h2 className="type-section font-display text-balance font-bold text-foreground-inverse">
               {settings.storeName} {settings.city}
             </h2>
             <address className="text-lg leading-[27px] text-mint not-italic">
@@ -80,12 +80,22 @@ export default async function LocationPage() {
                 settings.address
               )}
             </address>
+            <div className="flex flex-col gap-1">
+              <p className="text-sm leading-5 font-semibold text-mint">{t.hoursTitle}</p>
+              <p className="font-mono text-base leading-6 font-semibold text-foreground-inverse">
+                {formatOpeningHours(settings, locale)} WIB
+              </p>
+              <p className="text-[13px] leading-5 font-semibold text-foreground-inverse">
+                {open ? t.openNow : t.closedNow}
+              </p>
+              <p className="text-pretty text-sm leading-[21px] text-mint">{t.hoursNote}</p>
+            </div>
             <a
               href={directionsUrl(settings)}
               target="_blank"
               rel="noopener noreferrer"
               aria-label={t.openMapLabel}
-              className="mt-auto inline-flex w-full items-center justify-center rounded-sm px-7 py-4 font-display text-[15px] leading-[1.2] font-semibold tracking-[0.5px] text-foreground-inverse inset-ring-[1.5px] inset-ring-foreground-inverse transition-colors hover:bg-white/15"
+              className="inline-flex w-full items-center justify-center rounded-sm px-7 py-4 font-display text-[15px] leading-[1.2] font-semibold tracking-[0.5px] text-foreground-inverse inset-ring-[1.5px] inset-ring-foreground-inverse transition-colors hover:bg-white/15"
             >
               {t.openMap}
             </a>
@@ -106,61 +116,42 @@ export default async function LocationPage() {
 
       {/* Hours + getting here */}
       <section className={cn("section-y flex w-full flex-col gap-8 lg:gap-12", px)} aria-labelledby="location-visit">
-        <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+        <div className="flex w-full flex-col gap-4">
           <h2 id="location-visit" className={cn(sectionTitle, "lg:max-w-[720px]")}>
             {t.visitTitle}
           </h2>
-          <p className={cn(sectionSub, "lg:w-[440px] lg:shrink-0")}>{t.visitSub}</p>
+          <p className={cn(sectionSub, "max-w-[560px]")}>{t.visitSub}</p>
         </div>
 
-        <div className="grid w-full grid-cols-1 gap-10 lg:grid-cols-[440px_minmax(0,1fr)] lg:items-start lg:gap-16">
-          <div className="relative flex flex-col gap-4 rounded-m bg-card p-6 sm:p-8">
-            <Cutout
-              name="red-velvet"
-              width={120}
-              className="-top-12 -right-10 hidden lg:block"
-            />
-            <div className="flex items-center gap-3">
-              <Clock className="size-6 shrink-0 text-primary" aria-hidden />
-              <h3 className="font-display text-[22px] leading-[26px] font-bold text-foreground lg:text-[24px] lg:leading-[28px]">{t.hoursTitle}</h3>
-            </div>
-            <p className="font-mono text-base leading-6 font-semibold text-foreground">
-              {formatOpeningHours(settings, locale)} WIB
-            </p>
-            <p className="text-[13px] leading-5 font-semibold text-foreground">{open ? t.openNow : t.closedNow}</p>
-            <p className="text-pretty text-sm leading-[21px] text-muted-foreground">{t.hoursNote}</p>
-          </div>
-
-          <ul aria-label={t.routesLabel} className="flex flex-col">
-            {t.routes.map((route, i) => {
-              const Icon = routeStyle[i].icon;
-              return (
-                <li
-                  key={route.title}
-                  className="flex gap-4 py-6 shadow-[inset_0_-1px_0_var(--border-divider)] first:pt-0 last:pb-0 last:shadow-none sm:gap-6"
+        <ul aria-label={t.routesLabel} className="grid w-full grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-10">
+          {t.routes.map((route, i) => {
+            const Icon = routeStyle[i].icon;
+            return (
+              <li
+                key={route.title}
+                className="flex gap-4 sm:gap-6 lg:flex-col lg:gap-5 lg:pt-6 lg:shadow-[inset_0_1px_0_var(--border-divider)]"
+              >
+                <span
+                  className={cn("flex size-12 shrink-0 items-center justify-center rounded-pill sm:size-14", routeStyle[i].fill)}
+                  aria-hidden
                 >
-                  <span
-                    className={cn("flex size-12 shrink-0 items-center justify-center rounded-pill sm:size-14", routeStyle[i].fill)}
-                    aria-hidden
-                  >
-                    <Icon className="size-6 text-ink" />
-                  </span>
-                  <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
-                    <h3 className="font-display text-[24px] leading-[28px] font-bold text-foreground lg:text-[24px] lg:leading-[28px]">
-                      {route.title}
-                    </h3>
-                    <p className="max-w-[600px] text-pretty text-base leading-normal text-muted-foreground">{route.body}</p>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {route.tags.map((tag) => (
-                        <Chip key={tag}>{tag}</Chip>
-                      ))}
-                    </div>
+                  <Icon className="size-6 text-ink" />
+                </span>
+                <div className="flex min-w-0 flex-1 flex-col items-start gap-3">
+                  <h3 className="font-display text-[24px] leading-[28px] font-bold text-foreground lg:text-[24px] lg:leading-[28px]">
+                    {route.title}
+                  </h3>
+                  <p className="max-w-[600px] text-pretty text-base leading-normal text-muted-foreground">{route.body}</p>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    {route.tags.map((tag) => (
+                      <Chip key={tag}>{tag}</Chip>
+                    ))}
                   </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       {/* Regulars (illustrative reviews) */}

@@ -70,8 +70,6 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
     startTransition(() => formAction(data));
   };
 
-  const preview =
-    pickup && delivery ? t.previewBoth : delivery ? t.previewDelivery : pickup ? t.previewPickup : t.previewNone;
   const feedback =
     state.status === "saved" ? t.saved : state.status === "error" ? (err("form") ?? t.fix) : "";
   const message = pending ? "" : feedback;
@@ -189,13 +187,6 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
               {err("fulfilment")}
             </p>
           ) : null}
-          <div className="flex w-full flex-col gap-2 rounded-m bg-primary [--focus-ring:var(--white)] p-6" aria-live="polite">
-            <p className="font-mono text-[11px] leading-[17px] font-semibold tracking-[1px] text-mint">{t.preview}</p>
-            <p className="font-display text-[22px] leading-[33px] font-bold text-white">
-              {storeName || values.storeName} · {city || values.city}
-            </p>
-            <p className="text-sm leading-[21px] text-mint">{preview}</p>
-          </div>
         </div>
       </div>
 

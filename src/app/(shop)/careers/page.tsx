@@ -104,7 +104,7 @@ export default async function CareersPage() {
                   </div>
                   <div className="flex flex-col gap-1">
                     <dt className="font-mono text-[12px] leading-4 font-semibold text-primary">{t.fitLabel}</dt>
-                    <dd className="text-[15px] leading-[23px] text-foreground">{role.fit}</dd>
+                    <dd className="text-pretty text-[15px] leading-[23px] text-foreground">{role.fit}</dd>
                   </div>
                 </dl>
               </li>

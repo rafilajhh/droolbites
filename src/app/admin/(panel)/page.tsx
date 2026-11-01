@@ -122,7 +122,7 @@ export default async function AdminOverviewPage() {
         </div>
       )}
 
-      <div className="grid w-full gap-5 md:grid-cols-3">
+      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
         <Kpi
           label={o.awaiting}
           icon={Hourglass}
@@ -137,6 +137,7 @@ export default async function AdminOverviewPage() {
           iconBg="bg-mint"
           value={formatRupiah(paid._sum.total ?? 0)}
           sub={`${o.receivedSub(paid._count)} · ${o.allTime}`}
+          className="order-3 col-span-2 md:order-none md:col-span-1"
         />
         <Kpi
           label={o.onMenu}
@@ -169,11 +170,11 @@ export default async function AdminOverviewPage() {
                     <th scope="col" className={cn(thClasses, "w-[140px] bg-background py-2.5 pr-3")}>
                       {t.orders.col.method}
                     </th>
-                    <th scope="col" className={cn(thClasses, "w-[130px] bg-background py-2.5 pr-3")}>
-                      {t.orders.col.status}
-                    </th>
                     <th scope="col" className={cn(thClasses, "w-[90px] bg-background py-2.5 pr-3")}>
                       {t.orders.col.payment}
+                    </th>
+                    <th scope="col" className={cn(thClasses, "w-[130px] bg-background py-2.5 pr-3")}>
+                      {t.orders.col.status}
                     </th>
                     <th scope="col" className={cn(thClasses, "bg-background py-2.5 pr-3")}>
                       {t.orders.col.total}
@@ -188,6 +189,7 @@ export default async function AdminOverviewPage() {
                   {recent.map((order) => {
                     const status = fulfilmentBadgeInfo(order);
                     const payment = paymentStatusInfo[order.paymentStatus];
+                    const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                     return (
                       <tr key={order.orderNumber} className={mobileCardRowClasses}>
                         <th scope="row" className="py-3.5 pr-3 pl-3 text-left text-base leading-6 font-bold whitespace-nowrap max-md:order-1 max-md:grow max-md:basis-[55%] max-md:p-0">
@@ -197,13 +199,17 @@ export default async function AdminOverviewPage() {
                           <CellLabel>{t.orders.col.method}</CellLabel>
                           {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
                         </td>
-                        <td className="py-3.5 pr-3 max-md:order-4 max-md:p-0">
-                          <CellLabel>{t.orders.col.status}</CellLabel>
-                          <StatusBadge tone={status.tone} className="whitespace-nowrap">{status[locale]}</StatusBadge>
-                        </td>
                         <td className="py-3.5 pr-3 max-md:order-3 max-md:p-0">
                           <CellLabel>{t.orders.col.payment}</CellLabel>
                           <StatusBadge tone={payment.tone} className="whitespace-nowrap">{payment[locale]}</StatusBadge>
+                        </td>
+                        <td className="py-3.5 pr-3 max-md:order-4 max-md:p-0">
+                          <CellLabel>{t.orders.col.status}</CellLabel>
+                          {unpaid ? (
+                            <span className="text-muted-foreground" aria-label={status[locale]}>—</span>
+                          ) : (
+                            <StatusBadge tone={status.tone} className="whitespace-nowrap">{status[locale]}</StatusBadge>
+                          )}
                         </td>
                         <td className="py-3.5 pr-3 text-base leading-6 font-bold whitespace-nowrap max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:p-0 max-md:text-right">
                           <CellLabel>{t.orders.col.total}</CellLabel>
@@ -269,6 +275,7 @@ function Kpi({
   value,
   sub,
   href,
+  className,
 }: {
   label: string;
   icon: typeof Cookie;
@@ -277,11 +284,12 @@ function Kpi({
   sub: string;
   /** Makes the whole card a link to the matching order list. */
   href?: string;
+  className?: string;
 }) {
   const card = (
     <Card
       className={cn(
-        "flex flex-col gap-4 p-6",
+        "flex flex-col gap-2 p-4 md:gap-4 md:p-6",
         href &&
           "h-full transition-[background-color,box-shadow] duration-150 ease-out group-hover:bg-background group-hover:inset-ring-border/50",
       )}
@@ -292,15 +300,15 @@ function Kpi({
           <Icon className="size-[18px] text-foreground" aria-hidden />
         </span>
       </div>
-      <p className="font-display text-[44px] leading-[44px] font-bold md:text-[32px] xl:text-[44px]">{value}</p>
+      <p className="font-display text-[28px] leading-8 font-bold md:text-[32px] md:leading-[44px] xl:text-[44px]">{value}</p>
       <p className="text-[13px] leading-5 text-muted-foreground">{sub}</p>
     </Card>
   );
   return href ? (
-    <Link href={href} className="group block rounded-m">
+    <Link href={href} className={cn("group block rounded-m", className)}>
       {card}
     </Link>
   ) : (
-    card
+    <div className={className}>{card}</div>
   );
 }

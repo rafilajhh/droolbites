@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
 import { formatOpeningHours } from "@/components/content/hours";
 import { toShopCategories } from "@/components/shop/shop-product";
@@ -159,18 +159,18 @@ export default async function FaqPage() {
           </div>
           <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
             {picked.map(({ slug, bg, product, review }) => (
-              <article key={slug} className={cn("group/pick relative flex flex-col gap-6 rounded-m p-5", bg)}>
-                <div className={cn(photoFrame, "h-[220px] w-full lg:h-[240px]")}>
+              <article key={slug} className={cn("group/pick relative flex items-center gap-4 rounded-m p-3 md:flex-col md:items-stretch md:gap-6 md:p-5", bg)}>
+                <div className={cn(photoFrame, "size-24 shrink-0 md:h-[240px] md:w-full")}>
                   <Image
                     src={product.imageUrl}
                     alt=""
                     fill
                     quality={100}
-                    sizes="(min-width: 768px) 33vw, 100vw"
+                    sizes="(min-width: 768px) 33vw, 96px"
                     className="object-cover transition-[scale] duration-500 ease-out group-hover/pick:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100"
                   />
                 </div>
-                <figure className="flex flex-1 flex-col gap-3 px-2">
+                <figure className="hidden flex-1 flex-col gap-3 md:flex">
                   <blockquote className="font-display text-[20px] leading-[27px] font-medium text-pretty text-foreground lg:text-[22px] lg:leading-[29px]">
                     <p>“{review.quote}”</p>
                   </blockquote>
@@ -178,20 +178,23 @@ export default async function FaqPage() {
                     {review.name} · {review.area}
                   </figcaption>
                 </figure>
-                <div className="mx-2 flex items-baseline justify-between gap-4 pt-4 pb-2 shadow-[inset_0_1px_0_var(--border-divider)]">
-                  <h3 className="font-display text-[22px] leading-[25px] font-bold text-foreground">
-                    <Link
-                      href={`/menu/${slug}`}
-                      className="after:absolute after:inset-0 after:rounded-m after:content-[''] hover:underline"
-                    >
-                      {product.name}
-                    </Link>
-                  </h3>
-                  <p className="shrink-0 font-mono text-[13px] leading-5 font-semibold text-foreground">
-                    {product.variants.length > 1
-                      ? t.picks.from(formatRupiah(product.fromPrice))
-                      : formatRupiah(product.fromPrice)}
-                  </p>
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3 md:items-baseline md:gap-4 md:pt-4 md:pb-2 md:shadow-[inset_0_1px_0_var(--border-divider)]">
+                  <div className="flex min-w-0 flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-4 md:flex-1">
+                    <h3 className="font-display text-[20px] leading-[24px] font-bold text-foreground md:text-[22px] md:leading-[25px]">
+                      <Link
+                        href={`/menu/${slug}`}
+                        className="after:absolute after:inset-0 after:rounded-m after:content-[''] hover:underline"
+                      >
+                        {product.name}
+                      </Link>
+                    </h3>
+                    <p className="shrink-0 text-[17px] leading-[21px] font-bold text-foreground">
+                      {product.variants.length > 1
+                        ? t.picks.from(formatRupiah(product.fromPrice))
+                        : formatRupiah(product.fromPrice)}
+                    </p>
+                  </div>
+                  <ArrowRight className="size-5 shrink-0 text-foreground md:hidden" aria-hidden />
                 </div>
               </article>
             ))}

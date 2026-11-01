@@ -26,6 +26,11 @@ export const policyMessages = defineMessages({
       email: "Email us",
       call: "Call us",
     },
+    /** Replaces `help` title and body on the privacy page. */
+    privacyHelp: {
+      title: "Questions about your data?",
+      body: "Ask us what we hold about you, or to correct or delete it. Tell us the email on your account and we will reply while the shop is open, usually within the hour.",
+    },
     shipping: {
       title: "Shipping policy",
       sub: "Delivery, store pickup and help with your order.",
@@ -40,8 +45,9 @@ export const policyMessages = defineMessages({
         {
           id: "store-pickup",
           title: "Store pickup",
-          body: (c: PolicyContact) =>
-            `Store pickup is free. Choose it at checkout and collect your order at ${c.address}. Opening hours: ${c.hours}\u00a0WIB. Pickup orders close at ${c.pickupCutoff}\u00a0WIB, 30 minutes before closing, so the last boxes are still packed with care; anything ordered later is ready from ${c.opensAt} on the next opening day. Your order page shows when it is ready for pickup.`,
+          body: () =>
+            "Store pickup is free. Choose it at checkout and collect your order at the counter. Your order page shows when it is ready for pickup. Our address, opening hours and last pickup time are on the Location page.",
+          link: { href: "/location", label: "See location and hours" },
         },
         {
           id: "changes-to-your-order",
@@ -145,6 +151,10 @@ export const policyMessages = defineMessages({
       email: "Kirim email",
       call: "Telepon kami",
     },
+    privacyHelp: {
+      title: "Ada pertanyaan soal datamu?",
+      body: "Tanyakan data apa saja yang kami simpan, atau minta untuk memperbaiki atau menghapusnya. Sebutkan email akunmu, dan kami balas selama toko buka, biasanya dalam satu jam.",
+    },
     shipping: {
       title: "Kebijakan pengiriman",
       sub: "Pengiriman, ambil di toko dan bantuan untuk pesananmu.",
@@ -159,8 +169,9 @@ export const policyMessages = defineMessages({
         {
           id: "store-pickup",
           title: "Ambil di toko",
-          body: (c: PolicyContact) =>
-            `Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di ${c.address}. Jam buka: ${c.hours}\u00a0WIB. Pesanan ambil di toko ditutup pukul ${c.pickupCutoff}\u00a0WIB, 30 menit sebelum toko tutup, supaya kotak terakhir tetap dikemas dengan rapi; pesanan setelah itu siap diambil mulai pukul ${c.opensAt} di hari buka berikutnya. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil.`,
+          body: () =>
+            "Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di counter. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil. Alamat, jam buka dan batas akhir pengambilan ada di halaman Lokasi.",
+          link: { href: "/location", label: "Lihat lokasi dan jam buka" },
         },
         {
           id: "changes-to-your-order",

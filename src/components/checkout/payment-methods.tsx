@@ -14,9 +14,10 @@ export type PaymentLogos = Partial<Record<PaymentMethod, string>>;
  * The E-wallet / QRIS / Virtual account / Retail cards with their radio tiles.
  * `methods` is what the server allows right now (store settings + gateway
  * channels); a group without any of them is left out. Banks past the pen's four
- * stay folded until asked for, or while one of them is selected. Below lg the
- * group holding `leadMethod` (the preselected one) comes first, so the method
- * the pinned PAY bar names is on screen, not three cards down.
+ * stay folded until asked for, or while one of them is selected. The group
+ * holding `leadMethod` (the preselected one) comes first at every width, so the
+ * method the pinned PAY bar names is on screen, not three cards down. An odd
+ * last tile spans both columns so no cell is left empty.
  */
 export function PaymentMethodGroups({
   t,
@@ -54,13 +55,13 @@ export function PaymentMethodGroups({
             aria-labelledby={titleId}
             className={cn(
               "flex w-full flex-col gap-3 rounded-m bg-white p-5 inset-ring-1 inset-ring-border-subtle sm:p-7",
-              leadMethod && (group.methods as readonly PaymentMethod[]).includes(leadMethod) && "max-lg:order-first",
+              leadMethod && (group.methods as readonly PaymentMethod[]).includes(leadMethod) && "order-first",
             )}
           >
             <h2 id={titleId} className="pb-1 font-display text-[22px] leading-[25px] font-bold text-foreground">
               {t.groups[group.key].title}
             </h2>
-            <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2">
+            <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
               {shown.map((method) => {
                 const info = paymentMethodInfo[method];
                 return (

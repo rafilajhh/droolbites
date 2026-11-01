@@ -296,10 +296,10 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         </div>
       </section>
 
-      <HowToPay title={p.howToPay} sections={sections} />
-
       <PaymentWatcher statusUrl={statusUrl} successHref={successHref} />
       <PayActions orderNumber={orderNumber} token={token} orderHref={orderHref} />
+
+      <HowToPay title={p.howToPay} sections={sections} />
       {canSimulatePayment(live.provider) ? <SimulatePayment orderNumber={orderNumber} token={token} sandbox={provider.id !== "mock"} /> : null}
     </>,
   );

@@ -14,7 +14,7 @@ export const storyMessages = defineMessages({
     body: "Droolbites is a dessert shop in Surabaya, with a menu of soft cookies, fudgy brownies, and creamy tiramisu. We bring these familiar favorites together so you can find something for a quick treat, dessert after dinner, or a table to share.",
 
     intro:
-      "It started with one oven, two sisters and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter on Jl. Palem Sememi, and the first tray still comes out at 06:00.",
+      "It started with one oven, two sisters and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter of our own, and the first tray still comes out at 06:00.",
     since: "Since 2021",
 
     timelineTitle: "From a home kitchen to your table.",
@@ -23,7 +23,7 @@ export const storyMessages = defineMessages({
       {
         year: "2021",
         title: "A home kitchen in Sememi",
-        body: "Rani baked, Dewi took the orders over WhatsApp. One oven, one tray of chocolate chunk at a time, sold to neighbors and their friends.",
+        body: "Rani baked, Dewi took the orders over WhatsApp. Chocolate chunk, one tray at a time, sold to neighbors and their friends.",
       },
       {
         year: "2023",
@@ -42,11 +42,11 @@ export const storyMessages = defineMessages({
       },
     ],
 
-    foundersTitle: "Two sisters, one oven.",
+    foundersTitle: "Meet Rani & Dewi.",
     foundersBody:
       "Rani runs the kitchen: she spent years tweaking one chocolate chunk recipe until the middle stayed soft all day. Dewi turned it into a shop: the orders, the counter, and a brownie recipe she still won't share.",
-    firstCookie: "Rani's first cookie",
-    firstBrownie: "Dewi's secret recipe",
+    firstCookie: "Rani's cookie",
+    firstBrownie: "Dewi's brownie",
     quote:
       "We never wanted a long menu. We wanted the cookie you think about on the way home, and the brownie that makes you order one more tray.",
     quoteName: "Rani & Dewi",
@@ -59,10 +59,10 @@ export const storyMessages = defineMessages({
       { value: "12", label: "bakers and counter crew" },
       { value: String(desserts), label: desserts === 1 ? "dessert on the menu" : "desserts on the menu" },
       { value: "~400", label: "cookies a day, give or take" },
-      { value: "2021", label: "the year it all started" },
+      { value: "3", label: "kinds of dessert: cookies, brownies, tiramisu" },
     ],
 
-    visitTitle: "Come find us on Jl. Palem Sememi.",
+    visitTitle: "Come find us at the counter.",
     visitBody:
       "Grab a box at the counter and say hi to whoever's on shift, or order online for delivery anywhere in Surabaya.",
     findStore: "FIND OUR STORE",
@@ -77,7 +77,7 @@ export const storyMessages = defineMessages({
     body: "Droolbites adalah toko dessert di Surabaya dengan menu soft cookies, brownies fudgy dan tiramisu yang creamy. Semua favorit yang sudah akrab ini kami kumpulkan di satu tempat, jadi selalu ada pilihan buat ngemil sebentar, pencuci mulut habis makan malam, atau suguhan untuk ramai-ramai.",
 
     intro:
-      "Awalnya cuma satu oven, dua kakak-adik, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter di Jl. Palem Sememi, dan loyang pertama tetap keluar oven jam 06:00.",
+      "Awalnya cuma satu oven, dua kakak-adik, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter sendiri, dan loyang pertama tetap keluar oven jam 06:00.",
     since: "Sejak 2021",
 
     timelineTitle: "Dari dapur rumah sampai ke mejamu.",
@@ -86,7 +86,7 @@ export const storyMessages = defineMessages({
       {
         year: "2021",
         title: "Dapur rumah di Sememi",
-        body: "Rani yang memanggang, Dewi yang mencatat pesanan lewat WhatsApp. Satu oven, satu loyang chocolate chunk sekali jalan, dijual ke tetangga dan teman-teman mereka.",
+        body: "Rani yang memanggang, Dewi yang mencatat pesanan lewat WhatsApp. Chocolate chunk, seloyang demi seloyang, dijual ke tetangga dan teman-teman mereka.",
       },
       {
         year: "2023",
@@ -105,11 +105,11 @@ export const storyMessages = defineMessages({
       },
     ],
 
-    foundersTitle: "Kakak-adik, satu oven.",
+    foundersTitle: "Kenalan sama Rani & Dewi.",
     foundersBody:
       "Rani pegang dapur: bertahun-tahun ia mengutak-atik satu resep chocolate chunk sampai bagian tengahnya tetap lembut seharian. Dewi yang menjadikannya toko: urusan pesanan, counter, dan resep brownies yang sampai sekarang nggak mau ia bagi.",
-    firstCookie: "Cookie pertama Rani",
-    firstBrownie: "Resep rahasia Dewi",
+    firstCookie: "Cookie Rani",
+    firstBrownie: "Brownies Dewi",
     quote:
       "Dari awal kami nggak pernah pengin menu yang panjang. Kami cuma pengin bikin cookie yang kepikiran terus di jalan pulang, dan brownies yang bikin kamu pesan satu loyang lagi.",
     quoteName: "Rani & Dewi",
@@ -121,10 +121,10 @@ export const storyMessages = defineMessages({
       { value: "12", label: "baker dan kru toko" },
       { value: String(desserts), label: "dessert di menu" },
       { value: "~400", label: "cookies sehari, kurang lebih" },
-      { value: "2021", label: "tahun semuanya dimulai" },
+      { value: "3", label: "jenis dessert: cookies, brownies, tiramisu" },
     ],
 
-    visitTitle: "Temukan kami di Jl. Palem Sememi.",
+    visitTitle: "Temukan kami di counter.",
     visitBody:
       "Mampir ambil sekotak di counter sambil sapa siapa pun yang lagi jaga, atau pesan online dan kami antar ke mana pun di Surabaya.",
     findStore: "LIHAT LOKASI TOKO",

@@ -95,7 +95,7 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
         </div>
       </div>
 
-      <PolicyHelp copy={messages.help} email={settings.email} phone={settings.phone} />
+      <PolicyHelp copy={policy === "privacy" ? { ...messages.help, ...messages.privacyHelp } : messages.help} email={settings.email} phone={settings.phone} />
     </>
   );
 }

@@ -101,11 +101,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                 <th scope="col" className={cn(thClasses, "w-[130px] bg-background py-3 pr-3")}>
                   {c.method}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[140px] bg-background py-3 pr-3")}>
-                  {c.status}
-                </th>
                 <th scope="col" className={cn(thClasses, "w-[110px] bg-background py-3 pr-3")}>
                   {c.payment}
+                </th>
+                <th scope="col" className={cn(thClasses, "w-[140px] bg-background py-3 pr-3")}>
+                  {c.status}
                 </th>
                 <th scope="col" className={cn(thClasses, "w-[110px] bg-background py-3 pr-3")}>
                   {c.total}
@@ -127,6 +127,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                 orders.map((order) => {
                   const fs = fulfilmentBadgeInfo(order);
                   const ps = paymentStatusInfo[order.paymentStatus];
+                  const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
                     <tr key={order.orderNumber} className={mobileCardRowClasses}>
                       <th
@@ -147,13 +148,17 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         <CellLabel>{c.method}</CellLabel>
                         {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
                       </td>
-                      <td className="py-3 pr-3 max-md:order-4 max-md:p-0">
-                        <CellLabel>{c.status}</CellLabel>
-                        <StatusBadge tone={fs.tone} className="whitespace-nowrap">{fs[locale]}</StatusBadge>
-                      </td>
                       <td className="py-3 pr-3 max-md:order-3 max-md:p-0">
                         <CellLabel>{c.payment}</CellLabel>
                         <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
+                      </td>
+                      <td className="py-3 pr-3 max-md:order-4 max-md:p-0">
+                        <CellLabel>{c.status}</CellLabel>
+                        {unpaid ? (
+                          <span className="text-muted-foreground" aria-label={fs[locale]}>—</span>
+                        ) : (
+                          <StatusBadge tone={fs.tone} className="whitespace-nowrap">{fs[locale]}</StatusBadge>
+                        )}
                       </td>
                       <td className={cn(cell, "pr-3 whitespace-nowrap max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:text-right max-md:text-base max-md:font-bold")}>
                         <CellLabel>{c.total}</CellLabel>

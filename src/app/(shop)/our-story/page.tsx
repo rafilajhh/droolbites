@@ -78,11 +78,11 @@ export default async function OurStoryPage() {
 
       {/* Timeline: four chapters, oldest first. The year is the step marker. */}
       <section className={cn("section-y flex w-full flex-col gap-8 lg:gap-12", px)} aria-labelledby="story-timeline">
-        <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:gap-16">
-          <h2 id="story-timeline" className={cn(sectionTitle, "flex-1")}>
+        <div className="flex w-full flex-col gap-4">
+          <h2 id="story-timeline" className={sectionTitle}>
             {t.timelineTitle}
           </h2>
-          <p className="text-pretty text-lg leading-[27px] text-muted-foreground lg:w-[400px] lg:shrink-0">
+          <p className="text-pretty text-lg leading-[27px] text-muted-foreground">
             {t.timelineSub}
           </p>
         </div>
@@ -122,7 +122,7 @@ export default async function OurStoryPage() {
               imageClassName="scale-[1.25]"
             />
             <figcaption>
-              <Chip>{t.firstCookie}</Chip>
+              <Chip className="whitespace-nowrap">{t.firstCookie}</Chip>
             </figcaption>
           </figure>
           <figure className="flex flex-col gap-4 pt-12 lg:pt-20">
@@ -134,7 +134,7 @@ export default async function OurStoryPage() {
               imageClassName="scale-[1.15]"
             />
             <figcaption>
-              <Chip>{t.firstBrownie}</Chip>
+              <Chip className="whitespace-nowrap">{t.firstBrownie}</Chip>
             </figcaption>
           </figure>
         </div>

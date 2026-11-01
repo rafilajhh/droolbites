@@ -2,12 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { getMessages } from "@/i18n/server";
 import { commonMessages } from "@/i18n/messages/common";
+import { cn } from "@/lib/cn";
 import { getStoreSettings } from "@/lib/settings";
 import { Cutout } from "@/components/ui/snapshot";
 import { NewsletterForm } from "./newsletter-form";
 
 const linkClass =
-  "w-fit font-display text-lg leading-[1.3] font-medium text-foreground-inverse transition-opacity hover:opacity-75";
+  "w-fit font-display text-base leading-[1.3] sm:text-lg font-medium text-foreground-inverse transition-opacity hover:opacity-75";
 const headingClass = "font-mono text-[13px] leading-normal font-semibold tracking-[1px] text-mint";
 
 /** pen: Footer (Rrkv4), restaged by owner request: centred badge + newsletter on top, link columns below. */
@@ -112,14 +113,26 @@ export async function Footer() {
             </div>
           </div>
 
-          {columns.map((col) => (
-            <nav key={col.heading} aria-label={col.heading} className="flex flex-col gap-3.5 lg:flex-1">
+          {/* Below sm the last column spans both tracks and lays its links in two, so no column sits alone. */}
+          {columns.map((col, i) => (
+            <nav
+              key={col.heading}
+              aria-label={col.heading}
+              className={cn("flex flex-col gap-3.5 lg:flex-1", i === columns.length - 1 && "col-span-2 sm:col-span-1")}
+            >
               <p className={headingClass}>{col.heading}</p>
-              {col.links.map((link) => (
-                <Link key={link.href} href={link.href} className={linkClass}>
-                  {link.label}
-                </Link>
-              ))}
+              <div
+                className={cn(
+                  "flex flex-col gap-3.5",
+                  i === columns.length - 1 && "max-sm:grid max-sm:grid-cols-2 max-sm:gap-x-6",
+                )}
+              >
+                {col.links.map((link) => (
+                  <Link key={link.href} href={link.href} className={linkClass}>
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </nav>
           ))}
         </div>
