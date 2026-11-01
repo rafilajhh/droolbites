@@ -1,0 +1,51 @@
+# Production override for the VPS (see docs/deploy-vps.md). Use it on top of compose.yml:
+#
+#   docker compose -f compose.yml -f compose.prod.yml up -d --build
+#
+# The host's nginx terminates HTTPS and proxies to the app on 127.0.0.1:3010
+# (deploy/nginx/droolbites.conf). MySQL has no host port: it is only reachable on the
+# compose network. Secrets come from the server's .env (copy .env.production.example);
+# compose reads it both for ${...} below and, via compose.yml, as the app's env_file.
+# Needs Docker Compose v2.24+ (!reset / !override).
+services:
+  db:
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+    ports: !reset []
+    healthcheck:
+      # $$ = the container's own variable, so the password is not written into the rendered config.
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+
+  # Local mail catcher only; with SMTP_HOST empty the app sends no email at all.
+  mailpit:
+    profiles: ["dev-mail"]
+    ports: !reset []
+
+  app:
+    # Always part of the production stack, no --profile needed.
+    profiles: !reset []
+    environment:
+      # The app user (MYSQL_USER in compose.yml) owns only the droolbites database.
+      # Use a URL-safe password (openssl rand -hex 24), it is put into this URL as is.
+      DATABASE_URL: mysql://droolbites:${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}@db:3306/droolbites
+      APP_URL: ${APP_URL:?set APP_URL in .env, e.g. https://droolbites.biz.id}
+      # Empty SMTP_HOST = email off (no emails are sent; everything else works).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      # nginx is the one reverse proxy in front of the app (X-Forwarded-For for rate limits).
+      TRUST_PROXY: "1"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    # Only the host's nginx can reach it.
+    ports: !override
+      - "127.0.0.1:3010:3000"
+
+  migrate:
+    profiles: !reset []
+    environment:
+      DATABASE_URL: mysql://droolbites:${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}@db:3306/droolbites
+      # Only read by prisma/seed-production.ts; pass them with `run -e` (see docs/deploy-vps.md).
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      ADMIN_RESET_PASSWORD: ${ADMIN_RESET_PASSWORD:-}
