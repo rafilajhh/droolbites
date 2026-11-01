@@ -64,7 +64,7 @@ export default async function HomePage() {
       <section className="w-full px-3 pb-3 sm:px-6 sm:pb-6">
         {/* A full-bleed panel with content over the photo: no photoFrame ring, its own edge is enough. */}
         <div className={cn(
-            "relative flex min-h-[520px] overflow-hidden rounded-m w-full flex-col items-center justify-center gap-5 [--focus-ring:var(--white)] px-5 py-12 text-center sm:gap-6 lg:min-h-[600px] lg:px-40",
+            "relative flex min-h-[520px] overflow-hidden rounded-m w-full flex-col items-center justify-center gap-5 [--focus-ring:var(--white)] px-5 py-12 text-center sm:gap-6 lg:min-h-[520px] lg:px-40 xl:min-h-[600px]",
           )}>
           <Image
             src="/images/site/hero-background.png"
@@ -142,7 +142,7 @@ export default async function HomePage() {
       {brownies && brownieRow ? (
         <section className="w-full px-3 sm:px-6" aria-labelledby="home-brownies">
           <div className="panel-y flex w-full flex-col items-center gap-6 rounded-m bg-tint-lavender px-5 sm:px-10 lg:flex-row lg:gap-16 lg:px-16">
-            <div className={cn(photoFrame, "aspect-[560/500] w-full max-w-[560px] shrink-0 bg-oat")}>
+            <div className={cn(photoFrame, "aspect-[560/500] w-full max-w-[560px] shrink-0 bg-oat lg:max-w-[420px] xl:max-w-[520px]")}>
               <Image
                 src={brownies.imageUrl}
                 alt={t.browniesAlt}
@@ -192,7 +192,7 @@ export default async function HomePage() {
             width={132}
             className="-bottom-8 left-[-10px] hidden lg:block"
           />
-          <div className="relative w-full max-w-[440px] shrink-0 px-2 lg:w-[440px] lg:px-0">
+          <div className="relative w-full max-w-[440px] shrink-0 px-2 lg:w-[360px] lg:px-0 xl:w-[440px]">
             <Snapshot
               src="/images/site/hero-cookies.png"
               alt={t.story.alt}

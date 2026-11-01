@@ -23,8 +23,9 @@ export function BrowniePicker({ product, legend }: { product: ShopProduct; legen
   const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <fieldset className="flex w-full flex-col gap-2.5">
+    <div className="@container flex w-full flex-col gap-4">
+      {/* Two columns only when the picker is wide enough for "20 × 30 cm" and its price side by side. */}
+      <fieldset className="grid w-full grid-cols-1 gap-2.5 @[32rem]:grid-cols-2">
         <legend className="sr-only">{legend}</legend>
         {product.variants.map((v) => (
           <OptionTile

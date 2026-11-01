@@ -39,7 +39,7 @@ export default async function CareersPage() {
   return (
     <>
       <section className="flex w-full flex-col-reverse gap-8 px-4 pt-6 sm:px-8 lg:flex-row lg:items-center lg:gap-[72px] lg:px-16 lg:pt-12">
-        <div className={cn(photoFrame, "aspect-[15/14] w-full shrink-0 lg:aspect-auto lg:h-[560px] lg:w-[600px]")}>
+        <div className={cn(photoFrame, "aspect-[15/14] w-full shrink-0 lg:aspect-auto lg:h-[440px] lg:w-[480px] xl:h-[560px] xl:w-[600px]")}>
           <Image
             src="/images/site/story-bakers.png"
             alt={t.imageAlt}

@@ -16,7 +16,7 @@ type CardSize = "md" | "lg" | "sm";
 const styles: Record<CardSize, { media: string; name: string; desc: string; price: string; sizes: string }> = {
   // Card/Menu Item (gYvmU) as used on the menu and the landing cookie row.
   md: {
-    media: "h-[180px] sm:h-[240px] lg:h-[300px]",
+    media: "h-[180px] sm:h-[240px] xl:h-[300px]",
     name: "text-[17px] leading-[20px] sm:text-[22px] sm:leading-[25px]",
     desc: "text-[13px] leading-[19px] sm:text-sm sm:leading-[20px]",
     price: "text-[17px] leading-[21px] sm:text-xl sm:leading-[24px]",
@@ -24,7 +24,7 @@ const styles: Record<CardSize, { media: string; name: string; desc: string; pric
   },
   // Landing tiramisu row: 440px media, 28px name. Two-up below sm, so the media matches md there.
   lg: {
-    media: "h-[180px] sm:h-[340px] lg:h-[440px]",
+    media: "h-[180px] sm:h-[300px] xl:h-[400px]",
     name: "text-[22px] leading-[25px] lg:text-[28px] lg:leading-[32px]",
     desc: "text-sm leading-[20px] lg:text-base lg:leading-[23px]",
     price: "text-xl leading-[24px] lg:text-2xl lg:leading-[29px]",
@@ -78,7 +78,7 @@ export function MenuItemCard({
           className={cn(
             photoFrame,
             "flex w-full flex-col bg-oat transition-transform duration-300 ease-out group-hover/card:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover/card:translate-y-0",
-            layout === "banner" ? "h-[200px] sm:h-[280px] lg:h-[300px]" : s.media,
+            layout === "banner" ? "h-[200px] sm:h-[280px] lg:h-[240px] xl:h-[300px]" : s.media,
           )}
         >
           <Image
