@@ -105,7 +105,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                 </tr>
               </thead>
               {/* Below md each row is a stacked card like the orders list; cells carry sr-only labels. */}
-              <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
+              <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
                 {products.length === 0 ? (
                   <tr>
                     <td
@@ -167,7 +167,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                             href={`/admin/products/${p.id}/edit${qs}`}
                             scroll={false}
                             aria-label={t.products.editLabel(p.name)}
-                            className={cn(smallButtonClasses, "relative after:absolute after:-inset-x-1 after:-inset-y-2 after:content-['']")}
+                            className={cn(smallButtonClasses, "relative after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']")}
                           >
                             {t.common.edit}
                           </Link>

@@ -116,7 +116,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
               </tr>
             </thead>
             {/* Below md each row is a stacked card; cells carry sr-only labels since the header row is hidden. */}
-            <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
+            <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
               {orders.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="block px-4 py-8 text-center md:table-cell text-[15px] leading-[23px] text-muted-foreground">
@@ -168,6 +168,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         <ArrowLink
                           href={`/admin/orders/${order.orderNumber}`}
                           aria-label={t.orders.viewLabel(order.orderNumber)}
+                          className="after:-inset-y-4"
                         >
                           {t.common.view}
                         </ArrowLink>

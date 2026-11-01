@@ -12,7 +12,7 @@ export function AuthHead({ eyebrow, title, sub, titleId }: { eyebrow: string; ti
       >
         {title}
       </h1>
-      <p className="text-base leading-normal text-muted-foreground">{sub}</p>
+      <p className="text-base leading-normal text-balance text-muted-foreground">{sub}</p>
     </div>
   );
 }

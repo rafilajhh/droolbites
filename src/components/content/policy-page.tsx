@@ -47,7 +47,7 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
         <h1 className="type-page max-w-[900px] font-display text-balance font-bold text-foreground">
           {t.title}
         </h1>
-        <p className="text-[17px] leading-[1.53] text-muted-foreground lg:text-[19px] lg:leading-[29px]">{t.sub}</p>
+        <p className="text-balance text-[17px] leading-[1.53] text-muted-foreground lg:text-[19px] lg:leading-[29px]">{t.sub}</p>
         <Chip className="mt-1">
           <time dateTime={UPDATED_ISO}>
             {messages.updated(formatDate(new Date(`${UPDATED_ISO}T12:00:00+07:00`), locale))}
@@ -64,7 +64,7 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
               key={section.id}
               id={section.id}
               aria-labelledby={`${section.id}-title`}
-              className="flex scroll-mt-[88px] flex-col gap-3 pb-8 shadow-[inset_0_-1px_0_var(--border-subtle)] lg:pb-10"
+              className="flex max-w-[35em] scroll-mt-[88px] flex-col gap-3 pb-8 shadow-[inset_0_-1px_0_var(--border-subtle)] lg:pb-10"
             >
               <div className="flex items-center gap-3.5">
                 <span className="flex size-8 shrink-0 items-center justify-center rounded-pill bg-card text-[13px] leading-none font-bold text-foreground">

@@ -151,7 +151,7 @@ export default async function FaqPage() {
               >
                 {t.picks.title}
               </h2>
-              <p className="max-w-[560px] text-pretty text-base leading-normal text-muted-foreground lg:text-lg">{t.picks.sub}</p>
+              <p className="max-w-[560px] text-balance text-base leading-normal text-muted-foreground lg:text-lg">{t.picks.sub}</p>
             </div>
             <div className="shrink-0">
               <ArrowLink href="/menu">{t.picks.link}</ArrowLink>

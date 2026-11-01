@@ -15,7 +15,6 @@ export const storyMessages = defineMessages({
 
     intro:
       "It started with one oven, two sisters and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter of our own, and the first tray still comes out at 06:00.",
-    since: "Since 2021",
 
     timelineTitle: "From a home kitchen to your table.",
     timelineSub: "One street, and a lot of cookie dough.",
@@ -23,7 +22,7 @@ export const storyMessages = defineMessages({
       {
         year: "2021",
         title: "A home kitchen in Sememi",
-        body: "Rani baked, Dewi took the orders over WhatsApp. Chocolate chunk, one tray at a time, sold to neighbors and their friends.",
+        body: "Rani baked, Dewi took the orders over WhatsApp. Chocolate chunk, one tray at a time.",
       },
       {
         year: "2023",
@@ -59,7 +58,7 @@ export const storyMessages = defineMessages({
       { value: "12", label: "bakers and counter crew" },
       { value: String(desserts), label: desserts === 1 ? "dessert on the menu" : "desserts on the menu" },
       { value: "~400", label: "cookies a day, give or take" },
-      { value: "3", label: "kinds of dessert: cookies, brownies, tiramisu" },
+      { value: "100%", label: "baked fresh, never frozen" },
     ],
 
     visitTitle: "Come find us at the counter.",
@@ -78,7 +77,6 @@ export const storyMessages = defineMessages({
 
     intro:
       "Awalnya cuma satu oven, dua kakak-adik, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter sendiri, dan loyang pertama tetap keluar oven jam 06:00.",
-    since: "Sejak 2021",
 
     timelineTitle: "Dari dapur rumah sampai ke mejamu.",
     timelineSub: "Satu jalan yang sama, dan adonan cookies yang nggak ada habisnya.",
@@ -86,7 +84,7 @@ export const storyMessages = defineMessages({
       {
         year: "2021",
         title: "Dapur rumah di Sememi",
-        body: "Rani yang memanggang, Dewi yang mencatat pesanan lewat WhatsApp. Chocolate chunk, seloyang demi seloyang, dijual ke tetangga dan teman-teman mereka.",
+        body: "Rani yang memanggang, Dewi yang mencatat pesanan lewat WhatsApp. Chocolate chunk, seloyang demi seloyang.",
       },
       {
         year: "2023",
@@ -121,7 +119,7 @@ export const storyMessages = defineMessages({
       { value: "12", label: "baker dan kru toko" },
       { value: String(desserts), label: "dessert di menu" },
       { value: "~400", label: "cookies sehari, kurang lebih" },
-      { value: "3", label: "jenis dessert: cookies, brownies, tiramisu" },
+      { value: "100%", label: "dibuat segar, tanpa stok beku" },
     ],
 
     visitTitle: "Temukan kami di counter.",

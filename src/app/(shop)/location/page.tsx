@@ -80,15 +80,15 @@ export default async function LocationPage() {
                 settings.address
               )}
             </address>
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col items-start gap-2">
               <p className="text-sm leading-5 font-semibold text-mint">{t.hoursTitle}</p>
               <p className="font-mono text-base leading-6 font-semibold text-foreground-inverse">
                 {formatOpeningHours(settings, locale)} WIB
               </p>
-              <p className="text-[13px] leading-5 font-semibold text-foreground-inverse">
+              <p className="rounded-pill bg-white/15 px-3 py-1 text-sm leading-5 font-semibold text-foreground-inverse">
                 {open ? t.openNow : t.closedNow}
               </p>
-              <p className="text-pretty text-sm leading-[21px] text-mint">{t.hoursNote}</p>
+              <p className="text-pretty pt-1 text-sm leading-[21px] text-mint">{t.hoursNote}</p>
             </div>
             <a
               href={directionsUrl(settings)}
@@ -142,7 +142,7 @@ export default async function LocationPage() {
                     {route.title}
                   </h3>
                   <p className="max-w-[600px] text-pretty text-base leading-normal text-muted-foreground">{route.body}</p>
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2 pt-1 lg:flex-col lg:items-start">
                     {route.tags.map((tag) => (
                       <Chip key={tag}>{tag}</Chip>
                     ))}
@@ -207,8 +207,8 @@ export default async function LocationPage() {
 
       {/* Order ahead */}
       <section className="section-y w-full px-3 md:px-6" aria-labelledby="location-cta">
-        <div className="flex w-full flex-col gap-10 rounded-m bg-mint px-6 panel-y sm:px-10 lg:flex-row lg:items-center lg:gap-16 lg:px-16">
-          <div className="flex flex-1 flex-col items-start gap-4">
+        <div className="flex w-full flex-col gap-10 rounded-m bg-mint px-6 panel-y sm:px-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-16">
+          <div className="flex flex-col items-start gap-4">
             <h2
               id="location-cta"
               className="type-section font-display text-balance font-bold text-foreground"
@@ -231,8 +231,8 @@ export default async function LocationPage() {
           <Snapshot
             src="/images/site/gift-box.png"
             alt=""
-            sizes="(min-width: 1024px) 400px, 90vw"
-            className="aspect-[4/3] w-full shrink-0 lg:aspect-[5/4] lg:w-[400px]"
+            sizes="(min-width: 1024px) 560px, 90vw"
+            className="aspect-[4/3] w-full lg:aspect-[5/4]"
             imageClassName="object-[50%_60%]"
           />
         </div>

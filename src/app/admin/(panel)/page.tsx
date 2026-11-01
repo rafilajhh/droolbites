@@ -122,7 +122,7 @@ export default async function AdminOverviewPage() {
         </div>
       )}
 
-      <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+      <div className="grid w-full grid-cols-1 overflow-hidden max-md:rounded-m max-md:bg-white max-md:inset-ring-1 max-md:inset-ring-border-subtle md:grid-cols-3 md:gap-5">
         <Kpi
           label={o.awaiting}
           icon={Hourglass}
@@ -137,7 +137,6 @@ export default async function AdminOverviewPage() {
           iconBg="bg-mint"
           value={formatRupiah(paid._sum.total ?? 0)}
           sub={`${o.receivedSub(paid._count)} · ${o.allTime}`}
-          className="order-3 col-span-2 md:order-none md:col-span-1"
         />
         <Kpi
           label={o.onMenu}
@@ -219,6 +218,7 @@ export default async function AdminOverviewPage() {
                           <ArrowLink
                             href={`/admin/orders/${order.orderNumber}`}
                             aria-label={t.orders.viewLabel(order.orderNumber)}
+                            className="after:-inset-y-4"
                           >
                             {t.common.view}
                           </ArrowLink>
@@ -289,26 +289,26 @@ function Kpi({
   const card = (
     <Card
       className={cn(
-        "flex flex-col gap-2 p-4 md:gap-4 md:p-6",
+        "flex flex-col gap-2 p-4 max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-0.5 max-md:rounded-none max-md:bg-transparent max-md:inset-ring-0 md:gap-4 md:p-6",
         href &&
           "h-full transition-[background-color,box-shadow] duration-150 ease-out group-hover:bg-background group-hover:inset-ring-border/50",
       )}
     >
-      <div className="flex w-full items-center justify-between gap-3">
+      <div className="flex w-full items-center justify-between gap-3 max-md:col-start-1 max-md:row-start-1">
         <h2 className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</h2>
-        <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[10px]", iconBg)}>
+        <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[10px] max-md:hidden", iconBg)}>
           <Icon className="size-[18px] text-foreground" aria-hidden />
         </span>
       </div>
-      <p className="font-display text-[28px] leading-8 font-bold md:text-[32px] md:leading-[44px] xl:text-[44px]">{value}</p>
-      <p className="text-[13px] leading-5 text-muted-foreground">{sub}</p>
+      <p className="font-display text-[28px] leading-8 font-bold max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 md:text-[32px] md:leading-[44px] xl:text-[44px]">{value}</p>
+      <p className="text-[13px] leading-5 text-muted-foreground max-md:col-start-1 max-md:row-start-2">{sub}</p>
     </Card>
   );
   return href ? (
-    <Link href={href} className={cn("group block rounded-m", className)}>
+    <Link href={href} className={cn("group block rounded-m max-md:rounded-none max-md:not-last:shadow-[inset_0_-1px_0_var(--border-subtle)]", className)}>
       {card}
     </Link>
   ) : (
-    <div className={className}>{card}</div>
+    <div className={cn("max-md:not-last:shadow-[inset_0_-1px_0_var(--border-subtle)]", className)}>{card}</div>
   );
 }

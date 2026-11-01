@@ -48,8 +48,8 @@ export function AccountNav() {
   ];
 
   return (
-    <div className="flex w-full flex-col gap-2 lg:gap-3">
-      <nav aria-label={t.label} className="w-full">
+    <div className="flex w-full gap-1 lg:flex-col lg:gap-3">
+      <nav aria-label={t.label} className="min-w-0 flex-1">
         <ul className="grid grid-cols-3 gap-1 lg:flex lg:flex-col">
           {links.map(({ id, label, short, Icon }) => {
             const current = active === id;
@@ -72,10 +72,10 @@ export function AccountNav() {
           })}
         </ul>
       </nav>
-      <form action={signOut} className="max-lg:self-end lg:pt-3 lg:shadow-[inset_0_1px_0_var(--border-subtle)]">
+      <form action={signOut} className="flex max-lg:shrink-0 lg:pt-3 lg:shadow-[inset_0_1px_0_var(--border-subtle)]">
         <button
           type="submit"
-          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-sm px-2 text-sm leading-normal font-semibold text-muted-foreground transition-colors hover:text-foreground motion-reduce:transition-none lg:px-4"
+          className="flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-sm px-3 text-[13px] lg:flex-row lg:gap-2 lg:text-sm leading-[18px] font-semibold text-muted-foreground transition-colors hover:text-foreground motion-reduce:transition-none lg:px-4 lg:leading-normal"
         >
           <LogOut className="size-4 shrink-0" aria-hidden />
           {t.signOut}

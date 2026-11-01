@@ -36,9 +36,9 @@ export const careersMessages = defineMessages({
       },
       {
         title: "Packing & delivery crew",
-        type: "Full-time",
+        type: "Part-time",
         shift: "10:00–15:30 or 15:30–21:00",
-        body: "Box and label every online order, check it against its DB number, then ride it across Surabaya.",
+        body: "Box and label every online order, check it against its order number, then ride it across Surabaya.",
         fit: "You ride your own motorbike and have a valid SIM C.",
       },
     ],
@@ -116,9 +116,9 @@ export const careersMessages = defineMessages({
       },
       {
         title: "Kru packing & antar",
-        type: "Full-time",
+        type: "Part-time",
         shift: "10:00–15:30 atau 15:30–21:00",
-        body: "Mengemas dan memberi label tiap pesanan online, mencocokkannya dengan nomor DB, lalu mengantarnya keliling Surabaya.",
+        body: "Mengemas dan memberi label tiap pesanan online, mencocokkannya dengan nomor pesanan, lalu mengantarnya keliling Surabaya.",
         fit: "Kamu punya motor sendiri dan SIM C yang masih berlaku.",
       },
     ],

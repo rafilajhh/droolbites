@@ -125,7 +125,9 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
       </nav>
 
       <div className="flex w-full flex-col gap-10 px-4 pt-2 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 xl:gap-[72px]">
-        <ProductGallery photos={photos} badge={item.badge} />
+        <div className="lg:sticky lg:top-24 lg:shrink-0 lg:self-start">
+          <ProductGallery photos={photos} badge={item.badge} />
+        </div>
         <div className="flex min-w-0 flex-1 flex-col gap-7 lg:pt-6">
           <ProductBuy
             product={item}

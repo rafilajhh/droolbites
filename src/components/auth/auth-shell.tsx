@@ -55,7 +55,7 @@ export async function AuthShell({
             className="size-12 rounded-full sm:size-16 lg:size-24"
           />
         </Link>
-        <p className="font-display text-lg leading-[1.15] font-bold tracking-[-0.25px] text-white max-lg:text-balance sm:text-[28px] sm:leading-[1.05] sm:tracking-[-0.5px] lg:text-[40px]">
+        <p className="font-display text-lg leading-[1.15] font-bold tracking-[-0.25px] text-white text-balance sm:text-[28px] sm:leading-[1.05] sm:tracking-[-0.5px] lg:text-[40px]">
           {quote}
         </p>
       </div>

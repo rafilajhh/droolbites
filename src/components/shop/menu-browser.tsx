@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
+import { cn } from "@/lib/cn";
 import { CategoryFilter, type FilterOption } from "./category-filter";
 import { MenuItemCard } from "./menu-item-card";
 import { MenuSearch } from "./menu-search";
@@ -151,10 +152,13 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
                     return u ? `${c.name} ${t.unit[u]}` : c.name;
                   }),
                 );
-            // Full menu: a group of three gets three equal columns from sm (one card per row below sm),
-            // so no card is stretched and no cell is left empty. Filtered and search results keep the
-            // 2 / 4 widths and centre the last row.
+            // Full menu: a group of three gets three equal columns at lg. Below lg its tray-size product
+            // (at an even index, so it never splits a pair) takes a landscape row and the other two pair up
+            // like the cookies. Filtered and search results keep the 2 / 4 widths and centre the last row.
             const thirds = !filteredView && g.products.length === 3;
+            const bannerId = thirds
+              ? g.products.find((p, i) => i % 2 === 0 && p.variants.length > 1)?.id
+              : undefined;
             return (
               <section key={g.key} aria-labelledby={`group-${g.key}`} className="flex w-full flex-col gap-7">
                 <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 pb-5 shadow-[inset_0_-1px_0_var(--border-subtle)]">
@@ -168,18 +172,20 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
                 </div>
                 {/* Same widths as a 2 / 4 column grid; wrapping and centring leave no hole in the last row. */}
                 <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-8 lg:gap-6">
-                  {g.products.map((p) => (
-                    <MenuItemCard
-                      key={p.id}
-                      product={p}
-                      wide={thirds}
-                      className={
-                        thirds
-                          ? "w-full sm:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/3)]"
-                          : "w-[calc(50%-8px)] lg:w-[calc(25%-18px)]"
-                      }
-                    />
-                  ))}
+                  {g.products.map((p) => {
+                    const banner = p.id === bannerId;
+                    return (
+                      <MenuItemCard
+                        key={p.id}
+                        product={p}
+                        layout={banner ? "banner" : thirds ? "third" : undefined}
+                        className={cn(
+                          banner ? "w-full" : "w-[calc(50%-8px)]",
+                          thirds ? "lg:w-[calc((100%-48px)/3)]" : "lg:w-[calc(25%-18px)]",
+                        )}
+                      />
+                    );
+                  })}
                 </div>
               </section>
             );

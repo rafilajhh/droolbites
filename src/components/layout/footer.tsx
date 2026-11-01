@@ -67,7 +67,7 @@ export async function Footer() {
           <p className="pt-2 font-display type-section font-bold text-foreground-inverse">
             {f.newsTitle}
           </p>
-          <p className="text-base leading-normal text-mint">{f.newsSub}</p>
+          <p className="text-base leading-normal text-balance text-mint">{f.newsSub}</p>
           <div className="w-full max-w-[440px] pt-2 text-left">
             <NewsletterForm />
           </div>

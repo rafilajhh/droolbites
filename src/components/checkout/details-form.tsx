@@ -196,7 +196,7 @@ export function DetailsForm({
                       title={<span className="block leading-[21px]">{d.delivery}</span>}
                       sub={<span className="block leading-5">{d.deliverySub(store.city)}</span>}
                       meta={<span className="block leading-[21px]">{formatRupiah(store.deliveryFee)}</span>}
-                      className="flex-1"
+                      className="flex-1 items-start"
                     />
                   ) : null}
                   {options.pickup ? (
@@ -209,7 +209,7 @@ export function DetailsForm({
                       title={<span className="block leading-[21px]">{d.pickup}</span>}
                       sub={<span className="block leading-5">{store.shortAddress}</span>}
                       meta={<span className="block leading-[21px] text-primary">{d.free}</span>}
-                      className="flex-1"
+                      className="flex-1 items-start"
                     />
                   ) : null}
                 </div>

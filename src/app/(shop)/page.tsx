@@ -209,7 +209,7 @@ export default async function HomePage() {
       {/* Story band (owner-requested, after Levain's tinted story panel): a framed snapshot and a
           short home line, with a cookie cut-out resting on the panel edge. */}
       <section className="w-full px-3 sm:px-6" aria-labelledby="home-story">
-        <div className="panel-y relative flex w-full flex-col items-center gap-6 rounded-m bg-mint px-5 sm:px-10 lg:flex-row lg:gap-16 lg:px-16">
+        <div className="panel-y relative flex w-full flex-col items-center gap-6 rounded-m bg-mint px-5 sm:px-10 lg:flex-row lg:gap-20 lg:px-16">
           <Cutout
             name="chocolate-chunk"
             width={132}
@@ -229,7 +229,7 @@ export default async function HomePage() {
               className="-right-14 -bottom-9 hidden lg:block"
             />
           </div>
-          <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6 lg:max-w-[540px]">
+          <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6 lg:max-w-[640px]">
             <h2 id="home-story" className={sectionTitle}>
               {t.story.title}
             </h2>

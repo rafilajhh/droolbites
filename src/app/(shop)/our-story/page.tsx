@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { House, Smartphone, Store, Sunrise } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
-import { Chip, Sticker } from "@/components/ui/badges";
+import { Chip } from "@/components/ui/badges";
 import { ButtonLink } from "@/components/ui/button";
 import { Cutout, Snapshot } from "@/components/ui/snapshot";
 import { storyMessages } from "@/i18n/messages/pages/story";
@@ -72,7 +72,6 @@ export default async function OurStoryPage() {
             className="absolute right-[4%] bottom-0 aspect-[5/4] w-[50%]"
             imageClassName="scale-[1.6] object-[50%_45%]"
           />
-          <Sticker className="absolute bottom-[8%] left-[6%]">{t.since}</Sticker>
         </div>
       </section>
 
@@ -90,14 +89,14 @@ export default async function OurStoryPage() {
           {t.timeline.map((chapter, i) => {
             const Icon = chapters[i].icon;
             return (
-              <li key={chapter.year} className={cn("flex flex-col gap-4 rounded-m p-5 lg:gap-5 lg:p-8", chapters[i].bg)}>
+              <li key={chapter.year} className={cn("flex flex-col gap-4 rounded-m p-5 lg:gap-4 lg:p-6", chapters[i].bg)}>
                 <div className="flex items-center justify-between gap-4">
                   <p className="font-display text-4xl leading-none lg:text-5xl font-bold tracking-[-1px] text-foreground">
                     {chapter.year}
                   </p>
                   <Icon className="size-7 shrink-0 text-foreground" aria-hidden />
                 </div>
-                <h3 className="font-display text-[24px] leading-[28px] font-bold text-balance text-foreground lg:text-[26px] lg:leading-[30px]">
+                <h3 className="font-display text-[24px] leading-[28px] font-bold text-balance text-foreground lg:text-[24px] lg:leading-[28px]">
                   {chapter.title}
                 </h3>
                 <p className="text-pretty text-base leading-6 text-foreground">{chapter.body}</p>
@@ -109,10 +108,10 @@ export default async function OurStoryPage() {
 
       {/* Founders: the two first recipes, then the sisters in their own words. */}
       <section
-        className={cn("flex w-full flex-col items-center gap-10 pb-12 lg:flex-row lg:gap-20 lg:pb-20", px)}
+        className={cn("flex w-full flex-col items-center gap-10 pb-12 lg:flex-row lg:gap-16 lg:pb-20", px)}
         aria-labelledby="story-founders"
       >
-        <div className="grid w-full max-w-[600px] shrink-0 grid-cols-2 gap-5 sm:gap-8 lg:w-[560px]">
+        <div className="grid w-full max-w-[600px] shrink-0 grid-cols-2 gap-5 sm:gap-8 lg:w-[480px]">
           <figure className="flex flex-col gap-4">
             <Snapshot
               src="/images/products/chocolate-chunk.png"
@@ -125,7 +124,7 @@ export default async function OurStoryPage() {
               <Chip className="whitespace-nowrap">{t.firstCookie}</Chip>
             </figcaption>
           </figure>
-          <figure className="flex flex-col gap-4 pt-12 lg:pt-20">
+          <figure className="flex flex-col gap-4">
             <Snapshot
               src="/images/products/fudgy-brownies.png"
               alt=""
@@ -153,7 +152,7 @@ export default async function OurStoryPage() {
               width={112}
               className="-right-6 -bottom-10 hidden lg:block"
             />
-            <blockquote className="font-display text-[22px] leading-[29px] font-semibold text-pretty text-foreground lg:pr-16 lg:text-[26px] lg:leading-[34px]">
+            <blockquote className="font-display text-[22px] leading-[29px] font-semibold text-balance text-foreground lg:pr-16 lg:text-[26px] lg:leading-[34px]">
               <p>“{t.quote}”</p>
             </blockquote>
             <figcaption className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -195,8 +194,8 @@ export default async function OurStoryPage() {
 
       {/* Visit CTA: the story ends at the counter. */}
       <section className="section-y w-full px-3 md:px-6" aria-labelledby="story-visit">
-        <div className="flex w-full flex-col gap-10 rounded-m bg-mint px-6 panel-y sm:px-10 lg:flex-row lg:items-center lg:gap-16 lg:px-16">
-          <div className="flex flex-1 flex-col gap-8">
+        <div className="flex w-full flex-col gap-10 rounded-m bg-mint px-6 panel-y sm:px-10 lg:grid lg:grid-cols-2 lg:items-center lg:gap-16 lg:px-16">
+          <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-3">
               <h2
                 id="story-visit"
@@ -213,11 +212,11 @@ export default async function OurStoryPage() {
               </ButtonLink>
             </div>
           </div>
-          <div className="relative mx-auto w-full max-w-[320px] shrink-0 lg:mx-0 lg:w-[320px]">
+          <div className="relative mx-auto w-full max-w-[320px] lg:mx-0 lg:max-w-none">
             <Snapshot
               src="/images/products/white-chocolate-almond.png"
               alt=""
-              sizes="(min-width: 1024px) 320px, 80vw"
+              sizes="(min-width: 1024px) 560px, 80vw"
               className="aspect-[4/3] w-full"
               imageClassName="scale-[1.35]"
             />

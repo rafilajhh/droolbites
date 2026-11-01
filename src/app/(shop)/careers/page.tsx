@@ -64,11 +64,11 @@ export default async function CareersPage() {
 
       {/* Roles we hire for: the usual shifts, not live vacancies. */}
       <section className={cn("section-y flex w-full flex-col gap-8 lg:gap-10", px)} aria-labelledby="careers-roles">
-        <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:gap-16">
-          <h2 id="careers-roles" className={cn(sectionTitle, "flex-1")}>
+        <div className="flex w-full flex-col gap-4 lg:grid lg:grid-cols-3 lg:items-end lg:gap-6">
+          <h2 id="careers-roles" className={cn(sectionTitle, "lg:col-span-2")}>
             {t.rolesTitle}
           </h2>
-          <p className="text-pretty text-base leading-normal text-muted-foreground lg:w-[440px] lg:shrink-0 lg:text-lg lg:leading-[27px]">
+          <p className="text-pretty text-base leading-normal text-muted-foreground lg:text-lg lg:leading-[27px]">
             {t.rolesSub}
           </p>
         </div>

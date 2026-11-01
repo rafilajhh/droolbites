@@ -11,7 +11,7 @@ export const notFoundMessages = defineMessages({
     home: "BACK TO HOME",
     tryTitle: "Try one of these instead",
     picks: {
-      "chocolate-chunk": "Soft in the middle, baked every morning",
+      "chocolate-chunk": "Soft in the middle, baked daily",
       "fudgy-brownies": "Fudgy squares in four tray sizes",
       "classic-coffee-tiramisu": "Espresso-soaked, served cold",
     },
@@ -25,7 +25,7 @@ export const notFoundMessages = defineMessages({
     home: "KEMBALI KE BERANDA",
     tryTitle: "Coba salah satu ini saja",
     picks: {
-      "chocolate-chunk": "Lembut di tengah, dipanggang tiap pagi",
+      "chocolate-chunk": "Lembut di tengah, panggang harian",
       "fudgy-brownies": "Brownies fudgy, empat ukuran loyang",
       "classic-coffee-tiramisu": "Direndam espresso, disajikan dingin",
     },

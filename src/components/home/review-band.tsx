@@ -10,8 +10,6 @@ type Review = { quote: string; name: string; area: string };
 
 /** The product each illustrative reviewer orders, in the order of `items` (featured first). */
 const picks = ["red-velvet", "double-chocolate", "white-chocolate-almond"];
-/** The two smaller quotes sit on the moss as paper notes, the second nudged in. */
-const noteOffsets = ["", "lg:ml-8"];
 
 const whiteLink = "text-foreground-inverse shadow-[inset_0_-1.25px_0_var(--white)]";
 
@@ -78,14 +76,8 @@ export function ReviewBand({
 
         {notes.length ? (
           <ul aria-label={t.more} className="hidden flex-col gap-6 md:flex lg:gap-8">
-            {notes.map((review, i) => (
-              <li
-                key={review.name}
-                className={cn(
-                  "flex flex-col gap-5 rounded-m bg-background p-6 lg:p-7",
-                  noteOffsets[i],
-                )}
-              >
+            {notes.map((review) => (
+              <li key={review.name} className="flex flex-col gap-5 rounded-m bg-background p-6 lg:p-7">
                 <figure className="flex flex-col gap-5">
                   <blockquote className="font-display text-[20px] leading-[26px] font-semibold text-pretty text-foreground">
                     {review.quote}

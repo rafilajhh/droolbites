@@ -45,15 +45,18 @@ export function MenuItemCard({
   product,
   size = "md",
   showBadge = true,
-  wide = false,
+  layout,
   className,
 }: {
   product: ShopProduct;
   size?: CardSize;
   /** "You may also like" cards in w7mQL carry no badge. */
   showBadge?: boolean;
-  /** One of three equal columns from sm, a full row below sm: the photo gets a taller mobile height. */
-  wide?: boolean;
+  /**
+   * Menu group of three: "third" is one of three columns at lg; "banner" also takes a full
+   * landscape row below lg.
+   */
+  layout?: "third" | "banner";
   /** Width in the parent layout, e.g. the menu's wrapping rows. */
   className?: string;
 }) {
@@ -75,14 +78,20 @@ export function MenuItemCard({
           className={cn(
             photoFrame,
             "flex w-full flex-col bg-oat transition-transform duration-300 ease-out group-hover/card:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover/card:translate-y-0",
-            wide ? "h-[220px] sm:h-[240px] lg:h-[300px]" : s.media,
+            layout === "banner" ? "h-[200px] sm:h-[280px] lg:h-[300px]" : s.media,
           )}
         >
           <Image
             src={product.imageUrl}
             alt=""
             fill
-            sizes={wide ? "(min-width: 1024px) 421px, (min-width: 640px) 33vw, 100vw" : s.sizes}
+            sizes={
+              layout === "banner"
+                ? "(min-width: 1024px) 421px, 100vw"
+                : layout === "third"
+                  ? "(min-width: 1024px) 421px, 50vw"
+                  : s.sizes
+            }
             quality={100}
             className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100"
           />

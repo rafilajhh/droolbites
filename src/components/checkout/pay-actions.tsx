@@ -93,7 +93,7 @@ export function SimulatePayment({ orderNumber, token, sandbox = false }: { order
       <input type="hidden" name="t" value={token} />
       <div className="flex items-start gap-3">
         <FlaskConical className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <p className="text-[13px] leading-5 text-muted-foreground">
+        <p className="text-[13px] leading-5 text-pretty text-muted-foreground">
           <span className="font-bold text-foreground">{sandbox ? t.sandboxTitle : t.demoTitle}.</span> {sandbox ? t.sandboxBody : t.demoBody}
         </p>
       </div>
