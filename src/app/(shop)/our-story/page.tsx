@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import { Clock, House, Smartphone, Star, Store, Sunrise } from "lucide-react";
+import { House, Smartphone, Store, Sunrise } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
-import { formatOpeningHours } from "@/components/content/hours";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { ButtonLink } from "@/components/ui/button";
 import { Cutout, Snapshot } from "@/components/ui/snapshot";
 import { storyMessages } from "@/i18n/messages/pages/story";
-import { getLocale, getMessages } from "@/i18n/server";
+import { getMessages } from "@/i18n/server";
 import { getMenu } from "@/lib/catalog";
 import { cn } from "@/lib/cn";
-import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(storyMessages);
@@ -17,8 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const px = "px-4 sm:px-8 lg:px-16";
-const sectionTitle =
-  "font-display text-balance text-[34px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[44px] lg:leading-[45px]";
+const sectionTitle = "type-section font-display text-balance font-bold text-foreground";
 
 /** One tint and icon per chapter of the timeline, oldest first. */
 const chapters = [
@@ -30,26 +27,21 @@ const chapters = [
 
 /** pen: Our story (wyZ4j), extended with a timeline, a founders quote and a numbers band. */
 export default async function OurStoryPage() {
-  const [t, locale, settings, menu] = await Promise.all([
-    getMessages(storyMessages),
-    getLocale(),
-    getStoreSettings(),
-    getMenu(),
-  ]);
+  const [t, menu] = await Promise.all([getMessages(storyMessages), getMenu()]);
   const numbers = t.numbers(menu.reduce((sum, c) => sum + c.products.length, 0));
 
   return (
     <>
       {/* Hero: the opening of the story beside a collage of close-cropped product photos. */}
       <section
-        className="flex w-full flex-col gap-14 px-4 pt-6 pb-16 sm:px-8 lg:flex-row lg:items-center lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-24"
+        className="flex w-full flex-col gap-8 px-4 pt-6 sm:px-8 lg:flex-row lg:items-center lg:gap-[72px] lg:px-16 lg:pt-12"
         aria-labelledby="story-title"
       >
         <div className="flex flex-1 flex-col gap-6">
           <Eyebrow>{t.eyebrow}</Eyebrow>
           <h1
             id="story-title"
-            className="font-display text-balance text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground sm:text-[64px] lg:text-[80px] lg:leading-[82px] lg:tracking-[-2px]"
+            className="type-page font-display text-balance font-bold text-foreground"
           >
             {t.title}
           </h1>
@@ -85,7 +77,7 @@ export default async function OurStoryPage() {
       </section>
 
       {/* Timeline: four chapters, oldest first. The year is the step marker. */}
-      <section className={cn("flex w-full flex-col gap-10 lg:gap-12", px)} aria-labelledby="story-timeline">
+      <section className={cn("section-y flex w-full flex-col gap-8 lg:gap-12", px)} aria-labelledby="story-timeline">
         <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-end lg:gap-16">
           <h2 id="story-timeline" className={cn(sectionTitle, "flex-1")}>
             {t.timelineTitle}
@@ -94,13 +86,13 @@ export default async function OurStoryPage() {
             {t.timelineSub}
           </p>
         </div>
-        <ol className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <ol className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:gap-6 lg:grid-cols-4">
           {t.timeline.map((chapter, i) => {
             const Icon = chapters[i].icon;
             return (
-              <li key={chapter.year} className={cn("flex flex-col gap-5 rounded-m p-6 lg:p-8", chapters[i].bg)}>
+              <li key={chapter.year} className={cn("flex flex-col gap-4 rounded-m p-5 lg:gap-5 lg:p-8", chapters[i].bg)}>
                 <div className="flex items-center justify-between gap-4">
-                  <p className="font-display text-5xl leading-none font-bold tracking-[-1px] text-foreground">
+                  <p className="font-display text-4xl leading-none lg:text-5xl font-bold tracking-[-1px] text-foreground">
                     {chapter.year}
                   </p>
                   <Icon className="size-7 shrink-0 text-foreground" aria-hidden />
@@ -117,7 +109,7 @@ export default async function OurStoryPage() {
 
       {/* Founders: the two first recipes, then the sisters in their own words. */}
       <section
-        className={cn("flex w-full flex-col items-center gap-14 pt-20 pb-20 lg:flex-row lg:gap-20 lg:pt-28 lg:pb-28", px)}
+        className={cn("flex w-full flex-col items-center gap-10 pb-12 lg:flex-row lg:gap-20 lg:pb-20", px)}
         aria-labelledby="story-founders"
       >
         <div className="grid w-full max-w-[600px] shrink-0 grid-cols-2 gap-5 sm:gap-8 lg:w-[560px]">
@@ -175,7 +167,7 @@ export default async function OurStoryPage() {
       {/* Numbers: where the story stands today. */}
       <section
         className={cn(
-          "flex w-full flex-col gap-10 bg-primary [--focus-ring:var(--white)] py-14 lg:flex-row lg:items-center lg:gap-16 lg:py-20",
+          "panel-y flex w-full flex-col gap-8 bg-primary [--focus-ring:var(--white)] lg:flex-row lg:items-center lg:gap-16",
           px,
         )}
         aria-labelledby="story-numbers"
@@ -183,21 +175,18 @@ export default async function OurStoryPage() {
         <div className="flex flex-col gap-3 lg:w-[360px] lg:shrink-0">
           <h2
             id="story-numbers"
-            className="font-display text-balance text-[34px] leading-[1.03] font-bold tracking-[-1px] text-foreground-inverse lg:text-[44px] lg:leading-[45px]"
+            className="type-section font-display text-balance font-bold text-foreground-inverse"
           >
             {t.numbersTitle}
           </h2>
           <p className="text-pretty text-base leading-6 text-mint lg:text-lg lg:leading-[27px]">{t.numbersSub}</p>
         </div>
-        <dl className="grid flex-1 grid-cols-2 gap-x-8 gap-y-10 lg:grid-cols-4">
-          {numbers.map((stat, i) => (
+        <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
+          {numbers.map((stat) => (
             <div key={stat.label} className="flex flex-col-reverse justify-end gap-2">
               <dt className="text-pretty text-[15px] leading-[23px] text-mint">{stat.label}</dt>
               <dd className="flex items-center gap-2 font-display text-[52px] leading-none font-bold tracking-[-1px] text-foreground-inverse lg:text-[64px]">
                 {stat.value}
-                {i === numbers.length - 1 ? (
-                  <Star className="size-8 fill-highlight text-highlight lg:size-10" aria-hidden />
-                ) : null}
               </dd>
             </div>
           ))}
@@ -205,13 +194,13 @@ export default async function OurStoryPage() {
       </section>
 
       {/* Visit CTA: the story ends at the counter. */}
-      <section className="w-full px-3 pt-16 pb-16 md:px-6 lg:pt-20 lg:pb-28" aria-labelledby="story-visit">
-        <div className="flex w-full flex-col gap-10 rounded-m bg-mint px-6 py-10 sm:p-10 lg:flex-row lg:items-center lg:gap-16 lg:p-16">
+      <section className="section-y w-full px-3 md:px-6" aria-labelledby="story-visit">
+        <div className="flex w-full flex-col gap-10 rounded-m bg-mint px-6 panel-y sm:px-10 lg:flex-row lg:items-center lg:gap-16 lg:px-16">
           <div className="flex flex-1 flex-col gap-8">
             <div className="flex flex-col gap-3">
               <h2
                 id="story-visit"
-                className="font-display text-balance text-[34px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[48px] lg:leading-[49px]"
+                className="type-section font-display text-balance font-bold text-foreground"
               >
                 {t.visitTitle}
               </h2>
@@ -224,7 +213,7 @@ export default async function OurStoryPage() {
               </ButtonLink>
             </div>
           </div>
-          <div className="relative mx-auto w-full max-w-[320px] shrink-0 pb-4 lg:mx-0 lg:w-[320px]">
+          <div className="relative mx-auto w-full max-w-[320px] shrink-0 lg:mx-0 lg:w-[320px]">
             <Snapshot
               src="/images/products/white-chocolate-almond.png"
               alt=""
@@ -232,10 +221,6 @@ export default async function OurStoryPage() {
               className="aspect-[4/3] w-full"
               imageClassName="scale-[1.35]"
             />
-            <Sticker className="absolute -bottom-1 left-3 inline-flex items-center gap-2 rotate-[-5deg]">
-              <Clock className="size-4 shrink-0" aria-hidden />
-              {formatOpeningHours(settings, locale)} WIB
-            </Sticker>
           </div>
         </div>
       </section>

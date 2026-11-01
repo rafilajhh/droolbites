@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/** pen: Head (eyebrow, 48px title, sub) with its 8px bottom padding. */
+/** pen: Head (eyebrow, page title, sub) with its 8px bottom padding. */
 export function AuthHead({ eyebrow, title, sub, titleId }: { eyebrow: string; title: string; sub: string; titleId?: string }) {
   return (
     <div className="flex w-full flex-col gap-2.5 pb-2">
@@ -8,7 +8,7 @@ export function AuthHead({ eyebrow, title, sub, titleId }: { eyebrow: string; ti
       <h1
         id={titleId}
         tabIndex={titleId ? -1 : undefined}
-        className="font-display text-[40px] leading-none font-bold tracking-[-1px] text-foreground outline-hidden sm:text-5xl"
+        className="font-display type-page font-bold text-foreground outline-hidden"
       >
         {title}
       </h1>

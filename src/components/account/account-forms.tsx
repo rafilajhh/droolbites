@@ -3,15 +3,15 @@
 import { useActionState, useEffect, useRef } from "react";
 import { CircleCheck } from "lucide-react";
 import {
-  updateBilling,
+  updateAddress,
   updateProfile,
   type AccountState,
-  type BillingField,
+  type AddressField,
   type ProfileField,
 } from "@/app/actions/account";
 import { describedBy, FormAlert, useFocusFirstError } from "@/components/auth/form-bits";
 import { Button } from "@/components/ui/button";
-import { Field, Select, TextInput } from "@/components/ui/form-field";
+import { Field, TextInput } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { accountMessages } from "@/i18n/messages/account";
 
@@ -19,8 +19,8 @@ type Messages = typeof accountMessages.en;
 
 /**
  * Field + input with the error/aria wiring shared by both account forms.
- * Both forms show the account name, so when the server value changes (the other
- * form saved it) the input follows; an uncontrolled input would keep the old text.
+ * When the server value changes after a save the input follows; an uncontrolled
+ * input would keep the old text.
  */
 function AccountInput({
   name,
@@ -134,85 +134,48 @@ export function ProfileForm({ fullName, phone, email }: { fullName: string; phon
 }
 
 /**
- * pen: Billing information card form (IzCPT). The schema stores one name per
- * user, so "Billing name" is users.full_name; the address is the saved
- * delivery/billing address. Droolbites only sells in Indonesia, so Country is fixed.
+ * pen: Billing information card (IzCPT), now the saved delivery address that
+ * checkout's "Use saved address" fills in. We only deliver within Surabaya, so
+ * the city is shown read-only like checkout's (the server stores it regardless).
  */
-export function BillingForm({
-  billingName,
-  address,
-  city,
-  postalCode,
-}: {
-  billingName: string;
-  address: string;
-  city: string;
-  postalCode: string;
-}) {
+export function AddressForm({ address, city, postalCode }: { address: string; city: string; postalCode: string }) {
   const t = useMessages(accountMessages);
-  const [state, action, pending] = useActionState<AccountState<BillingField>, FormData>(updateBilling, {});
+  const [state, action, pending] = useActionState<AccountState<AddressField>, FormData>(updateAddress, {});
   const formRef = useRef<HTMLFormElement>(null);
-  useFocusFirstError(formRef, state.errors || state.formError ? state.attempt : undefined, "billing-alert");
-  const err = (key: BillingField) => errorText(t, state, key);
+  useFocusFirstError(formRef, state.errors || state.formError ? state.attempt : undefined, "address-alert");
+  const err = (key: AddressField) => errorText(t, state, key);
 
   return (
     <form ref={formRef} action={action} noValidate className="flex w-full flex-col gap-6">
-      <div className="flex w-full flex-col gap-6 sm:flex-row sm:gap-4">
-        <AccountInput
-          className="sm:flex-1"
-          name="billingName"
-          label={t.billing.name}
-          autoComplete="billing name"
-          required
-          maxLength={100}
-          placeholder={t.billing.namePlaceholder}
-          helper={t.billing.nameHelper}
-          defaultValue={state.values?.billingName ?? billingName}
-          error={err("billingName")}
-        />
-        <Field label={t.billing.country} htmlFor="country" className="sm:flex-1">
-          <Select id="country" name="country" autoComplete="billing country" defaultValue="ID">
-            <option value="ID">{t.billing.countryIndonesia}</option>
-          </Select>
-        </Field>
-      </div>
       <AccountInput
         name="address"
-        label={t.billing.address}
-        autoComplete="billing street-address"
+        label={t.address.street}
+        autoComplete="street-address"
         required
         maxLength={255}
-        placeholder={t.billing.addressPlaceholder}
+        placeholder={t.address.streetPlaceholder}
         defaultValue={state.values?.address ?? address}
         error={err("address")}
       />
       <div className="flex w-full flex-col gap-6 sm:flex-row sm:gap-4">
-        <AccountInput
-          className="sm:flex-1"
-          name="city"
-          label={t.billing.city}
-          autoComplete="billing address-level2"
-          required
-          maxLength={100}
-          placeholder={t.billing.cityPlaceholder}
-          defaultValue={state.values?.city ?? city}
-          error={err("city")}
-        />
+        <Field label={t.address.city} htmlFor="city" className="sm:flex-1">
+          <TextInput id="city" value={city} readOnly autoComplete="address-level2" className="bg-oat text-muted-foreground" />
+        </Field>
         <AccountInput
           className="sm:flex-1"
           name="postalCode"
-          label={t.billing.postalCode}
-          autoComplete="billing postal-code"
+          label={t.address.postalCode}
+          autoComplete="postal-code"
           inputMode="numeric"
           required
           maxLength={5}
-          placeholder={t.billing.postalCodePlaceholder}
+          placeholder={t.address.postalCodePlaceholder}
           defaultValue={state.values?.postalCode ?? postalCode}
           error={err("postalCode")}
         />
       </div>
-      {state.formError ? <FormAlert id="billing-alert">{t.errors[state.formError]}</FormAlert> : null}
-      <SaveRow label={t.billing.submit} saved={state.saved ? t.billing.saved : undefined} pending={pending} variant="secondary" />
+      {state.formError ? <FormAlert id="address-alert">{t.errors[state.formError]}</FormAlert> : null}
+      <SaveRow label={t.address.submit} saved={state.saved ? t.address.saved : undefined} pending={pending} variant="secondary" />
     </form>
   );
 }

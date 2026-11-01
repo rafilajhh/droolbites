@@ -22,13 +22,13 @@ const styles: Record<CardSize, { media: string; name: string; desc: string; pric
     price: "text-[17px] leading-[21px] sm:text-xl sm:leading-[24px]",
     sizes: "(min-width: 1024px) 316px, 50vw",
   },
-  // Landing tiramisu row: 440px media, 28px name.
+  // Landing tiramisu row: 440px media, 28px name. Two-up below sm, so the media matches md there.
   lg: {
-    media: "h-[240px] sm:h-[340px] lg:h-[440px]",
+    media: "h-[180px] sm:h-[340px] lg:h-[440px]",
     name: "text-[22px] leading-[25px] lg:text-[28px] lg:leading-[32px]",
     desc: "text-sm leading-[20px] lg:text-base lg:leading-[23px]",
     price: "text-xl leading-[24px] lg:text-2xl lg:leading-[29px]",
-    sizes: "(min-width: 1024px) 644px, 100vw",
+    sizes: "(min-width: 1024px) 644px, (min-width: 640px) 100vw, 50vw",
   },
   // "You may also like" on product detail: 260px media.
   sm: {
@@ -45,11 +45,20 @@ export function MenuItemCard({
   product,
   size = "md",
   showBadge = true,
+  wide = false,
+  className,
 }: {
   product: ShopProduct;
   size?: CardSize;
   /** "You may also like" cards in w7mQL carry no badge. */
   showBadge?: boolean;
+  /**
+   * Spans two columns of the menu grid (a full row below lg). The photo keeps the row's height,
+   * so it crops to landscape; only the image request size changes.
+   */
+  wide?: boolean;
+  /** Width in the parent layout, e.g. the menu's wrapping rows. */
+  className?: string;
 }) {
   const t = useMessages(menuMessages).card;
   const s = styles[size];
@@ -59,7 +68,7 @@ export function MenuItemCard({
   const badge = showBadge ? product.badge : undefined;
 
   return (
-    <article className="group/card flex min-w-0 flex-col gap-3 sm:gap-4">
+    <article className={cn("group/card flex min-w-0 flex-col gap-3 sm:gap-4", className)}>
       {/* The sticker sits outside the clipped photo so it can overlap the card corner. */}
       <div className="relative w-full">
         <Link
@@ -76,7 +85,7 @@ export function MenuItemCard({
             src={product.imageUrl}
             alt=""
             fill
-            sizes={s.sizes}
+            sizes={wide ? "(min-width: 1024px) 644px, 100vw" : s.sizes}
             quality={100}
             className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100"
           />

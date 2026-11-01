@@ -27,6 +27,12 @@ const emptyPicks = [
   { key: "tiramisu", href: "/menu?category=tiramisu", image: "/images/products/matcha-tiramisu.png", bg: "bg-tint-salmon" },
 ] as const;
 
+/**
+ * Single-variant products (cookies, tiramisu) carry only "1 piece"/"1 portion": the stepper
+ * already says how many, so their line shows no variant.
+ */
+const singleUnit = /^1 (piece|portion)$/;
+
 /** pen: Cart drawer (wSMRO) → Cart Drawer (My6z7), 480px from the right. */
 export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: number }) {
   const t = useMessages(commonMessages).cart;
@@ -167,7 +173,11 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                 >
                   <OrderLine
                     name={line.productName}
-                    meta={lineMeta(line.qty, variantLabel(line.variantName, line.categorySlug, locale))}
+                    meta={
+                      singleUnit.test(line.variantName)
+                        ? null
+                        : lineMeta(line.qty, variantLabel(line.variantName, line.categorySlug, locale))
+                    }
                     price={formatRupiah(line.lineTotal)}
                     imageUrl={line.imageUrl}
                   />

@@ -18,7 +18,8 @@ const whiteLink = "text-foreground-inverse shadow-[inset_0_-1.25px_0_var(--white
 /**
  * Home social proof: a moss panel with one large featured quote and a stack of two
  * smaller paper notes, so it reads differently from the three-up review cards on
- * Location and FAQ. Quotes and the rating are illustrative (owner-approved dummy content).
+ * Location and FAQ. Below md only the featured quote shows. Quotes and the rating are
+ * illustrative (owner-approved dummy content).
  */
 export function ReviewBand({
   t,
@@ -36,22 +37,19 @@ export function ReviewBand({
   const [featured, ...notes] = reviews;
 
   return (
-    <section className="w-full px-3 pt-20 sm:px-6 lg:pt-28" aria-labelledby="home-reviews">
-      <div className="relative grid w-full grid-cols-1 gap-12 rounded-m bg-primary [--focus-ring:var(--white)] px-5 py-12 sm:px-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-center lg:gap-16 lg:px-16 lg:py-[88px] xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-24">
+    <section className="w-full px-3 sm:px-6" aria-labelledby="home-reviews">
+      <div className="panel-y relative grid w-full grid-cols-1 gap-8 rounded-m bg-primary [--focus-ring:var(--white)] px-5 sm:px-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-center lg:gap-12 lg:px-16 xl:grid-cols-[minmax(0,1fr)_440px] xl:gap-16">
         <Cutout
           name="white-chocolate-almond"
           width={128}
           className="-top-12 right-10 hidden lg:block"
         />
-        <div className="flex min-w-0 flex-col items-start gap-10">
+        <div className="flex min-w-0 flex-col items-start gap-8">
           <div className="flex flex-col items-start gap-5">
-            <h2
-              id="home-reviews"
-              className="font-display text-[34px] leading-[36px] font-bold tracking-[-1px] text-balance text-foreground-inverse sm:text-[44px] sm:leading-[46px]"
-            >
+            <h2 id="home-reviews" className="font-display type-section font-bold text-balance text-foreground-inverse">
               {t.title}
             </h2>
-            <Sticker className="gap-2 rotate-[-4deg]">
+            <Sticker className="gap-2">
               <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
               {t.rating}
             </Sticker>
@@ -79,7 +77,7 @@ export function ReviewBand({
         </div>
 
         {notes.length ? (
-          <ul aria-label={t.more} className="flex flex-col gap-6 lg:gap-8">
+          <ul aria-label={t.more} className="hidden flex-col gap-6 md:flex lg:gap-8">
             {notes.map((review, i) => (
               <li
                 key={review.name}

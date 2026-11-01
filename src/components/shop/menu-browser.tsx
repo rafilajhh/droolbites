@@ -1,14 +1,11 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import Image from "next/image";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
-import { Cutout } from "@/components/ui/snapshot";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
-import { cn } from "@/lib/cn";
 import { CategoryFilter, type FilterOption } from "./category-filter";
 import { MenuItemCard } from "./menu-item-card";
 import { MenuSearch } from "./menu-search";
@@ -74,17 +71,6 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
     if (new URLSearchParams(window.location.search).has("search")) setMenuParams({ search: null }, "replace");
   }, [setSearchOpen]);
   const closeFilter = useCallback(() => setFilterOpen(false), [setFilterOpen]);
-  // The promo tile's button clears any search or category filter and jumps back to the top of the
-  // full menu. Focus moves to the toolbar so keyboard users continue from the top, not the tile.
-  const toolbarRef = useRef<HTMLDivElement>(null);
-  const browseAll = useCallback(() => {
-    if (query || active) {
-      setFiltered(true);
-      setMenuParams({ q: null, category: null });
-    }
-    toolbarRef.current?.querySelector("button")?.focus({ preventScroll: true });
-    window.scrollTo({ top: 0 });
-  }, [query, active, setFiltered]);
   const commitSearch = useCallback(
     (q: string) => {
       setSearchOpen(false);
@@ -115,16 +101,14 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
     })
     .filter((g) => g.products.length > 0);
   const shown = groups.reduce((n, g) => n + g.products.length, 0);
+  const filteredView = Boolean(query || active);
 
   return (
     <>
       <p aria-live="polite" className="sr-only">
         {filtered ? t.results(shown) : ""}
       </p>
-      <div
-        ref={toolbarRef}
-        className="flex w-full flex-col gap-3 px-4 sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-16"
-      >
+      <div className="flex w-full flex-col gap-3 px-4 sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-16">
         <MenuSearch
           products={allProducts}
           query={query}
@@ -143,7 +127,7 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
         />
       </div>
 
-      <div className="flex w-full flex-col gap-14 px-4 pt-10 pb-20 sm:px-8 lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-28">
+      <div className="flex w-full flex-col gap-14 px-4 pt-10 pb-12 sm:px-8 lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-20">
         {groups.length === 0 ? (
           <div className="flex w-full flex-col items-start gap-4 rounded-m bg-card p-8 lg:p-12" role="status">
             <p className="font-display text-[28px] leading-[31px] font-semibold">{t.empty.title(query)}</p>
@@ -153,29 +137,43 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
             </Link>
           </div>
         ) : (
-          groups.map((g, gi) => {
+          groups.map((g) => {
             const single = g.cats.length === 1;
             const title = single ? g.cats[0].name : t.group.join(g.cats.map((c) => c.name));
             const unit = single ? unitOf(g.products) : null;
             const count = unit ? t.group.flavors(g.products.length, t.unit[unit]) : t.group.desserts(g.products.length);
-            const isLast = gi === groups.length - 1;
-            const showPromo = isLast && g.products.length % COLUMNS !== 0;
+            // Full menu: a group that would leave one empty cell at lg (n % 4 === 3) lets its multi-size
+            // product span two columns (2+1+1 at lg; a full row then a pair below lg). It must start at an
+            // even index so it never straddles a row. Filtered and search results keep equal cards and
+            // centre the last row instead.
+            const wideId =
+              !filteredView && g.products.length % COLUMNS === 3
+                ? g.products.find((p, i) => i % 2 === 0 && p.variants.length > 1)?.id
+                : undefined;
             return (
               <section key={g.key} aria-labelledby={`group-${g.key}`} className="flex w-full flex-col gap-7">
                 <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 pb-5 shadow-[inset_0_-1px_0_var(--border-subtle)]">
                   <h2
                     id={`group-${g.key}`}
-                    className="font-display text-[26px] leading-[30px] font-bold text-foreground lg:text-[32px] lg:leading-[35px]"
+                    className="font-display text-[28px] leading-[30px] font-bold tracking-[-0.5px] text-foreground lg:text-[32px] lg:leading-[34px]"
                   >
                     {title}
                   </h2>
                   <p className="font-mono text-[13px] leading-[20px] font-semibold text-muted-foreground">{count}</p>
                 </div>
-                <div className="grid w-full grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4 lg:gap-6">
-                  {g.products.map((p) => (
-                    <MenuItemCard key={p.id} product={p} />
-                  ))}
-                  {showPromo ? <PromoTile onBrowse={browseAll} compact={g.products.length % 2 === 1} /> : null}
+                {/* Same widths as a 2 / 4 column grid; wrapping and centring leave no hole in the last row. */}
+                <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-8 lg:gap-6">
+                  {g.products.map((p) => {
+                    const wide = p.id === wideId;
+                    return (
+                      <MenuItemCard
+                        key={p.id}
+                        product={p}
+                        wide={wide}
+                        className={wide ? "w-full lg:w-[calc(50%-12px)]" : "w-[calc(50%-8px)] lg:w-[calc(25%-18px)]"}
+                      />
+                    );
+                  })}
                 </div>
               </section>
             );
@@ -183,60 +181,5 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
         )}
       </div>
     </>
-  );
-}
-
-/**
- * "Can't decide? Mix a box." tile at the end of the menu (uQ4f5 Promo Tile). Below lg the grid has two
- * columns: after an odd number of cards the tile takes the free cell (`compact`) instead of a full row,
- * so no card is left alone on its row.
- */
-function PromoTile({ onBrowse, compact }: { onBrowse: () => void; compact: boolean }) {
-  const t = useMessages(menuMessages).promo;
-  return (
-    <div
-      className={cn(
-        "relative col-span-2 flex min-h-[260px] flex-col justify-between gap-6 overflow-hidden rounded-m bg-primary [--focus-ring:var(--white)] p-6 lg:col-span-1 lg:min-h-0 lg:gap-6 lg:p-7",
-        compact && "col-span-1 min-h-0 gap-4 p-4 sm:p-6",
-      )}
-    >
-      {/* Decorative cookie tucked into the corner, clipped by the tile. */}
-      <Cutout
-        name="red-velvet"
-        width={150}
-        className={cn("-top-10 -right-10 sm:-right-8", compact && "max-sm:-top-12 max-sm:-right-14")}
-      />
-      <Image
-        src="/images/site/logo-badge.png"
-        alt=""
-        width={88}
-        height={88}
-        quality={100}
-        className={cn("size-[72px] rounded-full object-cover lg:size-[88px]", compact && "max-sm:size-14")}
-      />
-      <div className="relative flex w-full flex-col gap-3">
-        <p
-          className={cn(
-            "font-display text-[26px] leading-[28px] font-bold text-balance text-white lg:text-[30px] lg:leading-[32px]",
-            compact && "max-sm:text-[22px] max-sm:leading-[25px]",
-          )}
-        >
-          {t.title}
-        </p>
-        <p className={cn("text-[15px] leading-[23px] text-mint", compact && "max-sm:text-sm max-sm:leading-[20px]")}>
-          {t.body}
-        </p>
-      </div>
-      <button
-        type="button"
-        onClick={onBrowse}
-        className={buttonClasses(
-          "secondary",
-          cn("relative w-fit text-white! inset-ring-white! hover:bg-white/10!", compact && "max-sm:w-full max-sm:px-3"),
-        )}
-      >
-        {t.cta}
-      </button>
-    </div>
   );
 }

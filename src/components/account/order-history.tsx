@@ -63,7 +63,7 @@ export async function OrderHistory({ userId }: { userId: bigint }) {
   const cellLabel = (label: string) => <span className="sr-only xl:hidden">{label}: </span>;
 
   return (
-    <AccountCard id="order-history" title={o.title} sub={o.sub}>
+    <AccountCard id="order-history" title={o.title}>
       {orders.length === 0 ? (
         <div className="flex flex-col items-start gap-4">
           <p className="text-[15px] leading-[23px] text-foreground">{o.empty}</p>

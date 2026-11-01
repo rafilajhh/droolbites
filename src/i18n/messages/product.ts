@@ -1,26 +1,19 @@
 import { defineMessages } from "../config";
 
-/** Singular category eyebrow on the product page, keyed by category slug. */
-const EYEBROW: Record<string, string> = {
-  "soft-cookies": "SOFT COOKIE",
-  brownies: "FUDGY BROWNIES",
-  tiramisu: "TIRAMISU",
-};
-
 /** Product detail page (w7mQL). */
 export const productMessages = defineMessages({
   en: {
     breadcrumb: "Breadcrumb",
     menu: "Our menu",
-    eyebrow: EYEBROW,
     size: "Size",
     /** Below 1440px only the verb shows; `rest` stays in the accessible name. */
     addToCart: { verb: "ADD", rest: " TO CART" },
     error: "Couldn't add to cart. Please try again.",
     decrease: "Decrease quantity",
     increase: "Increase quantity",
-    perkDelivery: "Delivery across Surabaya",
-    perkPickup: "Pickup at Jl. Palem Sememi",
+    /** `fee` is the store's delivery fee, formatted. */
+    perkDelivery: (fee: string) => `Delivery ${fee}`,
+    perkPickup: "Free pickup",
     ingredients: "Ingredients",
     /** Start of the ingredients placeholder, linked to the store email. */
     ingredientsContact: "Contact us",
@@ -45,7 +38,6 @@ export const productMessages = defineMessages({
     },
     reviews: {
       title: "What regulars say",
-      sub: "A few favorites from customers who had it delivered or picked it up at the counter.",
       stars: (n: number) => `${n} out of 5 stars`,
     },
     alsoLike: "You may also like",
@@ -57,14 +49,13 @@ export const productMessages = defineMessages({
   id: {
     breadcrumb: "Navigasi",
     menu: "Menu kami",
-    eyebrow: EYEBROW,
     size: "Ukuran",
     addToCart: { verb: "TAMBAH", rest: " KE KERANJANG" },
     error: "Gagal menambahkan ke keranjang. Coba lagi ya.",
     decrease: "Kurangi jumlah",
     increase: "Tambah jumlah",
-    perkDelivery: "Antar ke seluruh Surabaya",
-    perkPickup: "Ambil di Jl. Palem Sememi",
+    perkDelivery: (fee: string) => `Ongkir ${fee}`,
+    perkPickup: "Pickup gratis",
     ingredients: "Bahan",
     ingredientsContact: "Hubungi kami",
     ingredientsSubject: (name: string) => `Bahan: ${name}`,
@@ -88,7 +79,6 @@ export const productMessages = defineMessages({
     },
     reviews: {
       title: "Kata pelanggan setia",
-      sub: "Beberapa ulasan favorit dari pelanggan yang memesan antar atau mengambilnya langsung di toko.",
       stars: (n: number) => `${n} dari 5 bintang`,
     },
     alsoLike: "Mungkin kamu juga suka",

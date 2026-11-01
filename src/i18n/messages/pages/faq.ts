@@ -4,6 +4,7 @@ import { defineMessages } from "../../config";
 export type FaqFacts = {
   address: string;
   hours: string;
+  opensAt: string;
   deliveryFee: string;
   email: string;
   payments: string;
@@ -25,10 +26,8 @@ export const faqMessages = defineMessages({
       "Answers about Droolbites desserts, delivery and store pickup, payment, storage and allergens.",
     eyebrow: "FAQ",
     title: "Questions? We've got answers.",
-    sub: "About our desserts, ordering, and visiting the store.",
     contactTitle: "Still hungry for answers?",
     whatsapp: "Chat on WhatsApp",
-    sticker: "No question too small",
     picks: {
       title: "Not sure where to start?",
       sub: "Three cookies our regulars keep coming back for, in their own words.",
@@ -65,22 +64,12 @@ export const faqMessages = defineMessages({
           {
             q: "What does Droolbites sell?",
             a: ({ counts: c }: FaqFacts) =>
-              `We offer ${enWord(c.cookies)} soft cookie ${c.cookies === 1 ? "flavor" : "flavors"}, fudgy brownies in ${enWord(c.brownieSizes)} ${c.brownieSizes === 1 ? "size" : "sizes"}, and ${enWord(c.tiramisu)} ${c.tiramisu === 1 ? "type" : "types"} of tiramisu.`,
-          },
-          {
-            q: "Which cookie flavors can I choose?",
-            a: () =>
-              "Chocolate Chunk, Double Chocolate, Red Velvet and White Chocolate Almond. Every cookie is thick, soft in the middle and sold by the piece, so you can mix flavors in one order.",
+              `We offer ${enWord(c.cookies)} soft cookie ${c.cookies === 1 ? "flavor" : "flavors"} (Chocolate Chunk, Double Chocolate, Red Velvet and White Chocolate Almond), fudgy brownies in ${enWord(c.brownieSizes)} ${c.brownieSizes === 1 ? "size" : "sizes"}, and ${enWord(c.tiramisu)} ${c.tiramisu === 1 ? "type" : "types"} of tiramisu (Classic Coffee and Matcha). Every cookie is thick, soft in the middle and sold by the piece, so you can mix flavors in one order. Tiramisu comes as single portions of soaked sponge layered with mascarpone cream and chilled overnight.`,
           },
           {
             q: "What brownie sizes are available?",
             a: () =>
               "The same fudgy brownie comes in four tray sizes: 10 × 10 cm (serves 2–4), 15 × 15 cm (serves 6–9), 20 × 20 cm (serves 10–16) and 20 × 30 cm for a crowd.",
-          },
-          {
-            q: "Which tiramisu options are available?",
-            a: () =>
-              "Classic Coffee and Matcha. Both are single portions of soaked sponge layered with mascarpone cream and chilled overnight.",
           },
         ],
       },
@@ -89,7 +78,7 @@ export const faqMessages = defineMessages({
         items: [
           {
             q: "Where is the store?",
-            a: (f: FaqFacts) => `You'll find us at ${f.address}. Opening hours: ${f.hours} WIB.`,
+            a: (f: FaqFacts) => `You'll find us at ${f.address}.`,
           },
           {
             q: "Can I choose delivery or store pickup?",
@@ -103,7 +92,13 @@ export const faqMessages = defineMessages({
           },
           {
             q: "When are you open?",
-            a: (f: FaqFacts) => `${f.hours} WIB. Store pickup orders can be collected during these hours.`,
+            a: (f: FaqFacts) =>
+              `${f.hours} WIB. The first trays come out of the oven at 06:00, and orders are collected or delivered from ${f.opensAt}. Store pickup orders can be collected during opening hours.`,
+          },
+          {
+            q: "How do I ask about an order?",
+            a: (f: FaqFacts) =>
+              `Message us on WhatsApp, call the shop or email ${f.email} with your order number. We answer within the hour while the shop is open.`,
           },
         ],
       },
@@ -130,10 +125,8 @@ export const faqMessages = defineMessages({
       "Jawaban seputar dessert Droolbites, pengiriman dan ambil di toko, pembayaran, penyimpanan dan alergen.",
     eyebrow: "FAQ",
     title: "Ada pertanyaan? Kami punya jawabannya.",
-    sub: "Seputar dessert kami, cara pesan, dan berkunjung ke toko.",
     contactTitle: "Masih penasaran?",
     whatsapp: "Chat lewat WhatsApp",
-    sticker: "Tanya apa aja, boleh",
     picks: {
       title: "Bingung mulai dari mana?",
       sub: "Tiga cookies yang bikin pelanggan setia kami balik lagi, kata mereka sendiri.",
@@ -170,22 +163,12 @@ export const faqMessages = defineMessages({
           {
             q: "Droolbites jual apa saja?",
             a: ({ counts: c }: FaqFacts) =>
-              `Kami punya ${idWord(c.cookies)} rasa soft cookies, brownies fudgy dalam ${idWord(c.brownieSizes)} ukuran, dan ${idWord(c.tiramisu)} jenis tiramisu.`,
-          },
-          {
-            q: "Rasa cookies apa saja yang bisa dipilih?",
-            a: () =>
-              "Chocolate Chunk, Double Chocolate, Red Velvet dan White Chocolate Almond. Semua cookies tebal, lembut di tengah dan dijual per buah, jadi kamu bisa campur rasa dalam satu pesanan.",
+              `Kami punya ${idWord(c.cookies)} rasa soft cookies (Chocolate Chunk, Double Chocolate, Red Velvet dan White Chocolate Almond), brownies fudgy dalam ${idWord(c.brownieSizes)} ukuran, dan ${idWord(c.tiramisu)} jenis tiramisu (Classic Coffee dan Matcha). Semua cookies tebal, lembut di tengah dan dijual per buah, jadi kamu bisa campur rasa dalam satu pesanan. Tiramisu dijual satu porsi: bolu yang direndam, berlapis krim mascarpone dan didinginkan semalaman.`,
           },
           {
             q: "Brownies tersedia dalam ukuran apa saja?",
             a: () =>
               "Brownies fudgy yang sama tersedia dalam empat ukuran loyang: 10 × 10 cm (untuk 2–4 orang), 15 × 15 cm (untuk 6–9 orang), 20 × 20 cm (untuk 10–16 orang) dan 20 × 30 cm untuk rombongan.",
-          },
-          {
-            q: "Ada pilihan tiramisu apa saja?",
-            a: () =>
-              "Classic Coffee dan Matcha. Keduanya satu porsi bolu yang direndam, berlapis krim mascarpone dan didinginkan semalaman.",
           },
         ],
       },
@@ -194,7 +177,7 @@ export const faqMessages = defineMessages({
         items: [
           {
             q: "Di mana tokonya?",
-            a: (f: FaqFacts) => `Kamu bisa menemukan kami di ${f.address}. Jam buka: ${f.hours} WIB.`,
+            a: (f: FaqFacts) => `Kamu bisa menemukan kami di ${f.address}.`,
           },
           {
             q: "Bisa pilih dikirim atau ambil di toko?",
@@ -208,7 +191,13 @@ export const faqMessages = defineMessages({
           },
           {
             q: "Jam berapa tokonya buka?",
-            a: (f: FaqFacts) => `${f.hours} WIB. Pesanan ambil di toko bisa diambil selama jam buka tersebut.`,
+            a: (f: FaqFacts) =>
+              `${f.hours} WIB. Loyang pertama keluar oven jam 06:00, dan pesanan bisa diambil atau diantar mulai ${f.opensAt}. Pesanan ambil di toko bisa diambil selama jam buka.`,
+          },
+          {
+            q: "Bagaimana kalau mau tanya soal pesanan?",
+            a: (f: FaqFacts) =>
+              `Kirim pesan lewat WhatsApp, telepon toko atau email ${f.email} dengan menyebutkan nomor pesananmu. Kami balas dalam satu jam selama toko buka.`,
           },
         ],
       },

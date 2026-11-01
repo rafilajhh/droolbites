@@ -7,13 +7,17 @@ import { useMessages } from "@/i18n/client";
 import { accountMessages } from "@/i18n/messages/account";
 import { cn } from "@/lib/cn";
 
-const ACCOUNT_SECTIONS = ["order-history", "account-information", "billing-information"] as const;
+const ACCOUNT_SECTIONS = ["order-history", "account-information", "saved-address"] as const;
 type SectionId = (typeof ACCOUNT_SECTIONS)[number];
 
+/** Below lg the three sections sit in one row with the icon above the label; from lg a vertical list. */
 const itemClass =
-  "flex w-full items-center gap-3 rounded-sm px-4 py-3.5 text-left text-[15px] leading-[23px] text-foreground transition-colors hover:bg-card";
+  "flex w-full flex-col items-center gap-1 rounded-sm px-2 py-2.5 text-center text-[13px] leading-[18px] text-foreground transition-colors hover:bg-card motion-reduce:transition-none sm:text-[15px] sm:leading-[23px] lg:flex-row lg:gap-3 lg:px-4 lg:py-3.5 lg:text-left";
 
-/** pen: Side Nav (ThhBD). Links jump to each card; the current card is highlighted while scrolling. */
+/**
+ * pen: Side Nav (ThhBD). Links jump to each card; the current card is highlighted while scrolling.
+ * Sign out is a quieter text action under the section links, not one of them.
+ */
 export function AccountNav() {
   const t = useMessages(accountMessages).nav;
   const [active, setActive] = useState<SectionId>("order-history");
@@ -40,40 +44,43 @@ export function AccountNav() {
   const links: { id: SectionId; label: string; short: string; Icon: typeof Receipt }[] = [
     { id: "order-history", label: t.orders, short: t.short.orders, Icon: Receipt },
     { id: "account-information", label: t.info, short: t.short.info, Icon: User },
-    { id: "billing-information", label: t.billing, short: t.short.billing, Icon: MapPin },
+    { id: "saved-address", label: t.address, short: t.short.address, Icon: MapPin },
   ];
 
   return (
-    <nav aria-label={t.label} className="w-full">
-      <ul className="grid grid-cols-2 gap-1 lg:flex lg:flex-col">
-        {links.map(({ id, label, short, Icon }) => {
-          const current = active === id;
-          return (
-            <li key={id}>
-              <a
-                href={`#${id}`}
-                onClick={() => setActive(id)}
-                aria-current={current ? "location" : undefined}
-                className={cn(itemClass, current ? "bg-card font-bold" : "font-medium")}
-              >
-                <Icon className={cn("size-5 shrink-0", current ? "text-primary" : "text-foreground")} aria-hidden />
-                <span className="sm:hidden" aria-hidden>
-                  {short}
-                </span>
-                <span className="max-sm:sr-only">{label}</span>
-              </a>
-            </li>
-          );
-        })}
-        <li>
-          <form action={signOut}>
-            <button type="submit" className={cn(itemClass, "cursor-pointer font-medium")}>
-              <LogOut className="size-5 shrink-0" aria-hidden />
-              {t.signOut}
-            </button>
-          </form>
-        </li>
-      </ul>
-    </nav>
+    <div className="flex w-full flex-col gap-2 lg:gap-3">
+      <nav aria-label={t.label} className="w-full">
+        <ul className="grid grid-cols-3 gap-1 lg:flex lg:flex-col">
+          {links.map(({ id, label, short, Icon }) => {
+            const current = active === id;
+            return (
+              <li key={id}>
+                <a
+                  href={`#${id}`}
+                  onClick={() => setActive(id)}
+                  aria-current={current ? "location" : undefined}
+                  className={cn(itemClass, current ? "bg-card font-bold" : "font-medium")}
+                >
+                  <Icon className={cn("size-5 shrink-0", current ? "text-primary" : "text-foreground")} aria-hidden />
+                  <span className="sm:hidden" aria-hidden>
+                    {short}
+                  </span>
+                  <span className="max-sm:sr-only">{label}</span>
+                </a>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+      <form action={signOut} className="max-lg:self-end lg:pt-3 lg:shadow-[inset_0_1px_0_var(--border-subtle)]">
+        <button
+          type="submit"
+          className="flex min-h-11 cursor-pointer items-center gap-2 rounded-sm px-2 text-sm leading-normal font-semibold text-muted-foreground transition-colors hover:text-foreground motion-reduce:transition-none lg:px-4"
+        >
+          <LogOut className="size-4 shrink-0" aria-hidden />
+          {t.signOut}
+        </button>
+      </form>
+    </div>
   );
 }

@@ -6,14 +6,22 @@ import { formatRupiah } from "@/lib/format";
 export type SummaryLine = {
   key: string;
   name: string;
-  /** Variant label, e.g. "1 piece" or "2 × 10 × 10 cm · 1 tray". */
+  /** Variant line, e.g. "2 × 10 × 10 cm · 1 tray"; empty when there is nothing to add. */
   meta: string;
   lineTotal: number;
   imageUrl: string | null;
 };
 
-/** "1 piece" for one, "2 × 1 piece" for more. */
-export function lineMeta(qty: number, label: string) {
+/** Labels `variantLabel` gives the catalog's one-size products ("1 piece" cookies, "1 portion" tiramisu). */
+const SINGLE_SIZE_LABELS = new Set(["1 piece", "1 buah", "1 portion", "1 porsi"]);
+
+/**
+ * The variant line under an order line: "10 × 10 cm · 1 tray", "2 × 10 × 10 cm · 1 tray".
+ * One-size products get none, since "1 piece" only repeats the quantity. Lists
+ * without a quantity stepper (order summaries) pass `showQty` to keep "2 × 1 piece".
+ */
+export function lineMeta(qty: number, label: string, showQty = false) {
+  if (SINGLE_SIZE_LABELS.has(label) && !(showQty && qty > 1)) return "";
   return qty > 1 ? `${qty} × ${label}` : label;
 }
 
@@ -53,7 +61,7 @@ export function OrderSummary({
       className={cn("flex w-full flex-col gap-5 rounded-m bg-card p-5 sm:p-7", className)}
     >
       <div className="flex w-full items-center justify-between gap-3">
-        <h2 id="order-summary-title" className="font-display text-2xl leading-7 font-bold text-foreground">
+        <h2 id="order-summary-title" className="font-display text-[22px] leading-7 font-bold text-foreground">
           {t.title}
         </h2>
         <span className="font-mono text-[13px] leading-5 font-semibold text-muted-foreground">{t.items(itemCount)}</span>

@@ -81,7 +81,7 @@ export const careersMessages = defineMessages({
       {
         title: "Attach the extras",
         body: () =>
-          "Include your name, contact details, a short intro — and your CV, experience or availability if you have them.",
+          "Add a short intro, plus your CV, experience or availability if you have them.",
       },
     ],
   },
@@ -164,7 +164,7 @@ export const careersMessages = defineMessages({
       {
         title: "Lampirkan pelengkapnya",
         body: () =>
-          "Sertakan nama, kontak, perkenalan singkat — serta CV, pengalaman atau ketersediaan waktumu jika ada.",
+          "Tambahkan perkenalan singkat, plus CV, pengalaman atau ketersediaan waktumu jika ada.",
       },
     ],
   },

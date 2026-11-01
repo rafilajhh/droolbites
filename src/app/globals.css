@@ -150,3 +150,72 @@
  * toggles skip their rotation) with Tailwind's motion-reduce: variant, so
  * state changes stay visible instead of being cut to 0ms everywhere.
  */
+
+/*
+ * Shared type and rhythm scale (1 Nov 2026 scale-down, measured against levainbakery.com,
+ * crumblcookies.com and milkbarstore.com). Pages use these instead of per-file sizes, so a
+ * heading means the same size everywhere. Pair with font-display font-bold.
+ */
+@utility type-hero {
+  font-size: 44px;
+  line-height: 44px;
+  letter-spacing: -1px;
+  @variant sm {
+    font-size: 64px;
+    line-height: 64px;
+    letter-spacing: -2px;
+  }
+  @variant lg {
+    font-size: 80px;
+    line-height: 78px;
+    letter-spacing: -2.5px;
+  }
+}
+
+@utility type-page {
+  font-size: 40px;
+  line-height: 42px;
+  letter-spacing: -1px;
+  @variant lg {
+    font-size: 56px;
+    line-height: 58px;
+    letter-spacing: -1.5px;
+  }
+}
+
+@utility type-section {
+  font-size: 32px;
+  line-height: 34px;
+  letter-spacing: -0.5px;
+  @variant lg {
+    font-size: 44px;
+    line-height: 46px;
+    letter-spacing: -1px;
+  }
+}
+
+@utility type-checkout {
+  font-size: 32px;
+  line-height: 34px;
+  letter-spacing: -0.5px;
+  @variant lg {
+    font-size: 40px;
+    line-height: 42px;
+    letter-spacing: -1px;
+  }
+}
+
+/* Vertical rhythm: a page section, and a tinted/moss panel's inner padding. */
+@utility section-y {
+  padding-block: 48px;
+  @variant lg {
+    padding-block: 80px;
+  }
+}
+
+@utility panel-y {
+  padding-block: 40px;
+  @variant lg {
+    padding-block: 64px;
+  }
+}

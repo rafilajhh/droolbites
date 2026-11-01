@@ -6,9 +6,8 @@ import { Eyebrow } from "@/components/content/eyebrow";
 import { formatOpeningHours } from "@/components/content/hours";
 import { toShopCategories } from "@/components/shop/shop-product";
 import { AccordionItem } from "@/components/ui/accordion";
-import { Sticker } from "@/components/ui/badges";
 import { ArrowLink } from "@/components/ui/button";
-import { Snapshot, photoFrame } from "@/components/ui/snapshot";
+import { photoFrame } from "@/components/ui/snapshot";
 import { faqMessages, type FaqFacts } from "@/i18n/messages/pages/faq";
 import { getLocale, getMessages } from "@/i18n/server";
 import { getMenu } from "@/lib/catalog";
@@ -76,6 +75,7 @@ export default async function FaqPage() {
   const facts: FaqFacts = {
     address: settings.address,
     hours: formatOpeningHours(settings, locale),
+    opensAt: settings.opensAt,
     deliveryFee: formatRupiah(settings.deliveryFee),
     email: settings.email,
     payments,
@@ -89,15 +89,15 @@ export default async function FaqPage() {
 
   return (
     <>
-      <section className="flex w-full flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 lg:flex-row lg:gap-24 lg:px-16 lg:pt-14 lg:pb-24">
-        {/* Sticky beside the long question list on desktops tall enough to show the whole column. */}
-        <div className="flex w-full flex-col gap-5 lg:w-[400px] lg:shrink-0 lg:self-start [@media(min-height:940px)]:lg:sticky [@media(min-height:940px)]:lg:top-[88px]">
-          <Eyebrow>{t.eyebrow}</Eyebrow>
-          <h1 className="font-display text-balance text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[64px] lg:leading-[65px] lg:tracking-[-2px]">
-            {t.title}
-          </h1>
-          <p className="text-lg leading-[27px] text-muted-foreground">{t.sub}</p>
-          <div className="flex flex-col gap-3.5 rounded-m bg-surface-inverse [--focus-ring:var(--white)] p-7">
+      <section className="section-y grid w-full grid-cols-1 gap-10 px-4 sm:px-8 lg:grid-cols-[400px_minmax(0,1fr)] lg:gap-x-24 lg:px-16">
+        {/* Heading and contact card: stacked in the left column at lg and sticky beside the long list; below lg the
+            wrapper dissolves so the contact card falls after the questions. */}
+        <div className="contents lg:sticky lg:top-[88px] lg:col-start-1 lg:row-start-1 lg:flex lg:flex-col lg:gap-8 lg:self-start">
+          <div className="order-1 flex flex-col gap-5">
+            <Eyebrow>{t.eyebrow}</Eyebrow>
+            <h1 className="type-page font-display text-balance font-bold text-foreground">{t.title}</h1>
+          </div>
+          <div className="order-3 flex flex-col gap-3.5 rounded-m bg-surface-inverse [--focus-ring:var(--white)] p-6 lg:p-7">
             <h2 className="font-display text-2xl leading-[26px] font-bold text-foreground-inverse">{t.contactTitle}</h2>
             <a href={`mailto:${settings.email}`} className={contactLink}>
               <Mail className="size-[18px] shrink-0 text-highlight" aria-hidden />
@@ -117,19 +117,9 @@ export default async function FaqPage() {
               {t.whatsapp}
             </a>
           </div>
-          <div className="relative hidden pt-3 lg:block">
-            <Snapshot
-              src="/images/site/gift-box.png"
-              alt=""
-              sizes="400px"
-              className="aspect-[4/3] w-full"
-              imageClassName="object-[50%_45%]"
-            />
-            <Sticker className="absolute -bottom-4 left-5">{t.sticker}</Sticker>
-          </div>
         </div>
 
-        <div className="flex min-w-0 flex-1 flex-col gap-12">
+        <div className="order-2 flex min-w-0 flex-col gap-10 lg:col-start-2 lg:row-start-1 lg:gap-12">
           {t.groups.map((group, gi) => (
             <div key={group.label} className="flex flex-col">
               <h2 className="font-mono text-[13px] leading-5 font-semibold tracking-[1px] text-muted-foreground">
@@ -152,12 +142,12 @@ export default async function FaqPage() {
       </section>
 
       {picked.length ? (
-        <section className="flex w-full flex-col gap-10 px-4 pb-16 sm:px-8 lg:px-16 lg:pb-28" aria-labelledby="faq-picks">
-          <div className="flex w-full flex-col items-start gap-6 pt-12 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-end sm:justify-between sm:gap-12 lg:pt-16">
+        <section className="flex w-full flex-col gap-8 px-4 pb-12 sm:px-8 lg:gap-10 lg:px-16 lg:pb-20" aria-labelledby="faq-picks">
+          <div className="flex w-full flex-col items-start gap-6 pt-12 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-end sm:justify-between sm:gap-12 lg:pt-14">
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <h2
                 id="faq-picks"
-                className="font-display text-balance text-[36px] leading-[38px] font-bold tracking-[-1px] text-foreground sm:text-[44px] sm:leading-[46px]"
+                className="type-section font-display text-balance font-bold text-foreground"
               >
                 {t.picks.title}
               </h2>
@@ -167,7 +157,7 @@ export default async function FaqPage() {
               <ArrowLink href="/menu">{t.picks.link}</ArrowLink>
             </div>
           </div>
-          <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
             {picked.map(({ slug, bg, product, review }) => (
               <article key={slug} className={cn("group/pick relative flex flex-col gap-6 rounded-m p-5", bg)}>
                 <div className={cn(photoFrame, "h-[220px] w-full lg:h-[240px]")}>

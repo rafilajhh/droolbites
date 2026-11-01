@@ -5,7 +5,6 @@ export const commonMessages = defineMessages({
   en: {
     announce: {
       label: "Store news",
-      fresh: "Baked fresh every morning in Surabaya",
       hoursLabel: "Hours:",
       hours: (hours: string) => `${hours} WIB`,
     },
@@ -42,7 +41,7 @@ export const commonMessages = defineMessages({
       checkout: "CHECKOUT",
       continue: "Continue shopping",
       emptyTitle: "Your cart is empty.",
-      emptyBody: "Cookies, brownies and tiramisu are baked fresh every morning.",
+      emptyBody: "Add a few desserts and they'll show up here.",
       emptyCta: "SEE THE MENU",
       picksTitle: "Start with a favorite",
       picks: {
@@ -56,7 +55,7 @@ export const commonMessages = defineMessages({
       status: (n: number, subtotal: string) => `${n} ${n === 1 ? "item" : "items"}, subtotal ${subtotal}`,
     },
     footer: {
-      tagline: "Soft cookies, fudgy brownies and creamy tiramisu — baked fresh daily in Surabaya.",
+      tagline: "Soft cookies, fudgy brownies and creamy tiramisu from Sememi, Surabaya.",
       shop: "SHOP",
       visit: "VISIT",
       help: "HELP",
@@ -84,7 +83,6 @@ export const commonMessages = defineMessages({
   id: {
     announce: {
       label: "Info toko",
-      fresh: "Dipanggang segar setiap pagi di Surabaya",
       hoursLabel: "Jam buka:",
       hours: (hours: string) => `${hours} WIB`,
     },
@@ -121,7 +119,7 @@ export const commonMessages = defineMessages({
       checkout: "CHECKOUT",
       continue: "Lanjut belanja",
       emptyTitle: "Keranjangmu masih kosong.",
-      emptyBody: "Cookies, brownies dan tiramisu dipanggang segar setiap pagi.",
+      emptyBody: "Tambahkan beberapa dessert, nanti muncul di sini.",
       emptyCta: "LIHAT MENU",
       picksTitle: "Mulai dari favorit",
       picks: {
@@ -135,7 +133,7 @@ export const commonMessages = defineMessages({
       status: (n: number, subtotal: string) => `${n} item, subtotal ${subtotal}`,
     },
     footer: {
-      tagline: "Soft cookies, brownies fudgy dan tiramisu yang creamy — dipanggang segar setiap hari di Surabaya.",
+      tagline: "Soft cookies, brownies fudgy dan tiramisu yang creamy dari Sememi, Surabaya.",
       shop: "BELANJA",
       visit: "KUNJUNGI",
       help: "BANTUAN",

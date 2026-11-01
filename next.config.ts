@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
     // "Jangan dikompres": photos are served at full quality.
     qualities: [100],
   },
+  async redirects() {
+    // The common guess for the reset flow; the real route is /reset-password.
+    return [{ source: "/forgot-password", destination: "/reset-password", permanent: true }];
+  },
   experimental: {
     // Above MAX_UPLOAD_BYTES (8 MB) plus form overhead, so an oversized photo
     // reaches saveProduct and gets the friendly "photoSize" error.

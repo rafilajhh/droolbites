@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { ChevronRight } from "lucide-react";
 import { AccordionItem } from "@/components/ui/accordion";
 import { ArrowLink } from "@/components/ui/button";
 import { galleryPhotos } from "@/components/product/gallery-photos";
-import { OrderSteps } from "@/components/product/order-steps";
 import { ProductReviews } from "@/components/product/product-reviews";
 import { formatRating, productRatings } from "@/components/product/reviews";
 import { MenuItemCard } from "@/components/shop/menu-item-card";
@@ -18,9 +16,11 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { menuMessages } from "@/i18n/messages/menu";
 import { productMessages } from "@/i18n/messages/product";
 import { getMenu, getProductBySlug } from "@/lib/catalog";
+import { formatRupiah } from "@/lib/format";
 import { getStoreSettings } from "@/lib/settings";
 
-const MAX_RELATED = 4;
+/** "You may also like" fills whole rows: four columns at lg, two below. */
+const RELATED_COLUMNS = { lg: 4, base: 2 };
 
 async function loadProduct(slug: string) {
   const product = await getProductBySlug(slug);
@@ -68,10 +68,14 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
   const others = toShopCategories(menu, locale)
     .flatMap((c) => c.products)
     .filter((p) => p.slug !== item.slug);
-  const related = [
+  const ranked = [
     ...others.filter((p) => p.categorySlug === item.categorySlug),
     ...others.filter((p) => p.categorySlug !== item.categorySlug),
-  ].slice(0, MAX_RELATED);
+  ];
+  // One full row at lg (which is also two full rows below lg), else one full row below lg; fewer than two hides it.
+  const relatedCount =
+    ranked.length >= RELATED_COLUMNS.lg ? RELATED_COLUMNS.lg : ranked.length >= RELATED_COLUMNS.base ? RELATED_COLUMNS.base : 0;
+  const related = ranked.slice(0, relatedCount);
 
   const details: { title: string; body?: string; placeholder?: boolean }[] = [
     {
@@ -120,15 +124,17 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
         </ol>
       </nav>
 
-      <div className="flex w-full flex-col gap-10 px-4 pt-2 pb-20 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 lg:pb-28 xl:gap-[72px]">
+      <div className="flex w-full flex-col gap-10 px-4 pt-2 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 xl:gap-[72px]">
         <ProductGallery photos={photos} badge={item.badge} />
         <div className="flex min-w-0 flex-1 flex-col gap-7 lg:pt-6">
           <ProductBuy
             product={item}
-            eyebrow={t.eyebrow[item.categorySlug] ?? item.categoryName.toUpperCase()}
+            eyebrow={item.categoryName.toUpperCase()}
             description={productLong(product.slug, product.description, locale)}
             unit={unit}
             rating={rating ? { value: formatRating(rating.value, locale), count: rating.count } : undefined}
+            deliveryFee={settings.deliveryEnabled ? formatRupiah(settings.deliveryFee) : null}
+            pickup={settings.pickupEnabled}
           />
           {details.length ? (
             <div className="flex w-full flex-col">
@@ -161,34 +167,28 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
         </div>
       </div>
 
-      <ProductReviews slug={product.slug} />
+      {/* Reviews and related products: one section-y around them, one section gap between them. */}
+      <div className="section-y flex w-full flex-col gap-12 lg:gap-20">
+        <ProductReviews slug={product.slug} />
 
-      {related.length ? (
-        <section
-          aria-labelledby="also-like"
-          className="flex w-full flex-col gap-8 px-4 pb-20 sm:px-8 lg:px-16 lg:pb-28"
-        >
-          <div className="flex w-full flex-wrap items-end justify-between gap-4">
-            <h2
-              id="also-like"
-              className="font-display text-[32px] leading-[35px] font-bold tracking-[-1px] text-foreground lg:text-[44px] lg:leading-[46px]"
-            >
-              {t.alsoLike}
-            </h2>
-            <ArrowLink href="/menu">{t.viewMenu}</ArrowLink>
-          </div>
-          <div className="grid w-full grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4 lg:gap-6">
-            {related.map((p) => (
-              <MenuItemCard key={p.id} product={p} size="sm" showBadge={false} />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {/* The payment step waits on the gateway; never let it hold up the page. */}
-      <Suspense fallback={null}>
-        <OrderSteps />
-      </Suspense>
+        {related.length ? (
+          <section aria-labelledby="also-like" className="flex w-full flex-col gap-8 px-4 sm:px-8 lg:px-16">
+            <div className="flex w-full flex-wrap items-end justify-between gap-4">
+              <h2 id="also-like" className="type-section font-display text-balance font-bold text-foreground">
+                {t.alsoLike}
+              </h2>
+              <ArrowLink href="/menu">{t.viewMenu}</ArrowLink>
+            </div>
+            <div className="grid w-full grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4 lg:gap-6">
+              {related.map((p) => (
+                <MenuItemCard key={p.id} product={p} size="sm" showBadge={false} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
+      {/* Below lg: room for the pinned buy bar, which hides once this spacer scrolls in, so it never covers the footer. */}
+      <div data-buy-bar-end aria-hidden className="h-[calc(5rem+env(safe-area-inset-bottom))] lg:hidden" />
     </div>
   );
 }

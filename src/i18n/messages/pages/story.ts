@@ -1,7 +1,7 @@
 import { defineMessages } from "../../config";
 
 /**
- * pen: Our story (wyZ4j). `title`, `body` and `values` are also read by the home story band;
+ * pen: Our story (wyZ4j). `body` is also read by the home story band;
  * everything from `intro` down belongs to the our-story page alone.
  */
 export const storyMessages = defineMessages({
@@ -12,21 +12,13 @@ export const storyMessages = defineMessages({
     eyebrow: "OUR STORY",
     title: "A little dessert shop with a big sweet tooth.",
     body: "Droolbites is a dessert shop in Surabaya, with a menu of soft cookies, fudgy brownies, and creamy tiramisu. We bring these familiar favorites together so you can find something for a quick treat, dessert after dinner, or a table to share.",
-    values: [
-      { title: "Baked every morning", body: "Small batches, so cookies leave the oven soft and brownies stay fudgy." },
-      {
-        title: "Familiar, done well",
-        body: "Chocolate chunk, red velvet, coffee tiramisu — favorites you already love, made generously.",
-      },
-      { title: "Made in Surabaya", body: "From our kitchen to your table, by delivery or pickup." },
-    ],
 
     intro:
-      "It started with one oven, two sisters and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter on Jl. Palem Sememi and a team of twelve, and the first tray still comes out at 06:00.",
+      "It started with one oven, two sisters and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter on Jl. Palem Sememi, and the first tray still comes out at 06:00.",
     since: "Since 2021",
 
     timelineTitle: "From a home kitchen to your table.",
-    timelineSub: "Five years, one street, and a lot of cookie dough.",
+    timelineSub: "One street, and a lot of cookie dough.",
     timeline: [
       {
         year: "2021",
@@ -45,8 +37,8 @@ export const storyMessages = defineMessages({
       },
       {
         year: "Today",
-        title: "A team of 12, same recipes",
-        body: "The first tray is out at 06:00. Rani still tastes every batch of dough, and Dewi still answers your messages herself.",
+        title: "Bigger crew, same recipes",
+        body: "Rani still tastes every batch of dough, and Dewi still answers your messages herself.",
       },
     ],
 
@@ -60,14 +52,14 @@ export const storyMessages = defineMessages({
     quoteName: "Rani & Dewi",
     quoteRole: "Founders, Droolbites",
 
-    numbersTitle: "Droolbites, five years in.",
+    numbersTitle: "Droolbites, in numbers.",
     numbersSub: "Still small on purpose. Just a little busier.",
     /** `desserts` is the live count of products on the menu. */
     numbers: (desserts: number) => [
       { value: "12", label: "bakers and counter crew" },
       { value: String(desserts), label: desserts === 1 ? "dessert on the menu" : "desserts on the menu" },
       { value: "~400", label: "cookies a day, give or take" },
-      { value: "4.8", label: "on Google Maps, from 300+ reviews" },
+      { value: "2021", label: "the year it all started" },
     ],
 
     visitTitle: "Come find us on Jl. Palem Sememi.",
@@ -83,24 +75,13 @@ export const storyMessages = defineMessages({
     eyebrow: "CERITA KAMI",
     title: "Toko dessert kecil buat kamu yang doyan manis.",
     body: "Droolbites adalah toko dessert di Surabaya dengan menu soft cookies, brownies fudgy dan tiramisu yang creamy. Semua favorit yang sudah akrab ini kami kumpulkan di satu tempat, jadi selalu ada pilihan buat ngemil sebentar, pencuci mulut habis makan malam, atau suguhan untuk ramai-ramai.",
-    values: [
-      {
-        title: "Dipanggang tiap pagi",
-        body: "Dibuat sedikit demi sedikit, jadi cookies keluar dari oven tetap lembut dan brownies tetap fudgy.",
-      },
-      {
-        title: "Favorit, dibuat sepenuh hati",
-        body: "Chocolate chunk, red velvet, tiramisu kopi — rasa yang sudah kamu suka, dan porsinya nggak pelit.",
-      },
-      { title: "Dibuat di Surabaya", body: "Dari dapur kami ke mejamu, lewat pengiriman atau ambil di toko." },
-    ],
 
     intro:
-      "Awalnya cuma satu oven, dua kakak-adik, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter di Jl. Palem Sememi dan tim dua belas orang, tapi loyang pertama tetap keluar oven jam 06:00.",
+      "Awalnya cuma satu oven, dua kakak-adik, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter di Jl. Palem Sememi, dan loyang pertama tetap keluar oven jam 06:00.",
     since: "Sejak 2021",
 
     timelineTitle: "Dari dapur rumah sampai ke mejamu.",
-    timelineSub: "Lima tahun, satu jalan yang sama, dan adonan cookies yang nggak ada habisnya.",
+    timelineSub: "Satu jalan yang sama, dan adonan cookies yang nggak ada habisnya.",
     timeline: [
       {
         year: "2021",
@@ -119,8 +100,8 @@ export const storyMessages = defineMessages({
       },
       {
         year: "Sekarang",
-        title: "Tim 12 orang, resep yang sama",
-        body: "Loyang pertama keluar jam 06:00. Rani masih mencicipi tiap adonan, dan Dewi masih membalas sendiri pesan-pesan kamu.",
+        title: "Tim makin ramai, resep tetap sama",
+        body: "Rani masih mencicipi tiap adonan, dan Dewi masih membalas sendiri pesan-pesan kamu.",
       },
     ],
 
@@ -134,13 +115,13 @@ export const storyMessages = defineMessages({
     quoteName: "Rani & Dewi",
     quoteRole: "Pendiri Droolbites",
 
-    numbersTitle: "Droolbites, lima tahun berjalan.",
+    numbersTitle: "Droolbites dalam angka.",
     numbersSub: "Masih kecil, dan memang sengaja. Cuma sekarang lebih sibuk.",
     numbers: (desserts: number) => [
       { value: "12", label: "baker dan kru toko" },
       { value: String(desserts), label: "dessert di menu" },
       { value: "~400", label: "cookies sehari, kurang lebih" },
-      { value: "4.8", label: "di Google Maps, dari 300+ ulasan" },
+      { value: "2021", label: "tahun semuanya dimulai" },
     ],
 
     visitTitle: "Temukan kami di Jl. Palem Sememi.",

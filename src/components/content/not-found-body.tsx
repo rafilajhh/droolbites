@@ -7,7 +7,7 @@ import { notFoundMessages } from "@/i18n/messages/pages/not-found";
 import { getMessages } from "@/i18n/server";
 import { cn } from "@/lib/cn";
 
-const four = "font-display text-[120px] leading-[0.9] font-extrabold sm:text-[220px]";
+const four = "font-display text-[96px] leading-[0.9] font-extrabold lg:text-[160px]";
 
 /** "Try one of these instead": one favorite per category. Static, so the 404 never waits on the catalog. */
 const picks = [
@@ -26,23 +26,23 @@ export async function NotFoundBody({ title, sub, menuLabel }: { title?: string; 
 
   return (
     <>
-      <section className="flex w-full flex-col items-center gap-7 px-4 pt-12 pb-14 text-center sm:px-8 lg:px-16 lg:pt-24 lg:pb-20">
+      <section className="section-y flex w-full flex-col items-center gap-6 px-4 text-center sm:px-8 lg:gap-7 lg:px-16">
         <div className="flex items-center gap-2" aria-hidden>
           <span className={`${four} text-accent-magenta`}>4</span>
-          <span className={cn(photoFrame, "size-[104px] shrink-0 rounded-pill bg-oat sm:size-[190px]")}>
+          <span className={cn(photoFrame, "size-[84px] shrink-0 rounded-pill bg-oat lg:size-[140px]")}>
             <Image
               src="/images/products/chocolate-chunk.png"
               alt=""
               fill
               priority
               quality={100}
-              sizes="190px"
+              sizes="(min-width: 1024px) 140px, 84px"
               className="object-cover"
             />
           </span>
           <span className={`${four} text-accent-cobalt`}>4</span>
         </div>
-        <h1 className="max-w-[900px] font-display text-balance text-[40px] leading-[1.02] font-bold tracking-[-1px] text-foreground sm:text-[64px] sm:leading-[65px] sm:tracking-[-2px]">
+        <h1 className="type-page max-w-[900px] font-display text-balance font-bold text-foreground">
           {title ?? t.title}
         </h1>
         <p className="max-w-[560px] text-balance text-[17px] leading-[1.53] text-muted-foreground sm:text-[19px] sm:leading-[29px]">
@@ -58,11 +58,11 @@ export async function NotFoundBody({ title, sub, menuLabel }: { title?: string; 
         </div>
       </section>
 
-      <section aria-labelledby="not-found-picks" className="w-full px-4 pb-16 sm:px-8 lg:px-16 lg:pb-28">
-        <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6 pt-12 shadow-[inset_0_1px_0_var(--border-subtle)] lg:gap-8 lg:pt-16">
+      <section aria-labelledby="not-found-picks" className="w-full px-4 pb-12 sm:px-8 lg:px-16 lg:pb-20">
+        <div className="mx-auto flex w-full max-w-[1100px] flex-col gap-6 pt-10 shadow-[inset_0_1px_0_var(--border-subtle)] lg:gap-8 lg:pt-14">
           <h2
             id="not-found-picks"
-            className="text-center font-display text-balance text-[28px] leading-[32px] font-bold tracking-[-0.5px] text-foreground lg:text-[36px] lg:leading-[40px] lg:tracking-[-1px]"
+            className="type-section text-center font-display text-balance font-bold text-foreground"
           >
             {t.tryTitle}
           </h2>

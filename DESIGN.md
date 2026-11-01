@@ -323,8 +323,8 @@ A warm-paper neutral base with one deep green and a rotating confectionery accen
 **Full ramp:** The six named roles below are the core. The pen is laid out per frame, so it also uses intermediate display steps (24–88px, plus the 220/120px 404 numeral), a 17–20px lede/body-large, and 9–12px badge and micro-label sizes. Every one of those steps is in the frontmatter `typography` map and was copied from the pen at 1440. Before adding a new size, pick the nearest existing step.
 
 ### Hierarchy
-- **Display** (700, 52 / 80 / 112px, line-height 50 / 76 / 106px, tracking -1.5 to -3px): landing hero h1 only, stepping up at sm and lg.
-- **Headline** (700, 34 / 44 / 52px, line-height about 1.0-1.05, tracking -1px): page titles, section headings.
+- **Display** (700, `type-hero`: 44 / 64 / 80px, line-height 44 / 64 / 78px, tracking -1 to -2.5px): landing hero h1 only. Scaled down on 1 Nov 2026 after measuring levainbakery.com, crumblcookies.com and milkbarstore.com (their largest headings are 53–60px); the pen's 112px is retired.
+- **Headline** (700): page h1s use `type-page` (40 / 56px), section h2s `type-section` (32 / 44px), checkout, pay and success h1s `type-checkout` (32 / 40px). The utilities live in `src/app/globals.css`; never set a heading size per file.
 - **Title** (600-700, 20-30px, line-height 1.1-1.2): cart title, empty states, order-line names, brand name.
 - **Body** (Manrope 400, 16-17px, line-height normal to 26px; 15px for secondary and admin text, 13px for helper/error): paragraphs; keep measure near 560-600px (`max-w-[560px]`/`[600px]`).
 - **Label** (Plex Mono 600, 13px chips and badges, 11-12px table headers and sidebar status, tracking 1px where uppercase-free eyebrow-style text exists): chips, stickers, table column headers, cart counts.
@@ -339,7 +339,7 @@ The mono uppercase eyebrow above section and page titles ("SOFT COOKIES", "VISIT
 
 ## Layout
 
-Content sits in a `max-w-[1440px]` centered column. Landing sections run full width inside 12px (mobile) and 24px (sm+) outer gutters; inner section padding is `px-5`/`px-10`/`px-16` stepping up by breakpoint. Vertical rhythm between landing sections is large: `pt-20 pb-16` mobile, `pt-28 pb-24` at lg. Product grids are 2 columns on mobile, 4 at lg (`gap-x-4 gap-y-8`, `lg:gap-6`). Admin uses a fixed 272px sticky sidebar from lg and a moss top bar with a 300px slide-in drawer below it; the main column pads 16/24/48px and stacks cards with 24px gaps. Header: always compact, 56px tall on mobile and 64px from md, with a hairline; it never changes size on scroll. The storefront `main` starts with a 12/24px top gutter (the landing side gutters) so the first section is not jammed under it, and sticky asides, TOCs and anchor targets sit at `top-[88px]`/`scroll-mt-[88px]`, 24px below the header.
+Content sits in a `max-w-[1440px]` centered column. Landing sections run full width inside 12px (mobile) and 24px (sm+) outer gutters; inner section padding is `px-5`/`px-10`/`px-16` stepping up by breakpoint. Vertical rhythm comes from two utilities: `section-y` (48px mobile, 80px lg) for page sections and `panel-y` (40 / 64px) inside tinted or moss panels. Product grids are 2 columns on mobile, 4 at lg (`gap-x-4 gap-y-8`, `lg:gap-6`). Admin uses a fixed 272px sticky sidebar from lg and a moss top bar with a 300px slide-in drawer below it; the main column pads 16/24/48px and stacks cards with 24px gaps. Header: always compact, 56px tall on mobile and 64px from md, with a hairline; it never changes size on scroll. The storefront `main` starts with a 12/24px top gutter (the landing side gutters) so the first section is not jammed under it, and sticky asides, TOCs and anchor targets sit at `top-[88px]`/`scroll-mt-[88px]`, 24px below the header.
 
 Touch targets are 44px minimum. Visible controls smaller than that (28px stepper buttons, text links) get an invisible `after:` hit-slop pseudo-element rather than being enlarged. The `lg` breakpoint is the sidebar/column switch; `sm` (640px) and `md` (768px) govern header height and gutters.
 
@@ -353,7 +353,7 @@ Flat by default. Depth is tonal: paper under oat under white, mint and tint pane
 ### Named Rules
 **The Hairline-Not-Border Rule.** Separators are inset shadows or inset rings, so they never change a box's size.
 **The Flat-Until-Floating Rule.** Only layers that float above content get a drop shadow.
-**The Cutout Exception.** Photographic cookie cutouts (`Cutout` in `src/components/ui/snapshot.tsx`) carry their own `drop-shadow` (`0 10px 12px` at 22% ink) because they sit on top of a panel as objects. They are decorative only (`alt=""`, `aria-hidden`), shown from `lg` up except the menu promo tile, placed on a panel edge or corner and never over an action. Use at most two per screen.
+**The Cutout Exception.** Photographic cookie cutouts (`Cutout` in `src/components/ui/snapshot.tsx`) carry their own `drop-shadow` (`0 10px 12px` at 22% ink) because they sit on top of a panel as objects. They are decorative only (`alt=""`, `aria-hidden`), shown from `lg` up, placed on a panel edge or corner and never over an action. Use at most two per screen.
 
 ## Shapes
 
@@ -376,6 +376,7 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 
 ### Cards / Containers
 - Storefront cards: oat fill, 20px radius, no border. Admin `Card`: white, 20px radius, 1px subtle inset ring.
+- **No wedged cards.** A grid of real items holds only real items: no promo, CTA, filler or decorative card to plug a hole or pad a column. A short last row centers (filtered menu) or a multi-size product spans two columns (all-products menu) instead. Say each store fact once, in its home (hours in the announcement bar and /location, freshness in the hero, rating in the review band and product pages, ordering steps in the FAQ); checkout carries no security reassurance copy.
 - Cart drawer: paper body, hairline-separated rows, oat footer; slides in, fades under reduced motion.
 
 ### Inputs / Fields

@@ -25,8 +25,8 @@ export function OccasionCard({
       <Snapshot
         src={image}
         alt={alt}
-        sizes="(min-width: 1024px) 421px, 100vw"
-        className="h-[240px] w-full lg:h-[320px]"
+        sizes="(min-width: 1440px) 644px, (min-width: 640px) 50vw, 100vw"
+        className="aspect-[4/3] w-full"
       />
       <h3 className="pt-1 font-display text-[24px] leading-[27px] font-medium text-foreground lg:text-[28px] lg:leading-[31px]">
         {title}

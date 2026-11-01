@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { getStoreSettings } from "@/lib/settings";
 import { formatRating, productRatings, productReviews } from "./reviews";
 
-/** Review panels alternate between two tints; mustard is left to the ordering strip below. */
+/** Review panels alternate between two tints. */
 const tints = ["bg-tint-lavender", "bg-tint-lime"];
 
 /** "What regulars say" on the product page: the product rating and two short reviews. */
@@ -20,17 +20,13 @@ export async function ProductReviews({ slug }: { slug: string }) {
     <section
       id="reviews"
       aria-labelledby="reviews-title"
-      className="flex w-full scroll-mt-[88px] flex-col gap-8 px-4 pb-20 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 lg:pb-28 xl:gap-[72px]"
+      className="flex w-full scroll-mt-[88px] flex-col gap-8 px-4 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 xl:gap-[72px]"
     >
       <div className="flex w-full flex-col items-start gap-4 lg:w-[340px] lg:shrink-0 lg:pt-2">
-        <h2
-          id="reviews-title"
-          className="font-display text-[32px] leading-[35px] font-bold tracking-[-1px] text-balance text-foreground lg:text-[44px] lg:leading-[46px]"
-        >
+        <h2 id="reviews-title" className="type-section font-display text-balance font-bold text-foreground">
           {t.reviews.title}
         </h2>
-        <p className="max-w-[560px] text-pretty text-base leading-[24px] text-muted-foreground">{t.reviews.sub}</p>
-        <Sticker className="mt-2 ml-1 gap-2 rotate-[-4deg]">
+        <Sticker className="mt-2 ml-1 gap-2">
           <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
           <span className="sr-only">{t.rating.rated} </span>
           {formatRating(rating.value, locale)}

@@ -4,7 +4,7 @@ import { UspItem } from "./usp-item";
 
 type Usp = { icon: LucideIcon; label: string };
 
-/** How many times the four items repeat inside each half, so wide screens never show the seam. */
+/** How many times the three items repeat inside each half, so wide screens never show the seam. */
 const REPEAT = 2;
 
 /**

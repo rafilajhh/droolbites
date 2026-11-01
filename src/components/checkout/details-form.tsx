@@ -2,17 +2,17 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, MapPin, Store, Truck } from "lucide-react";
+import { Store, Truck } from "lucide-react";
 import { saveCheckoutDetails, type DetailsState } from "@/app/actions/checkout";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { Button } from "@/components/ui/button";
 import { Field, TextInput } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
-import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { CheckoutSection } from "./checkout-section";
 import { OrderSummary, type SummaryLine } from "./order-summary";
+import { SummaryToggle } from "./summary-toggle";
 
 export type DetailsValues = {
   email: string;
@@ -54,7 +54,6 @@ export function DetailsForm({
   const d = t.details;
   const [state, formAction, pending] = useActionState(saveCheckoutDetails, initialState);
   const [values, setValues] = useState(initial);
-  const [summaryOpen, setSummaryOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   // Move focus to the first field with an error after each failed submit.
@@ -92,26 +91,18 @@ export function DetailsForm({
   const closed = !options.delivery && !options.pickup;
 
   return (
-    <div className="flex w-full flex-col gap-8 px-4 pt-8 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24">
+    // Below lg the Continue button is pinned to the bottom of the screen, so the page keeps room for it.
+    <div className="flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24">
       <form
         ref={formRef}
         action={formAction}
         noValidate
         className="flex w-full min-w-0 flex-1 flex-col gap-5"
-        aria-describedby="checkout-sub"
       >
-        <div className="flex flex-col gap-2 pb-3">
-          <h1 className="font-display text-[40px] leading-none font-bold tracking-[-1.5px] text-foreground sm:text-[56px]">
-            {d.title}
-          </h1>
-          <p id="checkout-sub" className="text-[17px] leading-[26px] text-muted-foreground">
-            {d.sub}
-          </p>
-        </div>
+        <h1 className="type-checkout pb-3 font-display font-bold text-foreground">{d.title}</h1>
 
         <CheckoutSection
           id="checkout-contact"
-          num={1}
           title={d.contact}
           meta={
             signInHref ? (
@@ -121,7 +112,7 @@ export function DetailsForm({
             ) : null
           }
         >
-          <Field label={d.email} htmlFor="checkout-email" helper={d.emailHelper} error={err("email")}>
+          <Field label={d.email} htmlFor="checkout-email" error={err("email")}>
             {input("email", {
               type: "email",
               autoComplete: "email",
@@ -154,7 +145,6 @@ export function DetailsForm({
 
         <CheckoutSection
           id="checkout-receive"
-          num={2}
           title={d.receive}
           meta={
             delivery && saved ? (
@@ -245,10 +235,6 @@ export function DetailsForm({
                       })}
                     </Field>
                   </div>
-                  <p className="flex items-center gap-2 text-sm leading-[21px] text-muted-foreground">
-                    <MapPin className="size-4 shrink-0 text-primary" aria-hidden />
-                    {d.region} · {d.cityNote}
-                  </p>
                 </>
               ) : (
                 <p className="text-[15px] leading-normal text-muted-foreground">
@@ -259,15 +245,24 @@ export function DetailsForm({
           )}
         </CheckoutSection>
 
-        <div className="flex w-full flex-col items-stretch gap-4 pt-2 sm:flex-row sm:items-center sm:gap-6">
-          <Button type="submit" disabled={pending || closed}>
-            {pending ? d.saving : d.continue}
-          </Button>
+        <div className="flex w-full flex-col items-center gap-4 pt-2 lg:flex-row lg:gap-6">
+          {/* Below lg this bar is pinned to the bottom of the screen, like the PAY bar on the payment step. */}
+          <div className="fixed inset-x-0 bottom-0 z-30 flex bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:shadow-none">
+            <Button type="submit" className="w-full lg:w-auto" disabled={pending || closed}>
+              {pending ? d.saving : d.continue}
+            </Button>
+          </div>
           <div className="flex items-center justify-center gap-6">
-            <Link href="/shipping-policy" className="text-sm leading-normal font-semibold text-muted-foreground hover:text-foreground">
+            <Link
+              href="/shipping-policy"
+              className="relative text-sm leading-normal font-semibold text-muted-foreground after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:text-foreground"
+            >
               {d.shipping}
             </Link>
-            <Link href="/privacy-policy" className="text-sm leading-normal font-semibold text-muted-foreground hover:text-foreground">
+            <Link
+              href="/privacy-policy"
+              className="relative text-sm leading-normal font-semibold text-muted-foreground after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:text-foreground"
+            >
               {d.privacy}
             </Link>
           </div>
@@ -275,27 +270,13 @@ export function DetailsForm({
       </form>
 
       {/* Below lg the summary moves above the form behind a toggle bar; at lg it is the right column. */}
-      <div className="order-first flex w-full flex-col gap-3 lg:order-none lg:w-[440px] lg:shrink-0">
-        <button
-          type="button"
-          aria-expanded={summaryOpen}
-          aria-controls="checkout-summary"
-          onClick={() => setSummaryOpen((open) => !open)}
-          className="flex min-h-14 w-full items-center gap-2 rounded-m bg-card px-5 py-3 text-left lg:hidden"
-        >
-          <span className="text-[15px] leading-[23px] font-semibold text-foreground">
-            {summaryOpen ? t.summary.hide : t.summary.show}
-          </span>
-          <ChevronDown
-            className={cn("size-4 shrink-0 text-foreground transition-transform motion-reduce:transition-none", summaryOpen && "rotate-180")}
-            aria-hidden
-          />
-          <span className="ml-auto font-display text-lg leading-6 font-bold text-foreground">
-            {formatRupiah(summary.subtotal + fee)}
-          </span>
-        </button>
+      <SummaryToggle
+        id="checkout-summary"
+        labels={t.summary}
+        total={formatRupiah(summary.subtotal + fee)}
+        className="order-first lg:order-none lg:w-[440px] lg:shrink-0"
+      >
         <OrderSummary
-          id="checkout-summary"
           t={t.summary}
           lines={summary.lines}
           itemCount={summary.itemCount}
@@ -303,9 +284,8 @@ export function DetailsForm({
           fulfilment={values.fulfilment}
           fee={fee}
           total={summary.subtotal + fee}
-          className={summaryOpen ? undefined : "hidden lg:flex"}
         />
-      </div>
+      </SummaryToggle>
     </div>
   );
 }

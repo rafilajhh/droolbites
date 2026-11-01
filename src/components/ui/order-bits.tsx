@@ -2,7 +2,10 @@ import Image from "next/image";
 import { cn } from "@/lib/cn";
 import { photoFrame } from "./snapshot";
 
-/** pen: Order Line (bAwzK). Thumb 64 by default; summaries use 52. */
+/**
+ * pen: Order Line (bAwzK). Thumb 64 by default; summaries use 52. An empty
+ * `meta` drops the variant line (single-size products, see `lineMeta`).
+ */
 export function OrderLine({
   name,
   meta,
@@ -14,7 +17,7 @@ export function OrderLine({
   className,
 }: {
   name: string;
-  meta: React.ReactNode;
+  meta?: React.ReactNode;
   price: React.ReactNode;
   imageUrl: string | null;
   thumb?: 52 | 64;
@@ -35,7 +38,7 @@ export function OrderLine({
         <p className={cn("font-display text-[17px] font-semibold leading-[1.25] text-foreground", nameClassName)}>
           {name}
         </p>
-        <p className="text-[13px] leading-normal text-muted-foreground">{meta}</p>
+        {meta ? <p className="text-[13px] leading-normal text-muted-foreground">{meta}</p> : null}
       </div>
       <p className={cn("shrink-0 text-[15px] font-bold leading-normal text-foreground", priceClassName)}>{price}</p>
     </div>

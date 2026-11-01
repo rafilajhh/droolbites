@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 
@@ -60,30 +61,44 @@ export function PolicyToc({ heading, items }: { heading: string; items: { id: st
     };
   }, [items]);
 
+  const links = items.map((item) => {
+    const isActive = item.id === active;
+    return (
+      <a
+        key={item.id}
+        href={`#${item.id}`}
+        aria-current={isActive ? "location" : undefined}
+        onClick={() => {
+          pinned.current = item.id;
+          setActive(item.id);
+        }}
+        className={cn(
+          "flex items-center gap-2.5 rounded-sm px-3.5 py-2.5 text-[15px] leading-[23px] text-foreground transition-colors",
+          isActive ? "bg-card font-bold" : "font-medium hover:bg-card/60",
+        )}
+      >
+        <span className={cn("h-[18px] w-[3px] shrink-0 rounded-[2px]", isActive && "bg-primary")} aria-hidden />
+        {item.title}
+      </a>
+    );
+  });
+
   return (
-    <nav aria-label={heading} className="flex w-full flex-col gap-1.5 lg:sticky lg:top-[88px] lg:w-[300px] lg:shrink-0 lg:self-start">
+    <>
+      {/* Below lg: a compact fold instead of a five-row block before the text. */}
+      <details className="group rounded-m bg-card lg:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-4 font-mono text-xs leading-[18px] font-semibold tracking-[1px] text-foreground [&::-webkit-details-marker]:hidden">
+          {heading}
+          <ChevronDown className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none" aria-hidden />
+        </summary>
+        <nav aria-label={heading} className="flex flex-col gap-1 px-1 pb-2">
+          {links}
+        </nav>
+      </details>
+      <nav aria-label={heading} className="hidden w-[300px] shrink-0 flex-col gap-1.5 self-start lg:sticky lg:top-[88px] lg:flex">
       <p className="font-mono text-xs leading-[18px] font-semibold tracking-[1px] text-muted-foreground">{heading}</p>
-      {items.map((item) => {
-        const isActive = item.id === active;
-        return (
-          <a
-            key={item.id}
-            href={`#${item.id}`}
-            aria-current={isActive ? "location" : undefined}
-            onClick={() => {
-              pinned.current = item.id;
-              setActive(item.id);
-            }}
-            className={cn(
-              "flex items-center gap-2.5 rounded-sm px-3.5 py-2.5 text-[15px] leading-[23px] text-foreground transition-colors",
-              isActive ? "bg-card font-bold" : "font-medium hover:bg-card/60",
-            )}
-          >
-            <span className={cn("h-[18px] w-[3px] shrink-0 rounded-[2px]", isActive && "bg-primary")} aria-hidden />
-            {item.title}
-          </a>
-        );
-      })}
-    </nav>
+      {links}
+      </nav>
+    </>
   );
 }

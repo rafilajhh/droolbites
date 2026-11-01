@@ -11,6 +11,7 @@ import { HowToPay } from "@/components/checkout/how-to-pay";
 import { OrderSummary } from "@/components/checkout/order-summary";
 import { PayActions, PaymentWatcher, SimulatePayment } from "@/components/checkout/pay-actions";
 import { orderSummaryLines } from "@/components/checkout/summary-lines";
+import { SummaryToggle } from "@/components/checkout/summary-toggle";
 import { StatusBadge } from "@/components/ui/badges";
 import { buttonClasses, ButtonLink } from "@/components/ui/button";
 import { PaymentMark } from "@/components/ui/choice-tiles";
@@ -59,18 +60,20 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   const statusUrl = withOrderToken(`/api/orders/${orderNumber}/payment-status`, token);
   const deadline = formatDateTime(live?.expiresAt ?? orderDeadline(order), locale);
 
+  // Below lg the summary folds into a bar under the payment details.
   const summary = (
-    <OrderSummary
-      t={t.summary}
-      lines={orderSummaryLines(order, locale)}
-      itemCount={itemCount(order)}
-      subtotal={order.subtotal}
-      fulfilment={order.fulfilmentMethod}
-      fee={order.deliveryFee}
-      serviceFee={pay.serviceFee}
-      total={pay.amount}
-      className="lg:w-[440px] lg:shrink-0"
-    />
+    <SummaryToggle id="pay-summary" labels={t.summary} total={amount} className="lg:w-[440px] lg:shrink-0">
+      <OrderSummary
+        t={t.summary}
+        lines={orderSummaryLines(order, locale)}
+        itemCount={itemCount(order)}
+        subtotal={order.subtotal}
+        fulfilment={order.fulfilmentMethod}
+        fee={order.deliveryFee}
+        serviceFee={pay.serviceFee}
+        total={pay.amount}
+      />
+    </SummaryToggle>
   );
 
   const layout = (title: string, sub: string, body: React.ReactNode) => (
@@ -81,9 +84,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
           <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
             <div className="flex flex-col items-start gap-2.5 pb-2">
               <StatusBadge tone={status.tone}>{status[locale]}</StatusBadge>
-              <h1 className="font-display text-[40px] leading-none font-bold tracking-[-1px] text-foreground sm:text-[52px]">
-                {title}
-              </h1>
+              <h1 className="type-checkout font-display font-bold text-foreground">{title}</h1>
               <p className="text-[17px] leading-[26px] text-muted-foreground">{sub}</p>
             </div>
             {body}
@@ -190,10 +191,9 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
     <>
       <div className="flex w-full flex-wrap items-center gap-4 rounded-m bg-tint-mustard px-5 py-[18px] sm:flex-nowrap sm:px-6">
         <Timer className="size-6 shrink-0 text-foreground" aria-hidden />
-        <div className="flex min-w-0 flex-1 basis-[calc(100%-40px)] flex-col sm:basis-0">
-          <p className="text-base leading-6 font-bold text-foreground">{p.payBefore(deadline)}</p>
-          <p className="text-sm leading-[21px] text-muted-foreground">{p.held}</p>
-        </div>
+        <p className="min-w-0 flex-1 basis-[calc(100%-40px)] text-base leading-6 font-bold text-foreground sm:basis-0">
+          {p.payBefore(deadline)}
+        </p>
         {live.expiresAt ? (
           <div className="w-full pl-10 sm:w-auto sm:pl-0">
             <Countdown expiresAt={live.expiresAt.toISOString()} label={p.timeLeft} />
@@ -205,12 +205,18 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         aria-label={info.name}
         className="flex w-full flex-col overflow-hidden rounded-m bg-white inset-ring-[1.5px] inset-ring-border"
       >
-        <div className="flex w-full flex-wrap items-center gap-x-3.5 gap-y-2 bg-mint px-5 py-[18px] sm:px-6">
+        {/* Below sm "Change method" sits under the name, so a long name like "BCA Virtual Account" keeps one line. */}
+        <div className="flex w-full items-center gap-3.5 bg-mint px-5 py-[18px] sm:px-6">
           <PaymentMark label={info.mark} className={info.markClass} logoUrl={logos[live.method]} />
-          <p className="min-w-0 flex-1 text-base leading-6 font-bold text-foreground">{info.name}</p>
-          <Link href={changeHref} className="text-sm leading-[21px] font-bold text-primary hover:underline">
-            {p.changeMethod}
-          </Link>
+          <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <p className="min-w-0 text-base leading-6 font-bold text-foreground">{info.name}</p>
+            <Link
+              href={changeHref}
+              className="relative shrink-0 text-sm leading-[21px] font-bold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
+            >
+              {p.changeMethod}
+            </Link>
+          </div>
         </div>
 
         {live.vaNumber ? (

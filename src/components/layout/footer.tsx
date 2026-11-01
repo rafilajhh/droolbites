@@ -63,7 +63,7 @@ export async function Footer() {
             quality={100}
             className="size-24 rounded-full object-cover lg:size-28"
           />
-          <p className="pt-2 font-display text-[32px] leading-[34px] font-bold tracking-[-1px] text-foreground-inverse sm:text-[40px] sm:leading-[42px] lg:text-[48px] lg:leading-[49px]">
+          <p className="pt-2 font-display type-section font-bold text-foreground-inverse">
             {f.newsTitle}
           </p>
           <p className="text-base leading-normal text-mint">{f.newsSub}</p>

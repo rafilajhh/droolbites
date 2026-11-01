@@ -34,7 +34,7 @@ const text = (max: number) => z.string().trim().max(max);
 
 /** Local delivery only covers Surabaya: the city is fixed and the postal code must be 601xx–602xx. */
 export const DELIVERY_CITY = "Surabaya";
-const DELIVERY_POSTAL_RE = /^60[12]\d{2}$/;
+export const DELIVERY_POSTAL_RE = /^60[12]\d{2}$/;
 
 /** Indonesian mobile numbers: 08…, +628… or 628… (spaces, dashes and brackets allowed). E-wallets need one. */
 const ID_MOBILE_RE = /^(?:\+?62|0)8\d{7,11}$/;

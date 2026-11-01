@@ -14,11 +14,8 @@ export const locationMessages = defineMessages({
     imageAlt: "The green Droolbites storefront with a display of cookies, brownies and tiramisu",
     openMap: "OPEN MAP",
     openMapLabel: "Open directions in Google Maps (opens in a new tab)",
-    pickupTitle: "Store pickup",
-    pickupBody: "Choose pickup at checkout and collect your order here.",
     openNow: "Open now",
     closedNow: "Closed now",
-    questionsTitle: "Questions?",
     callPrefix: "Call ",
     emailMiddle: " or email ",
 
@@ -26,19 +23,8 @@ export const locationMessages = defineMessages({
     visitSub:
       "We're on the west side of the city, a few minutes off Jl. Raya Sememi. Look for the green shopfront and the smell of brown butter.",
     hoursTitle: "Opening hours",
-    days: {
-      mon: "Monday",
-      tue: "Tuesday",
-      wed: "Wednesday",
-      thu: "Thursday",
-      fri: "Friday",
-      sat: "Saturday",
-      sun: "Sunday",
-    },
-    today: "Today",
-    closedDay: "Closed",
     hoursNote:
-      "Pickup orders close 30 minutes before we do. Public holidays keep the same hours unless we say otherwise on Instagram.",
+      "Public holidays keep the same hours unless we say otherwise on Instagram.",
     routesLabel: "Ways to get here",
     routes: [
       {
@@ -85,6 +71,7 @@ export const locationMessages = defineMessages({
     ctaTitle: "Order ahead, pick up warm.",
     ctaBody: (fee: string) =>
       `Choose store pickup at checkout and your order is boxed and waiting when you walk in. Pickup is free; delivery anywhere in Surabaya is a flat ${fee}.`,
+    pickupCutoff: (time: string) => `Pickup orders close at ${time}, 30 minutes before we do.`,
     ctaOrder: "ORDER FOR PICKUP",
     ctaCall: "CALL THE SHOP",
   },
@@ -97,11 +84,8 @@ export const locationMessages = defineMessages({
     imageAlt: "Tampak depan toko Droolbites yang hijau dengan etalase cookies, brownies dan tiramisu",
     openMap: "BUKA PETA",
     openMapLabel: "Buka petunjuk arah di Google Maps (tab baru)",
-    pickupTitle: "Ambil di toko",
-    pickupBody: "Pilih ambil di toko saat checkout, lalu ambil pesananmu di sini.",
     openNow: "Sedang buka",
     closedNow: "Sedang tutup",
-    questionsTitle: "Ada pertanyaan?",
     callPrefix: "Telepon ",
     emailMiddle: " atau email ",
 
@@ -109,19 +93,8 @@ export const locationMessages = defineMessages({
     visitSub:
       "Kami ada di Surabaya barat, beberapa menit dari Jl. Raya Sememi. Cari saja toko yang hijau dan wangi brown butter.",
     hoursTitle: "Jam buka",
-    days: {
-      mon: "Senin",
-      tue: "Selasa",
-      wed: "Rabu",
-      thu: "Kamis",
-      fri: "Jumat",
-      sat: "Sabtu",
-      sun: "Minggu",
-    },
-    today: "Hari ini",
-    closedDay: "Tutup",
     hoursNote:
-      "Pesanan ambil di toko ditutup 30 menit sebelum toko tutup. Hari libur nasional tetap buka seperti biasa, kecuali ada info lain di Instagram.",
+      "Hari libur nasional tetap buka seperti biasa, kecuali ada info lain di Instagram.",
     routesLabel: "Cara ke sini",
     routes: [
       {
@@ -168,6 +141,7 @@ export const locationMessages = defineMessages({
     ctaTitle: "Pesan dulu, ambil masih hangat.",
     ctaBody: (fee: string) =>
       `Pilih ambil di toko saat checkout, pesananmu sudah dikemas dan siap begitu kamu datang. Ambil di toko gratis; antar ke seluruh Surabaya cukup ${fee}.`,
+    pickupCutoff: (time: string) => `Pesanan ambil di toko ditutup pukul ${time}, 30 menit sebelum toko tutup.`,
     ctaOrder: "PESAN UNTUK DIAMBIL",
     ctaCall: "TELEPON TOKO",
   },

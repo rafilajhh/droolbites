@@ -14,7 +14,9 @@ export type PaymentLogos = Partial<Record<PaymentMethod, string>>;
  * The E-wallet / QRIS / Virtual account / Retail cards with their radio tiles.
  * `methods` is what the server allows right now (store settings + gateway
  * channels); a group without any of them is left out. Banks past the pen's four
- * stay folded until asked for, or while one of them is selected.
+ * stay folded until asked for, or while one of them is selected. Below lg the
+ * group holding `leadMethod` (the preselected one) comes first, so the method
+ * the pinned PAY bar names is on screen, not three cards down.
  */
 export function PaymentMethodGroups({
   t,
@@ -22,6 +24,7 @@ export function PaymentMethodGroups({
   logos,
   selected,
   onSelect,
+  leadMethod = null,
   className,
 }: {
   t: CheckoutMessages["payment"];
@@ -29,6 +32,7 @@ export function PaymentMethodGroups({
   logos: PaymentLogos;
   selected: PaymentMethod | null;
   onSelect: (method: PaymentMethod) => void;
+  leadMethod?: PaymentMethod | null;
   className?: string;
 }) {
   const groups = PAYMENT_GROUPS.map((g) => ({ key: g.key, methods: g.methods.filter((m) => methods.includes(m)) })).filter(
@@ -40,7 +44,6 @@ export function PaymentMethodGroups({
   return (
     <div className={cn("flex w-full flex-col gap-5", className)}>
       {groups.map((group) => {
-        const labels = t.groups[group.key];
         const titleId = `pay-group-${group.key}`;
         const folds = group.key === "va" && extraBanks.length > 0;
         const shown = folds && !showMore ? group.methods.slice(0, PRIMARY_VA_COUNT) : group.methods;
@@ -49,14 +52,14 @@ export function PaymentMethodGroups({
             key={group.key}
             role="radiogroup"
             aria-labelledby={titleId}
-            className="flex w-full flex-col gap-3 rounded-m bg-white p-5 inset-ring-1 inset-ring-border-subtle sm:p-7"
+            className={cn(
+              "flex w-full flex-col gap-3 rounded-m bg-white p-5 inset-ring-1 inset-ring-border-subtle sm:p-7",
+              leadMethod && (group.methods as readonly PaymentMethod[]).includes(leadMethod) && "max-lg:order-first",
+            )}
           >
-            <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-1 pb-1">
-              <h2 id={titleId} className="font-display text-[22px] leading-[25px] font-bold text-foreground">
-                {labels.title}
-              </h2>
-              <p className="text-[13px] leading-5 text-muted-foreground">{labels.sub}</p>
-            </div>
+            <h2 id={titleId} className="pb-1 font-display text-[22px] leading-[25px] font-bold text-foreground">
+              {t.groups[group.key].title}
+            </h2>
             <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2">
               {shown.map((method) => {
                 const info = paymentMethodInfo[method];

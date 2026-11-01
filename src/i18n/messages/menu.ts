@@ -42,15 +42,6 @@ const joinNames = (names: string[], and: string) => {
   return `${[first, ...tail.slice(0, -1)].join(", ")} ${and} ${tail[tail.length - 1]}`;
 };
 
-/** "A, B or C" from the truthy parts. */
-function joinOr(parts: (string | false | undefined)[], or = "or") {
-  const items = parts.filter((p): p is string => !!p);
-  return items.length > 1 ? `${items.slice(0, -1).join(", ")} ${or} ${items[items.length - 1]}` : (items[0] ?? "");
-}
-
-/** How orders reach the customer, from the store settings. `cutoff` is the last call for pickup. */
-type Fulfilment = { fee: string; cutoff: string; delivery: boolean; pickup: boolean };
-
 /**
  * Our Menu page (uQ4f5) with its overlays: category filter (nIoP5), search
  * suggestions (MPMQk) and the size picker (kfcyP). Also the strings of the
@@ -62,8 +53,7 @@ export const menuMessages = defineMessages({
     metaDescription: "Soft cookies, fudgy brownies and tiramisu, baked fresh every morning in Surabaya.",
     eyebrow: "OUR MENU",
     title: "Choose your dessert.",
-    sub: (n: number) =>
-      `${word(EN_WORDS, n)} ${n === 1 ? "dessert" : "desserts"}, baked fresh every morning. Mix anything into one order — delivery or pickup.`,
+    sub: "Mix anything into one order.",
     search: {
       placeholder: "Search cookies, brownies, tiramisu…",
       open: "Search the menu",
@@ -85,46 +75,6 @@ export const menuMessages = defineMessages({
     },
     results: (n: number) => `${n} ${n === 1 ? "dessert" : "desserts"} shown`,
     unit: { piece: "per piece", portion: "per portion", tray: "per tray" },
-    promo: {
-      title: "Can't decide? Mix a box.",
-      body: "Add any cookies, brownies and tiramisu to one order.",
-      cta: "BROWSE EVERYTHING",
-    },
-    /** Closing strip on the menu and product pages. */
-    steps: {
-      title: "Ordering is easy.",
-      /** `days` is null when the shop opens every day. */
-      sub: (opensAt: string, days: string | null) =>
-        `First trays come out of the oven at 06:00. Orders go out from ${opensAt}, ${days ? `on ${days}` : "every day"}.`,
-      items: [
-        { title: "Pick your desserts", body: "Mix cookies, brownies and tiramisu in one cart." },
-        {
-          title: (f: Fulfilment) =>
-            f.delivery && !f.pickup ? "Delivered to you" : f.pickup && !f.delivery ? "Pick up at our counter" : "Delivery or pickup",
-          body: (f: Fulfilment) =>
-            f.delivery && f.pickup
-              ? `A flat ${f.fee} anywhere in Surabaya, or free pickup at our counter until ${f.cutoff}.`
-              : f.delivery
-                ? `A flat ${f.fee} anywhere in Surabaya, whatever the size of your order.`
-                : f.pickup
-                  ? `Free pickup at our counter. Pickup orders close at ${f.cutoff}.`
-                  : "Delivery and pickup are paused for now. Call us and we'll help with your order.",
-        },
-        {
-          title: "Pay your way",
-          /** Built from the payment groups the store and gateway offer right now. */
-          body: (groups: { ewallet?: string; qris?: boolean; va?: boolean; retail?: boolean }) =>
-            (joinOr([
-              groups.qris && "QRIS",
-              groups.va && "a bank virtual account",
-              groups.ewallet && `e-wallet (${groups.ewallet})`,
-              groups.retail && "cash at Indomaret or Alfamart",
-            ]) || "Online payment is paused; ask us at the counter") + ".",
-        },
-      ],
-      help: "Questions about an order? Call or message us at",
-      helpAfter: ". We reply within the hour while the shop is open.",
-    },
     empty: {
       title: (q: string) => `No desserts match “${q}”.`,
       body: "Try another flavor, or browse the whole menu.",
@@ -155,8 +105,7 @@ export const menuMessages = defineMessages({
     metaDescription: "Soft cookies, brownies fudgy dan tiramisu, dipanggang segar setiap pagi di Surabaya.",
     eyebrow: "MENU KAMI",
     title: "Pilih dessert-mu.",
-    sub: (n: number) =>
-      `${word(ID_WORDS, n)} pilihan dessert, dipanggang segar setiap pagi. Campur apa saja dalam satu pesanan — diantar atau ambil sendiri.`,
+    sub: "Campur apa saja dalam satu pesanan.",
     search: {
       placeholder: "Cari cookies, brownies, tiramisu…",
       open: "Cari di menu",
@@ -178,46 +127,6 @@ export const menuMessages = defineMessages({
     },
     results: (n: number) => `${n} dessert ditampilkan`,
     unit: { piece: "per buah", portion: "per porsi", tray: "per loyang" },
-    promo: {
-      title: "Bingung pilih? Campur saja.",
-      body: "Masukkan cookies, brownies dan tiramisu ke satu pesanan.",
-      cta: "LIHAT SEMUA",
-    },
-    steps: {
-      title: "Pesannya gampang.",
-      sub: (opensAt: string, days: string | null) =>
-        `Loyang pertama keluar dari oven pukul 06:00. Pesanan dikirim mulai pukul ${opensAt}, ${days ? `setiap ${days}` : "setiap hari"}.`,
-      items: [
-        { title: "Pilih dessert-mu", body: "Campur cookies, brownies dan tiramisu dalam satu keranjang." },
-        {
-          title: (f: Fulfilment) =>
-            f.delivery && !f.pickup ? "Diantar ke tempatmu" : f.pickup && !f.delivery ? "Ambil di toko" : "Diantar atau ambil sendiri",
-          body: (f: Fulfilment) =>
-            f.delivery && f.pickup
-              ? `Ongkir flat ${f.fee} ke seluruh Surabaya, atau ambil gratis di toko sampai pukul ${f.cutoff}.`
-              : f.delivery
-                ? `Ongkir flat ${f.fee} ke seluruh Surabaya, berapa pun jumlah pesananmu.`
-                : f.pickup
-                  ? `Ambil gratis di toko. Pesanan ambil di toko ditutup pukul ${f.cutoff}.`
-                  : "Pengiriman dan ambil di toko sedang libur dulu. Hubungi kami, nanti kami bantu pesananmu.",
-        },
-        {
-          title: "Bayar sesukamu",
-          body: (groups: { ewallet?: string; qris?: boolean; va?: boolean; retail?: boolean }) =>
-            (joinOr(
-              [
-                groups.qris && "QRIS",
-                groups.va && "virtual account bank",
-                groups.ewallet && `e-wallet (${groups.ewallet})`,
-                groups.retail && "tunai di Indomaret atau Alfamart",
-              ],
-              "atau",
-            ) || "Pembayaran online sedang libur; tanya kami di toko") + ".",
-        },
-      ],
-      help: "Ada pertanyaan soal pesanan? Telepon atau chat kami di",
-      helpAfter: ". Kami balas dalam satu jam selama toko buka.",
-    },
     empty: {
       title: (q: string) => `Tidak ada dessert yang cocok dengan “${q}”.`,
       body: "Coba rasa lain, atau lihat seluruh menu.",
