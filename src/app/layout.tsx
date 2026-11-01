@@ -37,7 +37,6 @@ export const metadata: Metadata = {
   },
   description:
     "Thick, soft-centered cookies, fudgy brownies and creamy tiramisu — made in small batches in Surabaya for delivery or store pickup.",
-  icons: { icon: "/images/site/logo-badge.png" },
 };
 
 export const viewport: Viewport = {
