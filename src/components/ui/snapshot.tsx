@@ -2,13 +2,11 @@ import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 /**
- * The one photo frame on the storefront: 20px corners and a 1.5px moss outline drawn above
- * the photo by an `after:` layer (inset, so it never changes the box). Photos sit flat.
- * Small thumbnails (under ~80px) override the radius with `rounded-sm`, round avatars with
- * `rounded-pill`; the outline follows via `rounded-[inherit]`. Put it first in `cn()`.
+ * The one photo frame on the storefront: 20px corners, no outline (the photo's own oat ground
+ * separates it from the paper). Photos sit flat. Small thumbnails (under ~80px) override the
+ * radius with `rounded-sm`, round avatars with `rounded-pill`. Put it first in `cn()`.
  */
-export const photoFrame =
-  "relative overflow-hidden rounded-m after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:inset-ring-[1.5px] after:inset-ring-border after:content-['']";
+export const photoFrame = "relative overflow-hidden rounded-m";
 
 /**
  * Editorial photo in the shared `photoFrame` on an oat placeholder, for story, occasion and
