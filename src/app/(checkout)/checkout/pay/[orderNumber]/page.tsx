@@ -62,7 +62,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
 
   // Below lg the summary folds into a bar under the payment details.
   const summary = (
-    <SummaryToggle id="pay-summary" labels={t.summary} total={amount} className="lg:w-[440px] lg:shrink-0">
+    <SummaryToggle id="pay-summary" labels={{ show: t.summary.show, hide: t.summary.hide }} total={amount} className="lg:w-[440px] lg:shrink-0">
       <OrderSummary
         t={t.summary}
         lines={orderSummaryLines(order, locale)}

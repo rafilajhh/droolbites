@@ -151,7 +151,7 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
             />
           </div>
 
-          <SummaryToggle id="success-summary" labels={t.summary} total={formatRupiah(pay.amount)} className="lg:w-[440px] lg:shrink-0">
+          <SummaryToggle id="success-summary" labels={{ show: t.summary.show, hide: t.summary.hide }} total={formatRupiah(pay.amount)} className="lg:w-[440px] lg:shrink-0">
             <OrderSummary
               t={t.summary}
               lines={orderSummaryLines(order, locale)}
