@@ -2,24 +2,22 @@ import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 /**
- * Editorial photo treated as a printed snapshot stuck on the page: 20px corners, a thin moss
- * outline drawn above the photo (inset, so it never changes the box) and a slight tilt.
- * For story, occasion and visit photos — product grid images stay square to the grid.
- * Hover effects (e.g. settling flat in a group) go in `className`.
+ * The one photo frame on the storefront: 20px corners and a 1.5px moss outline drawn above
+ * the photo by an `after:` layer (inset, so it never changes the box). Photos sit flat.
+ * Small thumbnails (under ~80px) override the radius with `rounded-sm`, round avatars with
+ * `rounded-pill`; the outline follows via `rounded-[inherit]`. Put it first in `cn()`.
  */
-export type SnapshotTilt = "left" | "right" | "left-strong";
+export const photoFrame =
+  "relative overflow-hidden rounded-m after:pointer-events-none after:absolute after:inset-0 after:rounded-[inherit] after:inset-ring-[1.5px] after:inset-ring-border after:content-['']";
 
-const tilts: Record<SnapshotTilt, string> = {
-  left: "-rotate-[1.5deg]",
-  right: "rotate-[1.5deg]",
-  "left-strong": "-rotate-2 lg:-rotate-3",
-};
-
+/**
+ * Editorial photo in the shared `photoFrame` on an oat placeholder, for story, occasion and
+ * visit photos. Size, aspect and position go in `className`.
+ */
 export function Snapshot({
   src,
   alt,
   sizes,
-  tilt = "left",
   priority,
   className,
   imageClassName,
@@ -27,22 +25,13 @@ export function Snapshot({
   src: string;
   alt: string;
   sizes: string;
-  tilt?: SnapshotTilt;
   priority?: boolean;
-  /** Size/aspect of the frame, plus any hover classes. */
+  /** Size/aspect/position of the frame. */
   className?: string;
   imageClassName?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "relative overflow-hidden rounded-m bg-oat",
-        "after:pointer-events-none after:absolute after:inset-0 after:rounded-m after:inset-ring-[1.5px] after:inset-ring-border after:content-['']",
-        "transition-[rotate,translate] duration-300 ease-out motion-reduce:transition-none",
-        tilts[tilt],
-        className,
-      )}
-    >
+    <div className={cn(photoFrame, "bg-oat", className)}>
       <Image
         src={src}
         alt={alt}

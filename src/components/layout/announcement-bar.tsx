@@ -7,7 +7,7 @@ import { getStoreSettings } from "@/lib/settings";
 
 /**
  * Thin moss strip above the sticky header. It scrolls away with the page; the header
- * below keeps its own sticky/condense behavior. Hours come from the store settings.
+ * below stays sticky. Hours come from the store settings.
  */
 export async function AnnouncementBar() {
   const [t, locale, settings] = await Promise.all([getMessages(commonMessages), getLocale(), getStoreSettings()]);
@@ -20,7 +20,6 @@ export async function AnnouncementBar() {
     >
       <p className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-center gap-x-4 gap-y-1 text-center font-mono text-[12px] leading-[18px] font-semibold sm:text-[13px] sm:leading-[20px]">
         <span className="hidden md:inline">{a.fresh}</span>
-        <span className="hidden size-1.5 rounded-full bg-highlight md:inline-block" aria-hidden />
         <span className="inline-flex items-center gap-1.5">
           <Clock className="size-3.5 shrink-0 text-highlight" aria-hidden />
           <span>

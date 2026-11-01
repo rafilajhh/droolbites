@@ -2,8 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
+import { photoFrame } from "@/components/ui/snapshot";
 import { notFoundMessages } from "@/i18n/messages/pages/not-found";
 import { getMessages } from "@/i18n/server";
+import { cn } from "@/lib/cn";
 
 const four = "font-display text-[120px] leading-[0.9] font-extrabold sm:text-[220px]";
 
@@ -27,7 +29,7 @@ export async function NotFoundBody({ title, sub, menuLabel }: { title?: string; 
       <section className="flex w-full flex-col items-center gap-7 px-4 pt-12 pb-14 text-center sm:px-8 lg:px-16 lg:pt-24 lg:pb-20">
         <div className="flex items-center gap-2" aria-hidden>
           <span className={`${four} text-accent-magenta`}>4</span>
-          <span className="relative size-[104px] shrink-0 overflow-hidden rounded-full bg-oat sm:size-[190px]">
+          <span className={cn(photoFrame, "size-[104px] shrink-0 rounded-pill bg-oat sm:size-[190px]")}>
             <Image
               src="/images/products/chocolate-chunk.png"
               alt=""
@@ -71,7 +73,7 @@ export async function NotFoundBody({ title, sub, menuLabel }: { title?: string; 
                   href={`/menu/${pick.slug}`}
                   className="group/pick flex h-full items-center gap-4 rounded-m bg-card p-3 md:flex-col md:items-stretch md:gap-5 md:p-4"
                 >
-                  <div className="relative size-24 shrink-0 overflow-hidden rounded-sm md:aspect-[4/3] md:size-auto md:w-full">
+                  <div className={cn(photoFrame, "size-24 shrink-0 md:aspect-[4/3] md:size-auto md:w-full")}>
                     <Image
                       src={`/images/products/${pick.slug}.png`}
                       alt=""

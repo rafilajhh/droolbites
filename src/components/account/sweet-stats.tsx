@@ -1,6 +1,7 @@
 import { cache } from "react";
 import Image from "next/image";
 import { ArrowLink } from "@/components/ui/button";
+import { photoFrame } from "@/components/ui/snapshot";
 import { getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
 import { cn } from "@/lib/cn";
@@ -72,7 +73,7 @@ export async function SweetStats({ userId, id, className }: { userId: bigint; id
       </div>
       <div className="flex items-center gap-3.5 rounded-sm bg-background/70 p-3">
         {favorite.imageUrl ? (
-          <span className="relative size-14 shrink-0 -rotate-3 overflow-hidden rounded-pill bg-oat">
+          <span className={cn(photoFrame, "size-14 shrink-0 rounded-pill bg-oat")}>
             <Image src={favorite.imageUrl} alt="" fill sizes="56px" className="object-cover" />
           </span>
         ) : null}

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getMessages } from "@/i18n/server";
 import { authMessages } from "@/i18n/messages/auth";
+import { photoFrame } from "@/components/ui/snapshot";
 import { cn } from "@/lib/cn";
 
 export type AuthPhoto = "hero-cookies" | "gift-box" | "story-bakers" | "party-spread" | "store-front";
@@ -25,6 +26,7 @@ export async function AuthShell({
     <div className="flex min-h-dvh w-full flex-col gap-6 p-4 sm:p-6 lg:flex-row lg:items-start">
       <div
         className={cn(
+          photoFrame,
           "relative isolate flex h-60 w-full shrink-0 flex-col justify-between overflow-hidden rounded-m p-6 [--focus-ring:var(--white)] sm:h-72",
           "lg:sticky lg:top-6 lg:h-[calc(100dvh-48px)] lg:min-h-[640px] lg:w-[45%] xl:w-[640px] lg:p-8",
         )}

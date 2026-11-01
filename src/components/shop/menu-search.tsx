@@ -7,6 +7,7 @@ import { ArrowRight, Search, X } from "lucide-react";
 import { useModal } from "@/components/layout/shop-ui";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
+import { photoFrame } from "@/components/ui/snapshot";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { rankProducts } from "./menu-url";
@@ -195,7 +196,7 @@ function SearchPanel({
                     q && i === activeIndex && "bg-oat",
                   )}
                 >
-                  <span className="relative size-11 shrink-0 overflow-hidden rounded-[10px] bg-oat">
+                  <span className={cn(photoFrame, "size-11 shrink-0 rounded-sm bg-oat")}>
                     <Image src={p.imageUrl} alt="" fill sizes="44px" quality={100} className="object-cover" />
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">

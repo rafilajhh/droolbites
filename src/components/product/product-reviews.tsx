@@ -20,7 +20,7 @@ export async function ProductReviews({ slug }: { slug: string }) {
     <section
       id="reviews"
       aria-labelledby="reviews-title"
-      className="flex w-full scroll-mt-28 flex-col gap-8 px-4 pb-20 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 lg:pb-28 xl:gap-[72px]"
+      className="flex w-full scroll-mt-[88px] flex-col gap-8 px-4 pb-20 sm:px-8 lg:flex-row lg:gap-12 lg:px-16 lg:pb-28 xl:gap-[72px]"
     >
       <div className="flex w-full flex-col items-start gap-4 lg:w-[340px] lg:shrink-0 lg:pt-2">
         <h2

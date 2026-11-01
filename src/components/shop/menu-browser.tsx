@@ -204,7 +204,7 @@ function PromoTile({ onBrowse, compact }: { onBrowse: () => void; compact: boole
       <Cutout
         name="red-velvet"
         width={150}
-        className={cn("-top-10 -right-10 rotate-[-18deg] sm:-right-8", compact && "max-sm:-top-12 max-sm:-right-14")}
+        className={cn("-top-10 -right-10 sm:-right-8", compact && "max-sm:-top-12 max-sm:-right-14")}
       />
       <Image
         src="/images/site/logo-badge.png"

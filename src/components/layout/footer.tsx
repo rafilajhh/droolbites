@@ -50,8 +50,8 @@ export async function Footer() {
     <footer className="w-full bg-background px-3 pb-3 md:px-6 md:pb-6">
       <div className="relative flex w-full flex-col gap-12 rounded-m bg-surface-inverse [--focus-ring:var(--white)] px-6 pt-12 pb-8 md:px-16 md:pt-16 lg:gap-14">
         {/* Decorative cookies peeking over the top edge, clear of the centred newsletter (lg+ only). */}
-        <Cutout name="white-chocolate-almond" width={150} className="-top-10 left-8 hidden -rotate-[14deg] lg:block" />
-        <Cutout name="double-chocolate" width={124} className="-top-8 right-10 hidden rotate-[10deg] lg:block" />
+        <Cutout name="white-chocolate-almond" width={150} className="-top-10 left-8 hidden lg:block" />
+        <Cutout name="double-chocolate" width={124} className="-top-8 right-10 hidden lg:block" />
 
         {/* Newsletter, centred under the badge */}
         <div className="mx-auto flex w-full max-w-[560px] flex-col items-center gap-4 text-center">

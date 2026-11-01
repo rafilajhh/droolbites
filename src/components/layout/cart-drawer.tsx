@@ -12,6 +12,7 @@ import { lineMeta } from "@/components/checkout/order-summary";
 import { buttonClasses } from "@/components/ui/button";
 import { OrderLine, SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { photoFrame } from "@/components/ui/snapshot";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Cart } from "@/lib/cart";
@@ -113,7 +114,7 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
         {lines.length === 0 ? (
           <div className="flex min-h-0 flex-1 flex-col gap-10 overflow-y-auto px-5 py-8 sm:px-7 sm:py-10">
             <div className="flex flex-col items-start gap-4">
-              <span className="relative mb-2 size-[112px] shrink-0 -rotate-6 overflow-hidden rounded-pill bg-oat" aria-hidden>
+              <span className={cn(photoFrame, "mb-2 size-[112px] shrink-0 rounded-pill bg-oat")} aria-hidden>
                 <Image src="/images/products/chocolate-chunk.png" alt="" fill sizes="112px" className="object-cover" />
               </span>
               <p className="font-display text-[28px] leading-[1.1] font-semibold">{t.emptyTitle}</p>
@@ -137,7 +138,7 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                         pick.bg,
                       )}
                     >
-                      <span className="relative size-16 shrink-0 overflow-hidden rounded-sm bg-oat">
+                      <span className={cn(photoFrame, "size-16 shrink-0 rounded-sm bg-oat")}>
                         <Image src={pick.image} alt="" fill sizes="64px" className="object-cover" />
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">

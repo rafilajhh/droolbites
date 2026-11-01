@@ -57,30 +57,27 @@ export default async function OurStoryPage() {
             {t.intro}
           </p>
         </div>
-        <div className="group/collage relative mx-auto aspect-[560/600] w-full max-w-[560px] shrink-0 lg:mx-0 lg:w-[560px]">
+        <div className="relative mx-auto aspect-[560/600] w-full max-w-[560px] shrink-0 lg:mx-0 lg:w-[560px]">
           <Snapshot
             src="/images/products/double-chocolate.png"
             alt=""
-            tilt="left-strong"
             priority
             sizes="(min-width: 1024px) 325px, 58vw"
-            className="absolute top-[7%] left-0 aspect-[4/5] w-[58%] group-hover/collage:-rotate-1"
+            className="absolute top-[7%] left-0 aspect-[4/5] w-[58%]"
             imageClassName="scale-[1.45]"
           />
           <Snapshot
             src="/images/products/matcha-tiramisu.png"
             alt=""
-            tilt="right"
             sizes="(min-width: 1024px) 258px, 46vw"
-            className="absolute top-0 right-0 aspect-square w-[46%] group-hover/collage:rotate-[3deg]"
+            className="absolute top-0 right-0 aspect-square w-[46%]"
             imageClassName="scale-[1.2]"
           />
           <Snapshot
             src="/images/products/red-velvet.png"
             alt=""
-            tilt="left"
             sizes="(min-width: 1024px) 280px, 50vw"
-            className="absolute right-[4%] bottom-0 aspect-[5/4] w-[50%] group-hover/collage:-rotate-[3deg]"
+            className="absolute right-[4%] bottom-0 aspect-[5/4] w-[50%]"
             imageClassName="scale-[1.6] object-[50%_45%]"
           />
           <Sticker className="absolute bottom-[8%] left-[6%]">{t.since}</Sticker>
@@ -128,7 +125,6 @@ export default async function OurStoryPage() {
             <Snapshot
               src="/images/products/chocolate-chunk.png"
               alt=""
-              tilt="left"
               sizes="(min-width: 1024px) 264px, 45vw"
               className="aspect-[4/5] w-full"
               imageClassName="scale-[1.25]"
@@ -141,7 +137,6 @@ export default async function OurStoryPage() {
             <Snapshot
               src="/images/products/fudgy-brownies.png"
               alt=""
-              tilt="right"
               sizes="(min-width: 1024px) 264px, 45vw"
               className="aspect-[4/5] w-full"
               imageClassName="scale-[1.15]"
@@ -160,11 +155,11 @@ export default async function OurStoryPage() {
               {t.foundersBody}
             </p>
           </div>
-          <figure className="group/quote relative flex w-full flex-col gap-5 rounded-m bg-tint-lime p-6 lg:p-8">
+          <figure className="relative flex w-full flex-col gap-5 rounded-m bg-tint-lime p-6 lg:p-8">
             <Cutout
               name="chocolate-chunk"
               width={112}
-              className="-right-6 -bottom-10 hidden rotate-[12deg] transition-[rotate] duration-700 ease-out group-hover/quote:rotate-[-4deg] motion-reduce:transition-none lg:block"
+              className="-right-6 -bottom-10 hidden lg:block"
             />
             <blockquote className="font-display text-[22px] leading-[29px] font-semibold text-pretty text-foreground lg:pr-16 lg:text-[26px] lg:leading-[34px]">
               <p>“{t.quote}”</p>
@@ -233,7 +228,6 @@ export default async function OurStoryPage() {
             <Snapshot
               src="/images/products/white-chocolate-almond.png"
               alt=""
-              tilt="right"
               sizes="(min-width: 1024px) 320px, 80vw"
               className="aspect-[4/3] w-full"
               imageClassName="scale-[1.35]"

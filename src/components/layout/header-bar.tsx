@@ -2,24 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { Menu, Search, ShoppingBag, User } from "lucide-react";
-import { cn } from "@/lib/cn";
 import { useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { LanguageSwitch } from "./language-switch";
 import { useShopUI } from "./shop-ui";
-
-function useScrolled() {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const update = () => setScrolled(window.scrollY > 0);
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    return () => window.removeEventListener("scroll", update);
-  }, []);
-  return scrolled;
-}
 
 const iconLink =
   "relative flex size-10 items-center justify-center rounded-pill transition-colors after:absolute after:-inset-0.5 after:content-[''] hover:bg-card";
@@ -27,18 +14,10 @@ const iconLink =
 export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accountHref: string }) {
   const t = useMessages(commonMessages).header;
   const { open } = useShopUI();
-  const scrolled = useScrolled();
 
   return (
-    // Sticky: stays at the top while scrolling. At the top of the page it is the
-    // pen header (72 / 100px). Once scrolled it condenses to 56 / 64px with a hairline;
-    // the bottom margin gives the difference back so the page below never jumps.
-    <header
-      className={cn(
-        "sticky top-0 z-30 flex h-[72px] w-full items-center justify-between bg-background px-4 transition-[height,margin,box-shadow] duration-200 motion-reduce:transition-none md:h-[100px] md:px-8",
-        scrolled && "mb-4 h-14 shadow-[inset_0_-1px_0_var(--border-subtle)] md:mb-9 md:h-16",
-      )}
-    >
+    // Sticky and always compact (56 / 64px with a hairline): it never changes size on scroll.
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between bg-background px-4 shadow-[inset_0_-1px_0_var(--border-subtle)] md:h-16 md:px-8">
       <div className="flex flex-1 items-center">
         <button
           type="button"
@@ -55,14 +34,11 @@ export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accou
         <Image
           src="/images/site/logo-badge.png"
           alt="Droolbites"
-          width={76}
-          height={76}
+          width={48}
+          height={48}
           quality={100}
           priority
-          className={cn(
-            "size-14 rounded-pill object-cover transition-[width,height] duration-200 motion-reduce:transition-none md:size-[76px]",
-            scrolled && "size-11 md:size-12",
-          )}
+          className="size-11 rounded-pill object-cover md:size-12"
         />
       </Link>
 

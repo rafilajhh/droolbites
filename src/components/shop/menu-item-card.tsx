@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Sticker } from "@/components/ui/badges";
+import { photoFrame } from "@/components/ui/snapshot";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
 import { formatRupiah } from "@/lib/format";
@@ -66,7 +67,8 @@ export function MenuItemCard({
           tabIndex={-1}
           aria-hidden
           className={cn(
-            "relative flex w-full flex-col overflow-hidden rounded-m bg-oat transition-transform duration-300 ease-out group-hover/card:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover/card:translate-y-0",
+            photoFrame,
+            "flex w-full flex-col bg-oat transition-transform duration-300 ease-out group-hover/card:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover/card:translate-y-0",
             s.media,
           )}
         >
@@ -76,7 +78,7 @@ export function MenuItemCard({
             fill
             sizes={s.sizes}
             quality={100}
-            className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] group-hover/card:-rotate-2 motion-reduce:transition-none motion-reduce:group-hover/card:scale-100 motion-reduce:group-hover/card:rotate-0"
+            className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100"
           />
         </Link>
         {badge ? (

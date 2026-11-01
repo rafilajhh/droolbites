@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { cn } from "@/lib/cn";
+import { photoFrame } from "./snapshot";
 
 /** pen: Order Line (bAwzK). Thumb 64 by default; summaries use 52. */
 export function OrderLine({
@@ -24,7 +25,7 @@ export function OrderLine({
   return (
     <div className={cn("flex w-full items-center gap-4", className)}>
       <div
-        className={cn("relative shrink-0 overflow-hidden rounded-sm bg-oat", thumb === 52 ? "size-[52px]" : "size-16")}
+        className={cn(photoFrame, "shrink-0 rounded-sm bg-oat", thumb === 52 ? "size-[52px]" : "size-16")}
       >
         {imageUrl ? (
           <Image src={imageUrl} alt="" fill sizes="64px" quality={100} className="object-cover" />

@@ -8,7 +8,7 @@ import { toShopCategories } from "@/components/shop/shop-product";
 import { AccordionItem } from "@/components/ui/accordion";
 import { Sticker } from "@/components/ui/badges";
 import { ArrowLink } from "@/components/ui/button";
-import { Snapshot } from "@/components/ui/snapshot";
+import { Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { faqMessages, type FaqFacts } from "@/i18n/messages/pages/faq";
 import { getLocale, getMessages } from "@/i18n/server";
 import { getMenu } from "@/lib/catalog";
@@ -91,7 +91,7 @@ export default async function FaqPage() {
     <>
       <section className="flex w-full flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 lg:flex-row lg:gap-24 lg:px-16 lg:pt-14 lg:pb-24">
         {/* Sticky beside the long question list on desktops tall enough to show the whole column. */}
-        <div className="flex w-full flex-col gap-5 lg:w-[400px] lg:shrink-0 lg:self-start [@media(min-height:940px)]:lg:sticky [@media(min-height:940px)]:lg:top-24">
+        <div className="flex w-full flex-col gap-5 lg:w-[400px] lg:shrink-0 lg:self-start [@media(min-height:940px)]:lg:sticky [@media(min-height:940px)]:lg:top-[88px]">
           <Eyebrow>{t.eyebrow}</Eyebrow>
           <h1 className="font-display text-balance text-[44px] leading-[1.03] font-bold tracking-[-1px] text-foreground lg:text-[64px] lg:leading-[65px] lg:tracking-[-2px]">
             {t.title}
@@ -121,7 +121,6 @@ export default async function FaqPage() {
             <Snapshot
               src="/images/site/gift-box.png"
               alt=""
-              tilt="right"
               sizes="400px"
               className="aspect-[4/3] w-full"
               imageClassName="object-[50%_45%]"
@@ -171,14 +170,14 @@ export default async function FaqPage() {
           <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-3">
             {picked.map(({ slug, bg, product, review }) => (
               <article key={slug} className={cn("group/pick relative flex flex-col gap-6 rounded-m p-5", bg)}>
-                <div className="relative h-[220px] w-full overflow-hidden rounded-sm lg:h-[240px]">
+                <div className={cn(photoFrame, "h-[220px] w-full lg:h-[240px]")}>
                   <Image
                     src={product.imageUrl}
                     alt=""
                     fill
                     quality={100}
                     sizes="(min-width: 768px) 33vw, 100vw"
-                    className="object-cover transition-[scale,rotate] duration-500 ease-out group-hover/pick:scale-[1.06] group-hover/pick:-rotate-2 motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100 motion-reduce:group-hover/pick:rotate-0"
+                    className="object-cover transition-[scale] duration-500 ease-out group-hover/pick:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100"
                   />
                 </div>
                 <figure className="flex flex-1 flex-col gap-3 px-2">

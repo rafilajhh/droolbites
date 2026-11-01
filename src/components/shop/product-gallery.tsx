@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Sticker } from "@/components/ui/badges";
+import { photoFrame } from "@/components/ui/snapshot";
 import { useMessages } from "@/i18n/client";
 import { productMessages } from "@/i18n/messages/product";
 import { cn } from "@/lib/cn";
@@ -33,7 +34,7 @@ function GalleryImage({
   if (photo.plate) {
     return (
       <span className={cn("absolute inset-0 flex items-center justify-center", photo.plate)}>
-        <span className="relative size-[74%] -rotate-[8deg]">
+        <span className="relative size-[74%]">
           <Image
             src={photo.src}
             alt={alt}
@@ -95,7 +96,7 @@ export function ProductGallery({
       className="flex w-full flex-col gap-3 sm:gap-4 lg:w-[560px] lg:shrink-0 xl:w-[680px]"
     >
       <div className="relative w-full">
-        <div className="relative aspect-[680/640] w-full overflow-hidden rounded-m bg-oat">
+        <div className={cn(photoFrame, "aspect-[680/640] w-full bg-oat")}>
           <GalleryImage
             key={index}
             photo={current}
@@ -126,9 +127,10 @@ export function ProductGallery({
             aria-label={t.showPhoto(photo.alt)}
             aria-pressed={i === index}
             className={cn(
-              "relative w-full overflow-hidden rounded-sm bg-oat transition-opacity hover:opacity-90",
+              photoFrame,
+              "w-full rounded-sm bg-oat transition-opacity sm:rounded-m hover:opacity-90",
               thumbs.aspect,
-              i === index && "after:absolute after:inset-0 after:rounded-sm after:inset-ring-2 after:inset-ring-border",
+              i === index && "after:inset-ring-[3px]",
             )}
           >
             <GalleryImage photo={photo} alt="" sizes="(min-width: 1280px) 220px, 33vw" />

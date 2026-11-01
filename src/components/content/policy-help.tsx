@@ -2,6 +2,8 @@ import Image from "next/image";
 import { Clock, Mail, MessageCircle } from "lucide-react";
 import { Sticker } from "@/components/ui/badges";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
+import { photoFrame } from "@/components/ui/snapshot";
+import { cn } from "@/lib/cn";
 
 type HelpCopy = {
   title: string;
@@ -15,7 +17,7 @@ type HelpCopy = {
 
 /**
  * Closing "Still need help?" panel shared by the three policy pages: contact actions,
- * a tiramisu on a tilted plate with today's hours, and links to the other help pages.
+ * a framed tiramisu photo with today's hours, and links to the other help pages.
  */
 export function PolicyHelp({
   copy,
@@ -68,8 +70,8 @@ export function PolicyHelp({
             </p>
           </div>
           <div className="relative mb-4 aspect-[4/3] w-full max-w-[420px] shrink-0 lg:mb-0 lg:w-[420px]">
-            {/* Product photo on a tilted oat plate, like the home brownies band. */}
-            <div className="absolute top-[6%] left-[4%] h-[88%] w-[92%] origin-top-left -rotate-3 overflow-hidden rounded-m bg-oat">
+            {/* Product photo on an oat plate, like the home brownies band. */}
+            <div className={cn(photoFrame, "absolute top-[6%] left-[4%] h-[88%] w-[92%] bg-oat")}>
               <Image
                 src="/images/products/matcha-tiramisu.png"
                 alt=""

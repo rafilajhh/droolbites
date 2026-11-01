@@ -274,7 +274,7 @@ Droolbites is a small bakery printed on warm paper: cream background, ink-green 
 
 The system is a pixel-exact port of a pen.dev design at 1440px. Below that width it collapses to one column with 44px touch targets and no horizontal scroll. Where the build and the pen disagree, the pen is the spec and the code mirrors it (strokes drawn inside the box, line-heights rounded to whole pixels, Bricolage rendered at its 96 optical size at every size).
 
-Surfaces: landing (Persuade: sticky condensing header, rounded hero photo panel, USP marquee, product grids, a lavender brownies panel), menu, product page, cart drawer, 2-section checkout (details, then payment), pay page that varies by payment-method kind (QRIS, bank virtual account, e-wallet), account, and admin (Operate: moss sidebar, white cards, tables).
+Surfaces: landing (Persuade: sticky compact header, rounded hero photo panel with the moss photo frame, USP marquee, product grids, a lavender brownies panel), menu, product page, cart drawer, 2-section checkout (details, then payment), pay page that varies by payment-method kind (QRIS, bank virtual account, e-wallet), account, and admin (Operate: moss sidebar, white cards, tables).
 
 **Key Characteristics:**
 - Moss is the single structural color: primary button, sidebar, strokes, selected states.
@@ -339,7 +339,7 @@ The mono uppercase eyebrow above section and page titles ("SOFT COOKIES", "VISIT
 
 ## Layout
 
-Content sits in a `max-w-[1440px]` centered column. Landing sections run full width inside 12px (mobile) and 24px (sm+) outer gutters; inner section padding is `px-5`/`px-10`/`px-16` stepping up by breakpoint. Vertical rhythm between landing sections is large: `pt-20 pb-16` mobile, `pt-28 pb-24` at lg. Product grids are 2 columns on mobile, 4 at lg (`gap-x-4 gap-y-8`, `lg:gap-6`). Admin uses a fixed 272px sticky sidebar from lg and a moss top bar with a 300px slide-in drawer below it; the main column pads 16/24/48px and stacks cards with 24px gaps. Header: 72px tall on mobile and 100px at md, condensing to 56/64px with a hairline once scrolled; a bottom margin returns the difference so content does not jump.
+Content sits in a `max-w-[1440px]` centered column. Landing sections run full width inside 12px (mobile) and 24px (sm+) outer gutters; inner section padding is `px-5`/`px-10`/`px-16` stepping up by breakpoint. Vertical rhythm between landing sections is large: `pt-20 pb-16` mobile, `pt-28 pb-24` at lg. Product grids are 2 columns on mobile, 4 at lg (`gap-x-4 gap-y-8`, `lg:gap-6`). Admin uses a fixed 272px sticky sidebar from lg and a moss top bar with a 300px slide-in drawer below it; the main column pads 16/24/48px and stacks cards with 24px gaps. Header: always compact, 56px tall on mobile and 64px from md, with a hairline; it never changes size on scroll. The storefront `main` starts with a 12/24px top gutter (the landing side gutters) so the first section is not jammed under it, and sticky asides, TOCs and anchor targets sit at `top-[88px]`/`scroll-mt-[88px]`, 24px below the header.
 
 Touch targets are 44px minimum. Visible controls smaller than that (28px stepper buttons, text links) get an invisible `after:` hit-slop pseudo-element rather than being enlarged. The `lg` breakpoint is the sidebar/column switch; `sm` (640px) and `md` (768px) govern header height and gutters.
 
@@ -357,7 +357,7 @@ Flat by default. Depth is tonal: paper under oat under white, mint and tint pane
 
 ## Shapes
 
-Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the pen's `--radius-s`; do not use Tailwind's logical `rounded-s`), 20px for cards and large panels (`rounded-m`), and full pill (999px) for chips, badges, steppers, icon buttons and the logo badge. Full strokes are 1.25-1.5px inset rings (`inset-ring-[1.5px] inset-ring-border`; subtle 1.25px for unselected tiles; 1px for admin cards). Stickers are pills rotated -8deg (the small card/gallery variant, `Sticker size="sm"`, rotates -10deg); photo frames (`Snapshot`) tilt 1.5-3deg with a 20px radius and a 1.5px inset ring; the landing brownies image sits on a -3deg tilted oat plate. Icons are lucide line icons at 18-24px.
+Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the pen's `--radius-s`; do not use Tailwind's logical `rounded-s`), 20px for cards and large panels (`rounded-m`), and full pill (999px) for chips, badges, steppers, icon buttons and the logo badge. Full strokes are 1.25-1.5px inset rings (`inset-ring-[1.5px] inset-ring-border`; subtle 1.25px for unselected tiles; 1px for admin cards). Stickers are pills rotated -8deg (the small card/gallery variant, `Sticker size="sm"`, rotates -10deg); they are the only resting tilt on the site. Every photo sits flat in the one shared frame, `photoFrame` in `src/components/ui/snapshot.tsx` (also used by `Snapshot`): 20px radius plus a 1.5px moss inset ring drawn above the image by an `after:` layer, so it never changes layout. Thumbnails under about 80px use `rounded-sm` and round avatars `rounded-pill`; the ring follows via `rounded-[inherit]`. The landing brownies image sits flat on the oat plate in the same frame. Decorative `Cutout` cookies, the logo badge and icons get no frame and no tilt. Functional rotation stays (chevrons and accordion icons turning on open). Icons are lucide line icons at 18-24px.
 
 ## Components
 
@@ -385,9 +385,9 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 - Quantity stepper: pill with 1.25px moss ring, 36px buttons (28px `sm` in the drawer), bold tabular numerals.
 
 ### Navigation
-- **Site header:** paper, sticky, centered 76px logo badge (48px condensed), 40px circular icon links (menu, search, account, cart) with oat hover; mustard cart-count pill. Menu opens a dialog.
+- **Site header:** paper, sticky, always 56px tall (64px from md) with a bottom hairline, never resizing on scroll; centered 44px logo badge (48px from md), 40px circular icon links (menu, search, account, cart) with oat hover; mustard cart-count pill. Menu opens a dialog.
 - **Admin sidebar:** moss, 272px, white 15px 600 items with 20px icons; active item flips to a paper pill with moss text; hover white 10%. Store status block at the bottom, mint secondary links.
-- **Announcement bar:** static moss strip above the header, white Plex Mono 600 at 12/13px, mustard dot separators, white focus ring; secondary items hide below `md`. No motion.
+- **Announcement bar:** static moss strip above the header, white Plex Mono 600 at 12/13px, items spaced by gap only (no dot separators), white focus ring; secondary items hide below `md`. No motion.
 - **USP marquee:** oat band, two identical halves translated -50% over 55s linear; static grid under reduced motion; pause control present.
 
 ### Pay page

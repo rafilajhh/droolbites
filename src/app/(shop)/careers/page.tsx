@@ -4,7 +4,7 @@ import { Bike, ChefHat, Mail, Paperclip, Store, User } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { buttonClasses } from "@/components/ui/button";
-import { Cutout, Snapshot } from "@/components/ui/snapshot";
+import { Cutout, Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { CAREERS_EMAIL, careersMessages } from "@/i18n/messages/pages/careers";
 import { getMessages } from "@/i18n/server";
 import { cn } from "@/lib/cn";
@@ -40,7 +40,7 @@ export default async function CareersPage() {
   return (
     <>
       <section className="flex w-full flex-col-reverse gap-10 px-4 pt-6 pb-16 sm:px-8 lg:flex-row lg:items-center lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-24">
-        <div className="relative aspect-[15/14] w-full shrink-0 overflow-hidden rounded-m lg:aspect-auto lg:h-[560px] lg:w-[600px]">
+        <div className={cn(photoFrame, "aspect-[15/14] w-full shrink-0 lg:aspect-auto lg:h-[560px] lg:w-[600px]")}>
           <Image
             src="/images/site/story-bakers.png"
             alt={t.imageAlt}
@@ -145,38 +145,35 @@ export default async function CareersPage() {
         </ul>
       </section>
 
-      {/* The team: a tilted snapshot collage and a staff quote. */}
+      {/* The team: a snapshot collage and a staff quote. */}
       <section
         className={cn("flex w-full flex-col items-center gap-14 pt-20 lg:flex-row lg:gap-20 lg:pt-28", px)}
         aria-labelledby="careers-team"
       >
-        <div className="group/collage relative aspect-[600/540] w-full max-w-[600px] shrink-0 lg:w-[600px]">
+        <div className="relative aspect-[600/540] w-full max-w-[600px] shrink-0 lg:w-[600px]">
           <Snapshot
             src="/images/site/party-spread.png"
             alt=""
-            tilt="left"
             sizes="(min-width: 1024px) 264px, 44vw"
-            className="absolute top-[8%] left-0 aspect-[2/3] w-[44%] group-hover/collage:-rotate-[3deg]"
+            className="absolute top-[8%] left-0 aspect-[2/3] w-[44%]"
           />
           <Snapshot
             src="/images/site/store-front.png"
             alt=""
-            tilt="right"
             sizes="(min-width: 1024px) 324px, 54vw"
-            className="absolute top-0 right-0 aspect-[1312/1199] w-[54%] group-hover/collage:rotate-[3deg]"
+            className="absolute top-0 right-0 aspect-[1312/1199] w-[54%]"
           />
           <Snapshot
             src="/images/site/gift-box.png"
             alt=""
-            tilt="left-strong"
             sizes="(min-width: 1024px) 228px, 38vw"
-            className="absolute right-[10%] bottom-0 aspect-[4/5] w-[38%] group-hover/collage:-rotate-1"
+            className="absolute right-[10%] bottom-0 aspect-[4/5] w-[38%]"
             imageClassName="object-[50%_40%]"
           />
           <Cutout
             name="red-velvet"
             width={112}
-            className="bottom-[2%] left-[30%] hidden rotate-[10deg] transition-[rotate] duration-700 ease-out group-hover/collage:-rotate-[6deg] motion-reduce:transition-none lg:block"
+            className="bottom-[2%] left-[30%] hidden lg:block"
           />
         </div>
         <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-8">

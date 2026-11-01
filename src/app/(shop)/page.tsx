@@ -5,7 +5,7 @@ import { directionsUrl, formatOpeningHours } from "@/components/content/hours";
 import { ReviewBand } from "@/components/home/review-band";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
-import { Cutout, Snapshot } from "@/components/ui/snapshot";
+import { Cutout, Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { SizePickerButton } from "@/components/shop/add-to-cart";
 import { MenuItemCard } from "@/components/shop/menu-item-card";
 import { OccasionCard } from "@/components/shop/occasion-card";
@@ -68,7 +68,10 @@ export default async function HomePage() {
     <div className="mx-auto flex w-full max-w-[1440px] flex-col">
       {/* Hero */}
       <section className="w-full px-3 pb-3 sm:px-6 sm:pb-6">
-        <div className="relative flex min-h-[620px] w-full flex-col items-center justify-center gap-6 overflow-hidden rounded-m [--focus-ring:var(--white)] px-5 py-16 text-center sm:gap-7 lg:h-[720px] lg:px-40 lg:py-0">
+        <div className={cn(
+            photoFrame,
+            "flex min-h-[620px] w-full flex-col items-center justify-center gap-6 [--focus-ring:var(--white)] px-5 py-16 text-center sm:gap-7 lg:h-[720px] lg:px-40 lg:py-0",
+          )}>
           <Image
             src="/images/site/hero-background.png"
             alt={t.heroAlt}
@@ -160,7 +163,7 @@ export default async function HomePage() {
         <section className="w-full px-3 sm:px-6" aria-labelledby="home-brownies">
           <div className="flex w-full flex-col items-center gap-10 rounded-m bg-tint-lavender px-5 py-12 sm:px-10 lg:flex-row lg:gap-20 lg:px-16 lg:py-[88px]">
             <div className="relative aspect-[560/500] w-full max-w-[560px] shrink-0">
-              <div className="absolute top-[6%] left-[3.5714%] h-[88%] w-[92.857%] origin-top-left -rotate-3 overflow-hidden rounded-m bg-oat">
+              <div className={cn(photoFrame, "absolute top-[6%] left-[3.5714%] h-[88%] w-[92.857%] bg-oat")}>
                 <Image
                   src={brownies.imageUrl}
                   alt={t.browniesAlt}
@@ -226,21 +229,20 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Story band (owner-requested, after Levain's tinted story panel): a tilted snapshot,
+      {/* Story band (owner-requested, after Levain's tinted story panel): a framed snapshot,
           the our-story headline and values, with a cookie cut-out resting on the panel edge. */}
       <section className="w-full px-3 pt-20 sm:px-6 lg:pt-28" aria-labelledby="home-story">
-        <div className="group/band relative flex w-full flex-col gap-12 rounded-m bg-mint px-5 py-12 sm:px-10 lg:gap-16 lg:px-16 lg:py-[88px]">
+        <div className="relative flex w-full flex-col gap-12 rounded-m bg-mint px-5 py-12 sm:px-10 lg:gap-16 lg:px-16 lg:py-[88px]">
           <Cutout
             name="chocolate-chunk"
             width={132}
-            className="-bottom-8 left-[-10px] hidden -rotate-12 transition-[rotate] duration-700 ease-out group-hover/band:-rotate-[22deg] motion-reduce:transition-none lg:block"
+            className="-bottom-8 left-[-10px] hidden lg:block"
           />
           <div className="flex w-full flex-col items-center gap-10 lg:flex-row lg:gap-20">
             <div className="relative w-full max-w-[440px] shrink-0 px-2 lg:w-[440px] lg:px-0">
               <Snapshot
                 src="/images/site/hero-cookies.png"
                 alt={t.story.alt}
-                tilt="left-strong"
                 sizes="(min-width: 1024px) 440px, 90vw"
                 className="aspect-[4/5] w-full"
                 imageClassName="object-[50%_62%]"
@@ -248,7 +250,7 @@ export default async function HomePage() {
               <Cutout
                 name="double-chocolate"
                 width={120}
-                className="-right-14 -bottom-9 hidden rotate-[8deg] transition-[rotate] duration-700 ease-out group-hover/band:rotate-[-4deg] motion-reduce:transition-none lg:block"
+                className="-right-14 -bottom-9 hidden lg:block"
               />
             </div>
             <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-6 lg:max-w-[540px]">
@@ -295,7 +297,6 @@ export default async function HomePage() {
             body={t.occasions.gifting.body}
             href="/menu"
             linkLabel={t.occasions.gifting.link}
-            tilt="left"
           />
           <OccasionCard
             image="/images/site/party-spread.png"
@@ -304,7 +305,6 @@ export default async function HomePage() {
             body={t.occasions.gatherings.body}
             href="/menu?category=brownies"
             linkLabel={t.occasions.gatherings.link}
-            tilt="right"
           />
           <OccasionCard
             image="/images/site/story-bakers.png"
@@ -313,7 +313,6 @@ export default async function HomePage() {
             body={t.occasions.kitchen.body}
             href="/our-story"
             linkLabel={t.occasions.kitchen.link}
-            tilt="left"
           />
         </div>
       </section>
@@ -364,7 +363,6 @@ export default async function HomePage() {
           <Snapshot
             src="/images/site/store-front.png"
             alt={t.visit.alt}
-            tilt="right"
             sizes="(min-width: 1024px) 640px, 100vw"
             className="aspect-[640/389] w-full"
           />

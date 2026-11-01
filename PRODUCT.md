@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + Prisma 7 + MySQL 8. Chosen in the implementation plan (`Pemweb/droolbites-plan-implementasi.md`, 28 Oct 2026); the course allows any stack. Runs locally first (Docker Desktop: MySQL + Mailpit); VPS deploy with Docker Compose + Caddy on `droolbites.biz.id` comes later. Payment gateway undecided: a mock provider stands in until Midtrans/Xendit is chosen.
+Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + Prisma 7 + MySQL 8. Chosen in the implementation plan (`Pemweb/droolbites-plan-implementasi.md`, 28 Oct 2026); the course allows any stack. Runs locally first (Docker Desktop: MySQL + Mailpit); VPS deploy with Docker Compose behind the host's nginx (live at https://droolbites.biz.id). Payment gateway undecided: a mock provider stands in until Midtrans/Xendit is chosen.
 
 ## Users
 

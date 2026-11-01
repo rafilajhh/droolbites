@@ -2,7 +2,7 @@ import Image from "next/image";
 import { Quote, Star } from "lucide-react";
 import { Sticker } from "@/components/ui/badges";
 import { ArrowLink } from "@/components/ui/button";
-import { Cutout } from "@/components/ui/snapshot";
+import { Cutout, photoFrame } from "@/components/ui/snapshot";
 import type { ShopProduct } from "@/components/shop/shop-product";
 import { cn } from "@/lib/cn";
 
@@ -10,8 +10,8 @@ type Review = { quote: string; name: string; area: string };
 
 /** The product each illustrative reviewer orders, in the order of `items` (featured first). */
 const picks = ["red-velvet", "double-chocolate", "white-chocolate-almond"];
-/** The two smaller quotes sit on the moss like notes pinned at slightly different angles. */
-const noteTilts = ["-rotate-[1.5deg]", "rotate-[1.5deg] lg:ml-8"];
+/** The two smaller quotes sit on the moss as paper notes, the second nudged in. */
+const noteOffsets = ["", "lg:ml-8"];
 
 const whiteLink = "text-foreground-inverse shadow-[inset_0_-1.25px_0_var(--white)]";
 
@@ -41,7 +41,7 @@ export function ReviewBand({
         <Cutout
           name="white-chocolate-almond"
           width={128}
-          className="-top-12 right-10 hidden rotate-12 lg:block"
+          className="-top-12 right-10 hidden lg:block"
         />
         <div className="flex min-w-0 flex-col items-start gap-10">
           <div className="flex flex-col items-start gap-5">
@@ -62,7 +62,7 @@ export function ReviewBand({
               {featured.quote}
             </blockquote>
             <figcaption className="flex items-center gap-4">
-              <span className="relative size-16 shrink-0 -rotate-3 overflow-hidden rounded-sm bg-oat">
+              <span className={cn(photoFrame, "size-16 shrink-0 rounded-sm bg-oat")}>
                 <Image src={featured.product.imageUrl} alt="" fill sizes="64px" className="object-cover" />
               </span>
               <span className="flex flex-col">
@@ -84,8 +84,8 @@ export function ReviewBand({
               <li
                 key={review.name}
                 className={cn(
-                  "flex flex-col gap-5 rounded-m bg-background p-6 transition-[rotate] duration-300 ease-out hover:rotate-0 motion-reduce:transition-none lg:p-7",
-                  noteTilts[i],
+                  "flex flex-col gap-5 rounded-m bg-background p-6 lg:p-7",
+                  noteOffsets[i],
                 )}
               >
                 <figure className="flex flex-col gap-5">
@@ -93,7 +93,7 @@ export function ReviewBand({
                     {review.quote}
                   </blockquote>
                   <figcaption className="flex items-center gap-3.5">
-                    <span className="relative size-12 shrink-0 overflow-hidden rounded-pill bg-oat">
+                    <span className={cn(photoFrame, "size-12 shrink-0 rounded-pill bg-oat")}>
                       <Image src={review.product.imageUrl} alt="" fill sizes="48px" className="object-cover" />
                     </span>
                     <span className="flex flex-col">

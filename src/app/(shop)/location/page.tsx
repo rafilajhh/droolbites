@@ -5,7 +5,7 @@ import { Eyebrow } from "@/components/content/eyebrow";
 import { directionsUrl, formatOpeningHours } from "@/components/content/hours";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink, buttonClasses } from "@/components/ui/button";
-import { Cutout, Snapshot } from "@/components/ui/snapshot";
+import { Cutout, Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { locationMessages } from "@/i18n/messages/pages/location";
 import { getLocale, getMessages } from "@/i18n/server";
 import { cn } from "@/lib/cn";
@@ -59,7 +59,7 @@ export default async function LocationPage() {
       </section>
 
       <section className="flex w-full flex-col gap-6 px-4 sm:px-8 lg:flex-row lg:px-16">
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-m lg:aspect-auto lg:h-[620px] lg:flex-1">
+        <div className={cn(photoFrame, "aspect-[4/3] w-full lg:aspect-auto lg:h-[620px] lg:flex-1")}>
           <Image
             src="/images/site/store-front.png"
             alt={t.imageAlt}
@@ -145,7 +145,7 @@ export default async function LocationPage() {
             <Cutout
               name="red-velvet"
               width={120}
-              className="-top-12 -right-10 hidden rotate-[14deg] lg:block"
+              className="-top-12 -right-10 hidden lg:block"
             />
             <div className="flex items-center gap-3">
               <Clock className="size-6 shrink-0 text-primary" aria-hidden />
@@ -233,7 +233,7 @@ export default async function LocationPage() {
                     {review.quote}
                   </blockquote>
                   <figcaption className="flex items-center gap-3.5">
-                    <span className="relative size-14 shrink-0 overflow-hidden rounded-pill bg-background">
+                    <span className={cn(photoFrame, "size-14 shrink-0 rounded-pill bg-background")}>
                       <Image
                         src={`/images/products/${pick.slug}.png`}
                         alt=""
@@ -282,7 +282,6 @@ export default async function LocationPage() {
           <Snapshot
             src="/images/site/gift-box.png"
             alt=""
-            tilt="right"
             sizes="(min-width: 1024px) 400px, 90vw"
             className="aspect-[4/3] w-full shrink-0 lg:aspect-[5/4] lg:w-[400px]"
             imageClassName="object-[50%_60%]"

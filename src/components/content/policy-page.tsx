@@ -186,7 +186,7 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
                   key={section.id}
                   id={section.id}
                   aria-labelledby={`${section.id}-title`}
-                  className="flex scroll-mt-24 flex-col gap-3 pb-10 shadow-[inset_0_-1px_0_var(--border-subtle)]"
+                  className="flex scroll-mt-[88px] flex-col gap-3 pb-10 shadow-[inset_0_-1px_0_var(--border-subtle)]"
                 >
                   <div className="flex items-center gap-3.5">
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-pill bg-card text-[13px] leading-none font-bold text-foreground">
@@ -216,8 +216,8 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
               ) : null}
             </div>
 
-            <div className="sticky top-24 hidden w-[240px] shrink-0 self-start pt-2 pb-6 @min-[900px]:block" aria-hidden>
-              <Snapshot src={asidePhoto[policy]} alt="" tilt="right" sizes="240px" className="aspect-[4/5] w-full" />
+            <div className="sticky top-[88px] hidden w-[240px] shrink-0 self-start pt-2 pb-6 @min-[900px]:block" aria-hidden>
+              <Snapshot src={asidePhoto[policy]} alt="" sizes="240px" className="aspect-[4/5] w-full" />
               <Sticker className="absolute -bottom-1 -left-5">{t.sticker}</Sticker>
             </div>
           </div>
