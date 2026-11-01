@@ -86,7 +86,7 @@ export function NavMenu({ accountHref, email }: { accountHref: string; email: st
                   {link.label}
                 </span>
                 <ArrowUpRight
-                  className="size-[26px] shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  className="size-[26px] shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-0"
                   aria-hidden
                 />
               </Link>

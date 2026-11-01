@@ -40,12 +40,13 @@ function groupCategories(categories: ShopCategory[]): Group[] {
   return groups;
 }
 
-/** "per piece" / "per portion" when every product in the group is sold one way. */
-function unitOf(products: ShopProduct[]): "piece" | "portion" | null {
+/** "per piece" / "per portion" when every product is sold one way; "per tray" when every one comes in tray sizes. */
+function unitOf(products: ShopProduct[]): "piece" | "portion" | "tray" | null {
   const names = new Set(products.flatMap((p) => (p.variants.length === 1 ? [p.variants[0].name] : ["multi"])));
   if (names.size !== 1) return null;
   if (names.has("1 piece")) return "piece";
   if (names.has("1 portion")) return "portion";
+  if (names.has("multi")) return "tray";
   return null;
 }
 
@@ -141,15 +142,19 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
             const single = g.cats.length === 1;
             const title = single ? g.cats[0].name : t.group.join(g.cats.map((c) => c.name));
             const unit = single ? unitOf(g.products) : null;
-            const count = unit ? t.group.flavors(g.products.length, t.unit[unit]) : t.group.desserts(g.products.length);
-            // Full menu: a group that would leave one empty cell at lg (n % 4 === 3) lets its multi-size
-            // product span two columns (2+1+1 at lg; a full row then a pair below lg). It must start at an
-            // even index so it never straddles a row. Filtered and search results keep equal cards and
-            // centre the last row instead.
-            const wideId =
-              !filteredView && g.products.length % COLUMNS === 3
-                ? g.products.find((p, i) => i % 2 === 0 && p.variants.length > 1)?.id
-                : undefined;
+            // A shared group says how each part is sold ("Brownies per tray · Tiramisu per portion").
+            const count = unit
+              ? t.group.flavors(g.products.length, t.unit[unit])
+              : t.group.mixed(
+                  g.cats.map((c) => {
+                    const u = unitOf(c.products);
+                    return u ? `${c.name} ${t.unit[u]}` : c.name;
+                  }),
+                );
+            // Full menu: a group of three gets three equal columns from sm (one card per row below sm),
+            // so no card is stretched and no cell is left empty. Filtered and search results keep the
+            // 2 / 4 widths and centre the last row.
+            const thirds = !filteredView && g.products.length === 3;
             return (
               <section key={g.key} aria-labelledby={`group-${g.key}`} className="flex w-full flex-col gap-7">
                 <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 pb-5 shadow-[inset_0_-1px_0_var(--border-subtle)]">
@@ -163,17 +168,18 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
                 </div>
                 {/* Same widths as a 2 / 4 column grid; wrapping and centring leave no hole in the last row. */}
                 <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-8 lg:gap-6">
-                  {g.products.map((p) => {
-                    const wide = p.id === wideId;
-                    return (
-                      <MenuItemCard
-                        key={p.id}
-                        product={p}
-                        wide={wide}
-                        className={wide ? "w-full lg:w-[calc(50%-12px)]" : "w-[calc(50%-8px)] lg:w-[calc(25%-18px)]"}
-                      />
-                    );
-                  })}
+                  {g.products.map((p) => (
+                    <MenuItemCard
+                      key={p.id}
+                      product={p}
+                      wide={thirds}
+                      className={
+                        thirds
+                          ? "w-full sm:w-[calc((100%-32px)/3)] lg:w-[calc((100%-48px)/3)]"
+                          : "w-[calc(50%-8px)] lg:w-[calc(25%-18px)]"
+                      }
+                    />
+                  ))}
                 </div>
               </section>
             );

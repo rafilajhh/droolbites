@@ -93,6 +93,23 @@ export function DetailsForm({
   return (
     // Below lg the Continue button is pinned to the bottom of the screen, so the page keeps room for it.
     <div className="flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24">
+      {/* First in reading order: below lg it is a toggle bar above the form; at lg it moves to the right column. */}
+      <SummaryToggle
+        id="checkout-summary"
+        labels={t.summary}
+        total={formatRupiah(summary.subtotal + fee)}
+        className="lg:order-last lg:w-[440px] lg:shrink-0"
+      >
+        <OrderSummary
+          t={t.summary}
+          lines={summary.lines}
+          itemCount={summary.itemCount}
+          subtotal={summary.subtotal}
+          fulfilment={values.fulfilment}
+          fee={fee}
+          total={summary.subtotal + fee}
+        />
+      </SummaryToggle>
       <form
         ref={formRef}
         action={formAction}
@@ -247,7 +264,7 @@ export function DetailsForm({
 
         <div className="flex w-full flex-col items-center gap-4 pt-2 lg:flex-row lg:gap-6">
           {/* Below lg this bar is pinned to the bottom of the screen, like the PAY bar on the payment step. */}
-          <div className="fixed inset-x-0 bottom-0 z-30 flex bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:shadow-none">
+          <div data-pinned-bar className="fixed inset-x-0 bottom-0 z-30 flex bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:shadow-none">
             <Button type="submit" className="w-full lg:w-auto" disabled={pending || closed}>
               {pending ? d.saving : d.continue}
             </Button>
@@ -269,23 +286,6 @@ export function DetailsForm({
         </div>
       </form>
 
-      {/* Below lg the summary moves above the form behind a toggle bar; at lg it is the right column. */}
-      <SummaryToggle
-        id="checkout-summary"
-        labels={t.summary}
-        total={formatRupiah(summary.subtotal + fee)}
-        className="order-first lg:order-none lg:w-[440px] lg:shrink-0"
-      >
-        <OrderSummary
-          t={t.summary}
-          lines={summary.lines}
-          itemCount={summary.itemCount}
-          subtotal={summary.subtotal}
-          fulfilment={values.fulfilment}
-          fee={fee}
-          total={summary.subtotal + fee}
-        />
-      </SummaryToggle>
     </div>
   );
 }

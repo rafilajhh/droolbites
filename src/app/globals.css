@@ -127,6 +127,12 @@
        (measured: text widths match exactly). Manrope / Plex Mono ignore it. */
     font-variation-settings: "opsz" 96;
   }
+  /* A bar pinned to the bottom below lg (checkout Continue/PAY, product buy bar) must not hide the focused field. */
+  @media (width < 64rem) {
+    html:has([data-pinned-bar]) {
+      scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+    }
+  }
 
   body {
     background: var(--background);

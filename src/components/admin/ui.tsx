@@ -70,7 +70,7 @@ export function Toggle({
       />
       <span
         aria-hidden
-        className="pointer-events-none absolute top-[3px] left-[3px] size-[22px] rounded-full bg-white transition-transform peer-checked:translate-x-5"
+        className="pointer-events-none absolute top-[3px] left-[3px] size-[22px] rounded-full bg-white transition-transform peer-checked:translate-x-5 motion-reduce:transition-none"
       />
     </span>
   );

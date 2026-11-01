@@ -171,6 +171,7 @@ export function ProductBuy({
       {/* Pinned buy bar below lg (same paper, hairline and button as the checkout PAY bar). `invisible`
           takes it out of the tab order and the accessibility tree while it is slid away. */}
       <div
+        data-pinned-bar
         className={cn(
           "fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] transition-[translate,visibility] duration-200 ease-out motion-reduce:transition-none md:px-8 lg:hidden",
           !barShown && "invisible translate-y-full",

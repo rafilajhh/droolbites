@@ -66,13 +66,13 @@ typography:
     letterSpacing: "0.5px"
   numeral-404:
     fontFamily: "Bricolage Grotesque, sans-serif"
-    fontSize: "220px"
+    fontSize: "160px"
     fontWeight: 700
     lineHeight: 0.9
     fontVariation: "'opsz' 96"
   numeral-404-mobile:
     fontFamily: "Bricolage Grotesque, sans-serif"
-    fontSize: "120px"
+    fontSize: "96px"
     fontWeight: 700
     lineHeight: 0.9
     fontVariation: "'opsz' 96"
@@ -320,7 +320,7 @@ A warm-paper neutral base with one deep green and a rotating confectionery accen
 
 **Character:** A chunky, slightly quirky grotesque for voice, a clean humanist sans for reading, and a mono for prices-adjacent labels, chips and table headers.
 
-**Full ramp:** The six named roles below are the core. The pen is laid out per frame, so it also uses intermediate display steps (24–88px, plus the 220/120px 404 numeral), a 17–20px lede/body-large, and 9–12px badge and micro-label sizes. Every one of those steps is in the frontmatter `typography` map and was copied from the pen at 1440. Before adding a new size, pick the nearest existing step.
+**Full ramp:** The six named roles below are the core. The pen is laid out per frame, so it also uses intermediate display steps (24–88px, plus the 160/96px 404 numeral), a 17–20px lede/body-large, and 9–12px badge and micro-label sizes. Every one of those steps is in the frontmatter `typography` map and was copied from the pen at 1440. Before adding a new size, pick the nearest existing step.
 
 ### Hierarchy
 - **Display** (700, `type-hero`: 44 / 64 / 80px, line-height 44 / 64 / 78px, tracking -1 to -2.5px): landing hero h1 only. Scaled down on 1 Nov 2026 after measuring levainbakery.com, crumblcookies.com and milkbarstore.com (their largest headings are 53–60px); the pen's 112px is retired.

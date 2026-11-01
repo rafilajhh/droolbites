@@ -88,12 +88,29 @@ export function PaymentForm({
     <form
       action={formAction}
       className={cn(
-        "flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(9rem+env(safe-area-inset-bottom))] md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24",
+        "flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(9rem+env(safe-area-inset-bottom))] md:px-8 lg:grid lg:grid-cols-[minmax(0,1fr)_440px] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-12 lg:gap-y-4 lg:px-16 lg:pt-12 lg:pb-24",
         // Room for the error that joins the pinned PAY bar below lg.
         error && "pb-[calc(16rem+env(safe-area-inset-bottom))]",
       )}
     >
-      <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
+      {/* First in reading order: below lg a toggle bar above the methods; at lg the top of the right column. */}
+      <SummaryToggle
+        id="payment-summary"
+        labels={t.summary}
+        total={formatRupiah(summary.total)}
+        className="lg:col-start-2 lg:row-start-1"
+      >
+        <OrderSummary
+          t={t.summary}
+          lines={summary.lines}
+          itemCount={summary.itemCount}
+          subtotal={summary.subtotal}
+          fulfilment={review.fulfilment}
+          fee={review.fee}
+          total={summary.total}
+        />
+      </SummaryToggle>
+      <div className="flex w-full min-w-0 flex-col gap-5 lg:col-start-1 lg:row-span-2 lg:row-start-1">
         <div className="flex flex-col gap-2 pb-3">
           <h1 className="type-checkout font-display font-bold text-foreground">{p.title}</h1>
           <p className="text-[17px] leading-[26px] text-muted-foreground">{p.sub}</p>
@@ -140,7 +157,10 @@ export function PaymentForm({
 
       {/* Below lg the PAY button lives in a bar pinned to the bottom of the screen (the in-flow one is hidden),
           and a failed attempt's error sits right above it. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-3 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:hidden">
+      <div
+        data-pinned-bar
+        className="fixed inset-x-0 bottom-0 z-30 flex flex-col gap-3 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:hidden"
+      >
         {errorText ? (
           <p ref={mobileErrorRef} tabIndex={-1} role="alert" className={errorClass}>
             {errorText}
@@ -159,36 +179,22 @@ export function PaymentForm({
         </div>
       </div>
 
-      {/* Below lg the summary folds into a bar above the form, as on the details step. */}
-      <div className="order-first flex w-full flex-col gap-4 lg:order-none lg:w-[440px] lg:shrink-0">
-        <SummaryToggle id="payment-summary" labels={t.summary} total={formatRupiah(summary.total)}>
-          <OrderSummary
-            t={t.summary}
-            lines={summary.lines}
-            itemCount={summary.itemCount}
-            subtotal={summary.subtotal}
-            fulfilment={review.fulfilment}
-            fee={review.fee}
-            total={summary.total}
-          />
-        </SummaryToggle>
-        {/* Desktop only: below lg the pinned bar holds the chosen method, the error and PAY. */}
-        <div className="hidden w-full flex-col gap-3 rounded-m bg-white p-6 inset-ring-1 inset-ring-border-subtle lg:flex">
-          <div className="flex w-full items-center justify-between gap-3 text-sm leading-[21px]">
-            <span className="text-muted-foreground">{p.payingWith}</span>
-            <span className="text-right font-bold text-foreground" aria-live="polite">
-              {method ? paymentMethodInfo[method].name : "—"}
-            </span>
-          </div>
-          {errorText ? (
-            <p ref={desktopErrorRef} tabIndex={-1} role="alert" className={errorClass}>
-              {errorText}
-            </p>
-          ) : null}
-          <Button type="submit" className="w-full" disabled={pending || !method}>
-            {pending ? p.placing : p.pay(formatRupiah(summary.total))}
-          </Button>
+      {/* Desktop only: below lg the pinned bar holds the chosen method, the error and PAY. */}
+      <div className="hidden w-full flex-col gap-3 rounded-m bg-white p-6 inset-ring-1 inset-ring-border-subtle lg:col-start-2 lg:row-start-2 lg:flex">
+        <div className="flex w-full items-center justify-between gap-3 text-sm leading-[21px]">
+          <span className="text-muted-foreground">{p.payingWith}</span>
+          <span className="text-right font-bold text-foreground" aria-live="polite">
+            {method ? paymentMethodInfo[method].name : "—"}
+          </span>
         </div>
+        {errorText ? (
+          <p ref={desktopErrorRef} tabIndex={-1} role="alert" className={errorClass}>
+            {errorText}
+          </p>
+        ) : null}
+        <Button type="submit" className="w-full" disabled={pending || !method}>
+          {pending ? p.placing : p.pay(formatRupiah(summary.total))}
+        </Button>
       </div>
     </form>
   );

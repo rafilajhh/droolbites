@@ -67,7 +67,7 @@ export const policyMessages = defineMessages({
           id: "information-we-collect",
           title: "Information we collect",
           body: () =>
-            "The details you provide may include your name, email address, phone number, delivery and billing addresses, and the products in your order. Account details support your account and order history. If you subscribe to menu updates, you provide an email address for that purpose.",
+            "The details you provide may include your name, email address, phone number, delivery address, and the products in your order. Account details support your account and order history. If you subscribe to menu updates, you provide an email address for that purpose.",
         },
         {
           id: "why-we-use-it",
@@ -187,7 +187,7 @@ export const policyMessages = defineMessages({
           id: "information-we-collect",
           title: "Informasi yang kami kumpulkan",
           body: () =>
-            "Data yang kamu berikan bisa berupa nama, alamat email, nomor telepon, alamat pengiriman dan penagihan, serta produk dalam pesananmu. Data akun digunakan untuk akun dan riwayat pesananmu. Jika kamu berlangganan kabar menu, kamu memberikan alamat email untuk keperluan itu.",
+            "Data yang kamu berikan bisa berupa nama, alamat email, nomor telepon, alamat pengiriman, serta produk dalam pesananmu. Data akun digunakan untuk akun dan riwayat pesananmu. Jika kamu berlangganan kabar menu, kamu memberikan alamat email untuk keperluan itu.",
         },
         {
           id: "why-we-use-it",

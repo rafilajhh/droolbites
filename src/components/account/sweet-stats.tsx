@@ -60,10 +60,11 @@ export async function SweetStats({ userId, className }: { userId: bigint; classN
       </span>
       {/* An unavailable product's page 404s, so only link to one still on the menu. */}
       {favorite.isAvailable ? (
-        <>
+        // One unit, so the line never wraps between the dot and the link.
+        <span className="inline-flex items-center gap-[inherit] whitespace-nowrap">
           <span aria-hidden>·</span>
           <ArrowLink href={`/menu/${favorite.slug}`}>{s.again}</ArrowLink>
-        </>
+        </span>
       ) : null}
     </p>
   );

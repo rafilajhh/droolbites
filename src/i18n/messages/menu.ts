@@ -71,7 +71,7 @@ export const menuMessages = defineMessages({
     group: {
       join: (names: string[]) => joinNames(names, "&"),
       flavors: (n: number, unit: string) => `${n} ${n === 1 ? "flavor" : "flavors"} · ${unit}`,
-      desserts: (n: number) => `${n} ${n === 1 ? "dessert" : "desserts"}`,
+      mixed: (parts: string[]) => parts.join(" · "),
     },
     results: (n: number) => `${n} ${n === 1 ? "dessert" : "desserts"} shown`,
     unit: { piece: "per piece", portion: "per portion", tray: "per tray" },
@@ -123,7 +123,7 @@ export const menuMessages = defineMessages({
     group: {
       join: (names: string[]) => joinNames(names, "&"),
       flavors: (n: number, unit: string) => `${n} rasa · ${unit}`,
-      desserts: (n: number) => `${n} dessert`,
+      mixed: (parts: string[]) => parts.join(" · "),
     },
     results: (n: number) => `${n} dessert ditampilkan`,
     unit: { piece: "per buah", portion: "per porsi", tray: "per loyang" },
