@@ -110,9 +110,18 @@ export default async function HomePage() {
             </Link>
           </div>
           {cookiesFrom !== null ? (
-            <p className="relative font-mono text-[13px] leading-[20px] font-semibold text-white sm:text-sm sm:leading-[21px]">
-              {t.hero.proof(products.length, formatRupiah(cookiesFrom))}
-            </p>
+            <div className="relative flex flex-wrap items-center justify-center gap-2.5">
+              {/* The logo's letter colors, as a little row of sprinkles. */}
+              <span className="flex items-center gap-2.5" aria-hidden>
+                <span className="size-2.5 rounded-full bg-accent-magenta" />
+                <span className="size-2.5 rounded-full bg-accent-mustard" />
+                <span className="size-2.5 rounded-full bg-accent-teal" />
+                <span className="size-2.5 rounded-full bg-accent-lavender" />
+              </span>
+              <p className="font-mono text-[13px] leading-[20px] font-semibold text-white sm:text-sm sm:leading-[21px]">
+                {t.hero.proof(products.length, formatRupiah(cookiesFrom))}
+              </p>
+            </div>
           ) : null}
         </div>
       </section>
