@@ -96,9 +96,9 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         }
       />
 
-      <div className="flex w-full flex-col gap-6 xl:flex-row xl:items-start xl:gap-5">
-        <div className="flex min-w-0 flex-col gap-6 max-xl:contents xl:flex-1">
-        <Card className="flex min-w-0 flex-col gap-4 p-6 max-xl:order-1">
+      {/* One full-width stack: store info, the two order options side by side, hours, payments. */}
+      <div className="flex w-full flex-col gap-6">
+        <Card className="flex min-w-0 flex-col gap-4 p-6">
           <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.info}</h2>
           <div className="flex w-full flex-col gap-4 sm:flex-row">
             <Field label={t.storeName} htmlFor="settings-storeName" error={err("storeName")} className="flex-1">
@@ -164,8 +164,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           </Field>
         </Card>
 
-        <div className="flex w-full flex-col gap-6 max-xl:contents xl:w-[400px] xl:shrink-0">
-        <div className="flex w-full flex-col gap-4 max-xl:order-2">
+        <div className="grid w-full gap-4 sm:grid-cols-2">
           <ToggleCard
             id="settings-pickup"
             name="pickupEnabled"
@@ -185,15 +184,13 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             onChange={setDelivery}
           />
           {errors.fulfilment ? (
-            <p id="settings-fulfilment-error" role="alert" className="text-[13px] leading-5 text-error">
+            <p id="settings-fulfilment-error" role="alert" className="text-[13px] leading-5 text-error sm:col-span-2">
               {err("fulfilment")}
             </p>
           ) : null}
         </div>
 
-
-
-        <Card className="flex min-w-0 flex-col gap-4 p-6 max-xl:order-3">
+        <Card className="flex min-w-0 flex-col gap-4 p-6">
           <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.hours}</h2>
           <div className="flex w-full flex-col gap-4 sm:flex-row">
             <Field label={t.opensAt} htmlFor="settings-opensAt" error={err("opensAt")} className="flex-1">
@@ -265,9 +262,8 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             ) : null}
           </fieldset>
         </Card>
-        </div>
 
-        <Card className="flex w-full flex-col gap-4 p-6 max-xl:order-4">
+        <Card className="flex w-full flex-col gap-4 p-6">
           <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.payments}</h2>
           <PaymentToggle id="settings-va" name="vaEnabled" title={t.va} sub={t.vaSub} defaultChecked={values.vaEnabled} />
           <PaymentToggle
@@ -297,7 +293,6 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             </p>
           ) : null}
         </Card>
-        </div>
       </div>
 
       <div className="sticky bottom-0 z-20 -mx-4 -mb-6 flex items-center gap-3 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] sm:-mx-6 sm:px-6 lg:hidden">

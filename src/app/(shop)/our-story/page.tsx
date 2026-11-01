@@ -96,7 +96,7 @@ export default async function OurStoryPage() {
                   </p>
                   <Icon className="size-7 shrink-0 text-foreground" aria-hidden />
                 </div>
-                <h3 className="font-display text-[24px] leading-[28px] font-bold text-balance text-foreground lg:text-[24px] lg:leading-[28px]">
+                <h3 className="font-display text-[24px] leading-[28px] font-bold text-balance text-foreground lg:min-h-14">
                   {chapter.title}
                 </h3>
                 <p className="text-pretty text-base leading-6 text-foreground">{chapter.body}</p>
