@@ -7,7 +7,8 @@ const ID_WORDS = ["Nol", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh"
 export const homeMessages = defineMessages({
   en: {
     hero: {
-      chip: (name: string) => `New: ${name}!`,
+      chip: "Baked fresh daily in Surabaya",
+      sticker: (name: string) => `New: ${name}!`,
       title: "One bite, endless drool.",
       sub: "Thick, soft-centered cookies, fudgy brownies and creamy tiramisu — made in small batches for delivery or pickup.",
       order: "ORDER NOW",
@@ -101,7 +102,8 @@ export const homeMessages = defineMessages({
   },
   id: {
     hero: {
-      chip: (name: string) => `Baru: ${name}!`,
+      chip: "Dipanggang segar tiap hari",
+      sticker: (name: string) => `Baru: ${name}!`,
       title: "Sekali gigit, bikin ketagihan.",
       sub: "Cookies tebal yang lembut di tengah, brownies fudgy dan tiramisu yang creamy — dibuat dalam batch kecil untuk diantar atau diambil.",
       order: "PESAN SEKARANG",

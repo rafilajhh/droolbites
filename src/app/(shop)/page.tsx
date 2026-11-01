@@ -4,7 +4,7 @@ import { MapPin, QrCode, Store, Truck } from "lucide-react";
 import { directionsUrl } from "@/components/content/hours";
 import { BrowniePicker } from "@/components/home/brownie-picker";
 import { ReviewBand } from "@/components/home/review-band";
-import { Chip } from "@/components/ui/badges";
+import { Chip, Sticker } from "@/components/ui/badges";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { Cutout, Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { MenuItemCard } from "@/components/shop/menu-item-card";
@@ -86,14 +86,7 @@ export default async function HomePage() {
             className="absolute inset-0 bg-radial-[ellipse_55%_60%_at_50%_50%] from-ink/70 to-ink/15 max-lg:from-ink/75 max-lg:to-ink/45"
             aria-hidden
           />
-          {newProduct ? (
-            <Link
-              href={`/menu/${newProduct.slug}`}
-              className="relative rounded-pill transition-opacity after:absolute after:inset-x-0 after:-inset-y-1.5 after:content-[''] hover:opacity-90"
-            >
-              <Chip className="bg-highlight! text-ink">{t.hero.chip(newProduct.name)}</Chip>
-            </Link>
-          ) : null}
+          <Chip className="relative bg-highlight! text-ink">{t.hero.chip}</Chip>
           <h1 className="relative w-full font-display type-hero font-bold text-balance text-white">{t.hero.title}</h1>
           <p className="relative max-w-[600px] text-pretty text-[17px] leading-[26px] text-white lg:text-xl lg:leading-[30px]">
             {t.hero.sub}
@@ -122,6 +115,15 @@ export default async function HomePage() {
                 {t.hero.proof(products.length, formatRupiah(cookiesFrom))}
               </p>
             </div>
+          ) : null}
+          {/* The newest product as a paper sticker in the corner, clear of the centred copy. */}
+          {newProduct ? (
+            <Link
+              href={`/menu/${newProduct.slug}`}
+              className="absolute right-10 bottom-14 hidden rounded-pill transition-transform hover:scale-105 motion-reduce:transition-none motion-reduce:hover:scale-100 lg:block xl:right-16 xl:bottom-20"
+            >
+              <Sticker>{t.hero.sticker(newProduct.name)}</Sticker>
+            </Link>
           ) : null}
         </div>
       </section>
