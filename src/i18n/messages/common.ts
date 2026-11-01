@@ -46,7 +46,7 @@ export const commonMessages = defineMessages({
       picksTitle: "Start with a favorite",
       picks: {
         cookies: { name: "Soft cookies", sub: "Four flavors, golden and gooey" },
-        brownies: { name: "Fudgy brownies", sub: "Trays from 10 × 10 to 20 × 30 cm" },
+        brownies: { name: "Fudgy brownies", sub: "Trays from 10 × 10 to 20 × 30 cm" },
         tiramisu: { name: "Tiramisu", sub: "Classic coffee or matcha, by the cup" },
       },
       decrease: "Decrease quantity",
@@ -115,7 +115,7 @@ export const commonMessages = defineMessages({
       items: (n: number) => `${n} item`,
       remove: "Hapus",
       subtotal: "Subtotal",
-      note: (fee: string) => `Ongkir ${fee} se-Surabaya · pickup gratis.`,
+      note: (fee: string) => `Ongkir ${fee} se-Surabaya · ambil di toko gratis.`,
       checkout: "CHECKOUT",
       continue: "Lanjut belanja",
       emptyTitle: "Keranjangmu masih kosong.",
@@ -124,7 +124,7 @@ export const commonMessages = defineMessages({
       picksTitle: "Mulai dari favorit",
       picks: {
         cookies: { name: "Soft cookies", sub: "Empat rasa, renyah di pinggir, lumer di tengah" },
-        brownies: { name: "Fudgy brownies", sub: "Loyang 10 × 10 sampai 20 × 30 cm" },
+        brownies: { name: "Fudgy brownies", sub: "Loyang 10 × 10 sampai 20 × 30 cm" },
         tiramisu: { name: "Tiramisu", sub: "Kopi klasik atau matcha, per cup" },
       },
       decrease: "Kurangi jumlah",

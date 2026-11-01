@@ -82,7 +82,7 @@ export const accountMessages = defineMessages({
       short: { orders: "Pesanan", info: "Akun", address: "Alamat" },
     },
     stats: {
-      summary: (orders: number, desserts: number) => `${orders} pesanan · ${desserts} dessert`,
+      summary: (orders: number, desserts: number) => `${orders} pesanan · ${desserts} item`,
       favorite: "Favorit",
       again: "Pesan lagi",
       empty: "Kotak pertamamu menunggu.",

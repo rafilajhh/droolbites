@@ -170,7 +170,7 @@ export default async function HomePage() {
                       key={v.id}
                       className="flex w-full items-center gap-4 py-4 shadow-[inset_0_-1px_0_color-mix(in_srgb,var(--border)_20%,transparent)]"
                     >
-                      <dt className="flex-1 font-display text-lg leading-[22px] font-semibold text-foreground lg:text-xl lg:leading-[24px]">
+                      <dt className="flex-1 font-display text-lg leading-[22px] font-semibold whitespace-nowrap text-foreground lg:text-xl lg:leading-[24px]">
                         {v.name}
                       </dt>
                       {serves ? <dd className="text-sm leading-normal text-muted-foreground">{serves}</dd> : null}

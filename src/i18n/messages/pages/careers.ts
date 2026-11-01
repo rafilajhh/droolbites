@@ -102,21 +102,21 @@ export const careersMessages = defineMessages({
     roles: [
       {
         title: "Baker pagi",
-        type: "Full-time",
+        type: "Penuh waktu",
         shift: "06:00–14:00",
         body: "Mengaduk dan menyendok adonan cookies hari itu, memanggang brownies dan menyusun tiramisu sebelum toko buka jam sepuluh.",
         fit: "Kamu biasa bangun pagi. Pengalaman dapur membantu, resepnya kami ajari.",
       },
       {
         title: "Kru counter",
-        type: "Part-time",
+        type: "Paruh waktu",
         shift: "10:00–15:30 atau 15:30–21:00",
         body: "Menyambut pembeli yang datang, menyerahkan pesanan ambil di toko, dan membantu memilih antara Red Velvet dan Double Chocolate.",
         fit: "Kamu senang ngobrol dengan orang dan tetap tenang saat ramai malam.",
       },
       {
         title: "Kru packing & antar",
-        type: "Part-time",
+        type: "Paruh waktu",
         shift: "10:00–15:30 atau 15:30–21:00",
         body: "Mengemas dan memberi label tiap pesanan online, mencocokkannya dengan nomor pesanan, lalu mengantarnya keliling Surabaya.",
         fit: "Kamu punya motor sendiri dan SIM C yang masih berlaku.",

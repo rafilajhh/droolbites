@@ -55,7 +55,7 @@ export const productMessages = defineMessages({
     decrease: "Kurangi jumlah",
     increase: "Tambah jumlah",
     perkDelivery: (fee: string) => `Ongkir ${fee}`,
-    perkPickup: "Pickup gratis",
+    perkPickup: "Ambil di toko gratis",
     ingredients: "Bahan",
     ingredientsContact: "Hubungi kami",
     ingredientsSubject: (name: string) => `Bahan: ${name}`,

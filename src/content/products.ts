@@ -163,10 +163,10 @@ export const brownieServings: Record<string, Text> = {
 
 /** Shorter serving notes for the landing page's brownie size list (syGdV). */
 export const brownieServingsShort: Record<string, Text> = {
-  "10 × 10 cm": { en: "For 2–4", id: "Untuk 2–4 orang" },
-  "15 × 15 cm": { en: "For 6–9", id: "Untuk 6–9 orang" },
-  "20 × 20 cm": { en: "For 10–16", id: "Untuk 10–16 orang" },
-  "20 × 30 cm": { en: "For a crowd", id: "Untuk rombongan" },
+  "10 × 10 cm": { en: "For 2–4", id: "2–4 orang" },
+  "15 × 15 cm": { en: "For 6–9", id: "6–9 orang" },
+  "20 × 20 cm": { en: "For 10–16", id: "10–16 orang" },
+  "20 × 30 cm": { en: "For a crowd", id: "Rombongan" },
 };
 
 /** Product photo, falling back to the bundled /images/products/<slug>.png when the database has none. */
