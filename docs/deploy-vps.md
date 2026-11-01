@@ -164,7 +164,7 @@ Sertifikat cuma bisa dibuat **setelah** A record di langkah 2 sudah mengarah ke 
 **a. Pasang bagian HTTP saja** (semua yang di atas baris `# ---- HTTPS ----`):
 
 ```bash
-sudo sed '/# ---- HTTPS ----/,$d' deploy/nginx/droolbites.conf | sudo tee /etc/nginx/sites-available/droolbites.conf > /dev/null
+sudo sed '/^# ---- HTTPS ----$/,$d' deploy/nginx/droolbites.conf | sudo tee /etc/nginx/sites-available/droolbites.conf > /dev/null
 sudo ln -s /etc/nginx/sites-available/droolbites.conf /etc/nginx/sites-enabled/droolbites.conf
 sudo nginx -t && sudo systemctl reload nginx
 ```
