@@ -24,7 +24,7 @@ export function BrowniePicker({ product, legend }: { product: ShopProduct; legen
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <fieldset className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2">
+      <fieldset className="flex w-full flex-col gap-2.5">
         <legend className="sr-only">{legend}</legend>
         {product.variants.map((v) => (
           <OptionTile
@@ -33,10 +33,10 @@ export function BrowniePicker({ product, legend }: { product: ShopProduct; legen
             value={v.id}
             checked={v.id === variantId}
             onChange={setVariantId}
-            title={v.name}
+            title={<span className="whitespace-nowrap">{v.name}</span>}
             sub={v.serves}
             meta={<span className="text-base font-bold">{formatRupiah(v.price)}</span>}
-            className="min-h-[71px] px-[18px]! py-3.5!"
+            className="min-h-16 px-[18px]! py-3!"
           />
         ))}
       </fieldset>
