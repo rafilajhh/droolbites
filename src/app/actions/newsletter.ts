@@ -2,7 +2,8 @@
 
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { sendMail } from "@/lib/mail";
+import { appUrl, emailFooter, sendMail } from "@/lib/mail";
+import { button, paragraph, renderEmail } from "@/lib/email-template";
 import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
 
 export type NewsletterState = { status: "idle" | "ok" | "invalid" };
@@ -32,10 +33,25 @@ export async function subscribeNewsletter(_prev: NewsletterState, formData: Form
     if ((error as { code?: string }).code === "P2002") return { status: "ok" };
     throw error;
   }
+  const menu = appUrl("/menu");
   await sendMail({
     to: email,
     subject: "Welcome to Droolbites",
     text: "Thanks for joining! We'll email you when new flavors and seasonal specials drop.\n\nDroolbites · Surabaya",
+    html: renderEmail({
+      lang: "en",
+      baseUrl: appUrl("/"),
+      preheader: "You're on the list for new flavors and seasonal specials.",
+      eyebrow: "NEWSLETTER",
+      title: "Welcome to Droolbites!",
+      body: [
+        paragraph("Thanks for joining! We'll email you when new flavors and seasonal specials drop. Monthly at most, and no spam."),
+        paragraph("Until then, the soft cookies, fudgy brownies and tiramisu are on the menu every day.", { muted: true }),
+        button("SEE THE MENU", menu),
+      ].join("\n"),
+      footer: await emailFooter(),
+      reason: "You're getting this email because this address signed up for the Droolbites newsletter.",
+    }),
   });
   return { status: "ok" };
 }

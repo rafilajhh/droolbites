@@ -5,10 +5,11 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { safeNext } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { appUrl, sendMail } from "@/lib/mail";
+import { appUrl, emailFooter, sendMail } from "@/lib/mail";
+import { button, fallbackLink, paragraph, renderEmail } from "@/lib/email-template";
 import { allowRequest, clientIp, isSignInLocked, perClientMax, recordSignInFailure, resetSignInFailures } from "@/lib/rate-limit";
 import { createSession, deleteSession } from "@/lib/session";
-import { getMessages } from "@/i18n/server";
+import { getLocale, getMessages } from "@/i18n/server";
 import { authMessages } from "@/i18n/messages/auth";
 import { createResetToken, findResetUser } from "@/app/(auth)/reset-password/reset-token";
 
@@ -137,9 +138,28 @@ export async function requestPasswordReset(_prev: AuthState, formData: FormData)
   });
   if (user) {
     const token = await createResetToken(user);
-    const t = (await getMessages(authMessages)).reset;
+    const [t, lang, footer] = await Promise.all([
+      getMessages(authMessages).then((m) => m.reset),
+      getLocale(),
+      emailFooter(),
+    ]);
     const link = appUrl(`/reset-password/${token}`);
-    await sendMail({ to: user.email, subject: t.mailSubject, text: t.mailText(user.fullName, link) });
+    const html = renderEmail({
+      lang,
+      baseUrl: appUrl("/"),
+      preheader: t.mail.preheader,
+      eyebrow: t.mail.eyebrow,
+      title: t.mail.title,
+      body: [
+        paragraph(t.mail.intro(user.fullName)),
+        button(t.mail.button, link),
+        paragraph(t.mail.expiry, { muted: true }),
+        fallbackLink(t.mail.fallback, link),
+      ].join("\n"),
+      footer,
+      reason: t.mail.reason,
+    });
+    await sendMail({ to: user.email, subject: t.mailSubject, text: t.mailText(user.fullName, link), html });
   }
   // Same answer whether or not the account exists (no account enumeration).
   return { sent: true, values: { email }, attempt };

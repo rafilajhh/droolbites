@@ -81,6 +81,17 @@ export const authMessages = defineMessages({
       mailSubject: "Reset your Droolbites password",
       mailText: (name: string, link: string) =>
         `Hi ${name},\n\nWe received a request to reset the password for your Droolbites account. Open this link to choose a new password:\n\n${link}\n\nThe link works once and expires in 1 hour. If you didn't ask for this, you can ignore this email; your password stays the same.\n\nDroolbites · Surabaya`,
+      /** The HTML version of the same email. */
+      mail: {
+        preheader: "Choose a new password. The link expires in 1 hour.",
+        eyebrow: "RESET PASSWORD",
+        title: "Choose a new password",
+        intro: (name: string) => `Hi ${name}, we received a request to reset the password for your Droolbites account.`,
+        button: "CHOOSE NEW PASSWORD",
+        expiry: "The link works once and expires in 1 hour. If you didn't ask for this, you can ignore this email; your password stays the same.",
+        fallback: "Button not working? Open this link:",
+        reason: "You're getting this email because someone asked to reset the password for this address at droolbites.biz.id.",
+      },
     },
     newPassword: {
       metaTitle: "Set new password",
@@ -183,6 +194,16 @@ export const authMessages = defineMessages({
       mailSubject: "Atur ulang kata sandi Droolbites",
       mailText: (name: string, link: string) =>
         `Hai ${name},\n\nKami menerima permintaan untuk mengatur ulang kata sandi akun Droolbites kamu. Buka tautan ini untuk membuat kata sandi baru:\n\n${link}\n\nTautan ini hanya bisa dipakai sekali dan berlaku 1 jam. Kalau kamu tidak memintanya, abaikan saja email ini; kata sandimu tidak berubah.\n\nDroolbites · Surabaya`,
+      mail: {
+        preheader: "Buat kata sandi baru. Tautannya berlaku 1 jam.",
+        eyebrow: "ATUR ULANG KATA SANDI",
+        title: "Buat kata sandi baru",
+        intro: (name: string) => `Hai ${name}, kami menerima permintaan untuk mengatur ulang kata sandi akun Droolbites kamu.`,
+        button: "BUAT KATA SANDI BARU",
+        expiry: "Tautan ini hanya bisa dipakai sekali dan berlaku 1 jam. Kalau kamu tidak memintanya, abaikan saja email ini; kata sandimu tidak berubah.",
+        fallback: "Tombolnya tidak bisa diklik? Buka tautan ini:",
+        reason: "Kamu menerima email ini karena ada permintaan atur ulang kata sandi untuk alamat ini di droolbites.biz.id.",
+      },
     },
     newPassword: {
       metaTitle: "Buat kata sandi baru",

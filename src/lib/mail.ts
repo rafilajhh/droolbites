@@ -1,5 +1,7 @@
 import "server-only";
 import nodemailer from "nodemailer";
+import type { EmailFooter } from "./email-template";
+import { getStoreSettings } from "./settings";
 
 /**
  * Local development sends everything to Mailpit (http://localhost:8025).
@@ -53,4 +55,10 @@ export async function sendMail({ to, subject, text, html }: { to: string; subjec
 
 export function appUrl(path = "/") {
   return new URL(path, process.env.APP_URL ?? "http://localhost:3000").toString();
+}
+
+/** The store details for the footer band of the HTML emails. */
+export async function emailFooter(): Promise<EmailFooter> {
+  const { storeName, address, phone, email } = await getStoreSettings();
+  return { storeName, address, phone, email };
 }
