@@ -3,6 +3,7 @@
 //   node scripts/session-token.mjs customer   (alya@email.com, id 2)
 // Usage: node scripts/shot.mjs /account --cookie db_session=$(node scripts/session-token.mjs customer)
 import "dotenv/config";
+import { createHash } from "node:crypto";
 import { SignJWT } from "jose";
 import mariadb from "mariadb";
 
@@ -18,14 +19,16 @@ const conn = await mariadb.createConnection({
   database: url.pathname.slice(1),
   allowPublicKeyRetrieval: true, // MySQL 8.4 caching_sha2 after a restart
 });
-const [row] = await conn.query("SELECT id, role FROM users WHERE email = ?", [email]);
+const [row] = await conn.query("SELECT id, role, password_hash FROM users WHERE email = ?", [email]);
 await conn.end();
 if (!row) {
   console.error(`no user ${email}`);
   process.exit(1);
 }
 
-const token = await new SignJWT({ userId: String(row.id), role: row.role })
+// Same password stamp as src/lib/session.ts passwordStamp(): sessions carry it.
+const pv = createHash("sha256").update(`session:${row.password_hash ?? ""}`).digest("hex").slice(0, 16);
+const token = await new SignJWT({ userId: String(row.id), role: row.role, pv })
   .setProtectedHeader({ alg: "HS256" })
   .setIssuedAt()
   .setExpirationTime("1d")

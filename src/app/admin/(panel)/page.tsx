@@ -42,7 +42,7 @@ export default async function AdminOverviewPage() {
   const o = t.overview;
 
   const [awaiting, paid, productsOnMenu, variantsOnMenu, needsAction, recent, categories] = await Promise.all([
-    db.order.count({ where: { paymentStatus: "awaiting" } }),
+    db.order.count({ where: { paymentStatus: "awaiting", fulfilmentStatus: { not: "cancelled" } } }),
     // Paid but later cancelled by the store (a refund) is not money kept.
     db.order.aggregate({
       where: { paymentStatus: "paid", fulfilmentStatus: { not: "cancelled" } },

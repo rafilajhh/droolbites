@@ -69,7 +69,7 @@ export const adminReportsMessages = defineMessages({
       today: "Hari ini",
       "7d": "7 hari",
       "30d": "30 hari",
-      all: "Sepanjang waktu",
+      all: "Semua",
     },
     kpi: {
       revenue: "Pendapatan",

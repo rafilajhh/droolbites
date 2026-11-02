@@ -16,9 +16,18 @@ import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
 
+/** The order number from the URL, or null for a malformed %-sequence (a 404, not a crash). */
+function decodeNumber(raw: string) {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return null;
+  }
+}
+
 export async function generateMetadata({ params }: PageProps<"/admin/invoice/[orderNumber]">): Promise<Metadata> {
   const [{ orderNumber }, t] = await Promise.all([params, getMessages(adminExtraMessages)]);
-  return { title: t.invoice.metaTitle(decodeURIComponent(orderNumber)), robots: { index: false, follow: false } };
+  return { title: t.invoice.metaTitle(decodeNumber(orderNumber) ?? ""), robots: { index: false, follow: false } };
 }
 
 // A4 page, no cream background on paper. Kept here so it only applies to this page.
@@ -33,9 +42,10 @@ const rule = "border-border-divider print:border-neutral-400";
  */
 export default async function AdminInvoicePage({ params }: PageProps<"/admin/invoice/[orderNumber]">) {
   await requireAdmin();
-  const { orderNumber } = await params;
+  const number = decodeNumber((await params).orderNumber);
+  if (!number) notFound();
   const order = await db.order.findUnique({
-    where: { orderNumber: decodeURIComponent(orderNumber) },
+    where: { orderNumber: number },
     include: {
       items: {
         orderBy: { id: "asc" },
@@ -54,8 +64,16 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
   const payment = order.payments.find((p) => p.status === "paid") ?? order.payments[0];
   const pay = payable(order, payment);
   const isDelivery = order.fulfilmentMethod === "delivery";
+  // The payment's own time only: the order's updatedAt moves with every status change.
   const paidAt =
-    order.paymentStatus === "paid" ? `${formatDateTime(payment?.paidAt ?? order.updatedAt ?? order.createdAt, locale)} ${t.wib}` : t.notPaid;
+    order.paymentStatus !== "paid" ? t.notPaid : payment?.paidAt ? `${formatDateTime(payment.paidAt, locale)} ${t.wib}` : "—";
+  // Cancelled by the store: the invoice says so, and a paid one is owed back.
+  const cancelled = order.fulfilmentStatus === "cancelled";
+  const status = cancelled
+    ? order.paymentStatus === "paid"
+      ? t.cancelledRefund
+      : t.cancelled
+    : paymentStatusInfo[order.paymentStatus][locale];
 
   const lines = order.items.map((item) => ({
     id: item.id.toString(),
@@ -91,7 +109,7 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
                 height={64}
                 loading="eager"
                 quality={100}
-                className="size-16 shrink-0"
+                className="size-16 shrink-0 rounded-full"
               />
               <div className="flex min-w-0 flex-col gap-0.5">
                 <p className="font-display text-[22px] leading-[28px] font-bold">{settings.storeName}</p>
@@ -205,7 +223,7 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
               <dt className={muted}>{t.method}</dt>
               <dd className="font-semibold">{payment ? paymentMethodInfo[payment.method].name : t.noPayment}</dd>
               <dt className={muted}>{t.status}</dt>
-              <dd className="font-semibold">{paymentStatusInfo[order.paymentStatus][locale]}</dd>
+              <dd className={cn("font-semibold", cancelled && "text-error print:text-black")}>{status}</dd>
             </dl>
           </section>
 

@@ -2,15 +2,19 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "./db";
-import { getSession } from "./session";
+import { getSession, passwordStamp } from "./session";
 
-/** The signed-in user (customer or admin), or null. */
+/**
+ * The signed-in user (customer or admin), or null. A session from before the account's last
+ * password change no longer counts, so changing the password signs out every other device.
+ */
 export const getCurrentUser = cache(async () => {
   const session = await getSession();
   if (!session) return null;
-  return db.user.findUnique({
+  const row = await db.user.findUnique({
     where: { id: BigInt(session.userId) },
     select: {
+      passwordHash: true,
       id: true,
       fullName: true,
       email: true,
@@ -22,6 +26,10 @@ export const getCurrentUser = cache(async () => {
       createdAt: true,
     },
   });
+  if (!row) return null;
+  // The hash only decides validity; it never leaves this function.
+  const { passwordHash, ...user } = row;
+  return session.pv === passwordStamp(passwordHash) ? user : null;
 });
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;

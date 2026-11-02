@@ -31,12 +31,12 @@ function jakarta(date: Date) {
 
 /**
  * One CSV cell. Text that a spreadsheet would read as a formula (= + - @, or a
- * leading tab/CR) gets a ' in front; quotes, commas and line breaks are quoted.
+ * leading tab/CR) gets a ' in front; quotes, separators and line breaks are quoted.
  */
-function cell(value: string | number) {
+function cell(value: string | number, sep: string) {
   if (typeof value === "number") return String(value);
   const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
-  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+  return safe.includes(sep) || /["\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
 
 /**
@@ -121,8 +121,11 @@ export async function GET(request: NextRequest) {
     ];
   });
 
-  // BOM so Excel reads the file as UTF-8; CRLF line ends per RFC 4180.
-  const csv = "﻿" + [header, ...rows].map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";
+  // Excel splits a double-clicked CSV on the region's list separator: ";" in Indonesia, "," in
+  // English regions. The admin's language stands in for their region. BOM so Excel reads UTF-8;
+  // CRLF line ends per RFC 4180.
+  const sep = locale === "id" ? ";" : ",";
+  const csv = "\uFEFF" + [header, ...rows].map((row) => row.map((v) => cell(v, sep)).join(sep)).join("\r\n") + "\r\n";
 
   return new Response(csv, {
     headers: {

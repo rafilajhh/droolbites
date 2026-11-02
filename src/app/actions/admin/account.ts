@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
+import { createSession } from "@/lib/session";
 
 /** Keys into adminExtraMessages.account.errors. */
 export type PasswordErrorKey =
@@ -73,6 +74,8 @@ export async function changeAdminPassword(_prev: PasswordState, formData: FormDa
     return { status: "error", errors: { form: "generic" }, attempt };
   }
 
-  // The session cookie holds only the user id and role, so it stays valid: the admin remains signed in.
+  // Sessions carry a stamp of the password, so every other device is now signed out; this one gets
+  // a fresh session and stays signed in.
+  await createSession({ userId: admin.id.toString(), role: "admin" });
   return { status: "saved", errors: {}, attempt };
 }
