@@ -23,6 +23,8 @@ export const getCurrentUser = cache(async () => {
       address: true,
       city: true,
       postalCode: true,
+      addressLat: true,
+      addressLng: true,
       createdAt: true,
     },
   });

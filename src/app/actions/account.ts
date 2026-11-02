@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
+import { isLatLng } from "@/lib/delivery";
 import { getSession } from "@/lib/session";
 
 /** Keys into accountMessages.errors; the client renders them in the active language. */
-export type AccountErrorKey = "fullName" | "phone" | "email" | "emailTaken" | "address" | "city" | "postalCode" | "generic";
+export type AccountErrorKey = "fullName" | "phone" | "email" | "emailTaken" | "address" | "city" | "postalCode" | "pin" | "generic";
 
 export type AccountState<F extends string> = {
   errors?: Partial<Record<F, AccountErrorKey>>;
@@ -19,7 +20,7 @@ export type AccountState<F extends string> = {
 };
 
 export type ProfileField = "fullName" | "phone" | "email";
-export type AddressField = "address" | "city" | "postalCode";
+export type AddressField = "address" | "city" | "postalCode" | "pin";
 
 /**
  * Fresh read of the signed-in user. getCurrentUser() is cached per request, and
@@ -72,9 +73,10 @@ export async function updateProfile(_prev: AccountState<ProfileField>, formData:
 }
 
 /**
- * Saved delivery address: users.address/city/postal_code. Whether it can be delivered to is decided
- * at checkout from the map pin (distance from the store), not from the city; the country (Indonesia)
- * has no column and the name on orders stays users.full_name.
+ * Saved delivery address: users.address/city/postal_code plus its map pin (address_lat/lng), which
+ * checkout uses to measure the delivery distance. Whether it can be delivered to is decided there from
+ * the pin, not from the city; the country (Indonesia) has no column and the name on orders stays
+ * users.full_name.
  */
 export async function updateAddress(_prev: AccountState<AddressField>, formData: FormData): Promise<AccountState<AddressField>> {
   const attempt = Date.now();
@@ -84,15 +86,19 @@ export async function updateAddress(_prev: AccountState<AddressField>, formData:
   const address = text(formData, "address");
   const city = text(formData, "city");
   const postalCode = text(formData, "postalCode");
+  const lat = Number(formData.get("lat"));
+  const lng = Number(formData.get("lng"));
 
   const values = { address, city, postalCode };
   const errors: AccountState<AddressField>["errors"] = {};
   if (address.length < 5 || address.length > 255) errors.address = "address";
   if (city.length < 2 || city.length > 100) errors.city = "city";
   if (!/^\d{5}$/.test(postalCode)) errors.postalCode = "postalCode";
+  if (!formData.get("lat") || !formData.get("lng") || !isLatLng(lat, lng)) errors.pin = "pin";
   if (Object.keys(errors).length) return { errors, values, attempt };
 
-  await db.user.update({ where: { id: user.id }, data: { address, city, postalCode } });
+  await db.user.update({ where: { id: user.id }, data: { address, city, postalCode, addressLat: lat, addressLng: lng } });
+  revalidatePath("/checkout");
   revalidatePath("/account");
   return { saved: true, values, attempt };
 }

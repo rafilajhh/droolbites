@@ -7,7 +7,7 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCurrentUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
-import { deliveryFeeFor, withinRange } from "@/lib/delivery";
+import { deliveryFeeFor, quotePin, savedPin, withinRange } from "@/lib/delivery";
 import { readCheckoutDetails, shortStoreAddress } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -58,13 +58,18 @@ export default async function CheckoutDetailsPage() {
           apartment: "",
           city: user.city,
           postal: user.postalCode,
+          pin: savedPin(user),
         }
       : null;
 
   // Coming back from the payment step: the pin and its distance are already known.
-  const pin = details?.fulfilment === "delivery" && details.lat !== null && details.lng !== null ? { lat: details.lat, lng: details.lng } : null;
-  const quote =
-    pin && details?.distanceM != null
+  const backPin = details?.fulfilment === "delivery" && details.lat !== null && details.lng !== null ? { lat: details.lat, lng: details.lng } : null;
+  // First visit with a saved address: the form starts with it, so the map starts on its pin.
+  const firstPin = !details && saved?.pin && initial.fulfilment === "delivery" ? saved.pin : null;
+  const pin = backPin ?? firstPin;
+  const quote = firstPin
+    ? await quotePin(settings, firstPin).catch(() => null)
+    : pin && details?.distanceM != null
       ? withinRange(settings, details.distanceM)
         ? {
             status: "ok" as const,

@@ -101,3 +101,19 @@ export function deliveryFeeFor(rates: Pick<DeliveryRates, "deliveryFee" | "deliv
   const extraKm = Math.max(0, Math.ceil(distanceM / 1000 - rates.deliveryBaseKm - 1e-9));
   return rates.deliveryFee + extraKm * rates.deliveryPerKm;
 }
+
+export type PinQuote =
+  | { status: "ok"; distanceM: number; fee: number; estimated: boolean }
+  | { status: "tooFar"; distanceM: number; maxKm: number };
+
+/** Road distance and fee for a pin, or how far beyond the delivery range it is. */
+export async function quotePin(rates: DeliveryRates, to: LatLng): Promise<PinQuote> {
+  const { distanceM, kind } = await measureDelivery(rates, to);
+  if (!withinRange(rates, distanceM)) return { status: "tooFar", distanceM, maxKm: rates.deliveryMaxKm };
+  return { status: "ok", distanceM, fee: deliveryFeeFor(rates, distanceM), estimated: kind === "estimated" };
+}
+
+/** The saved address's pin, when it has a valid one. */
+export function savedPin(user: { addressLat: number | null; addressLng: number | null } | null): LatLng | null {
+  return user && isLatLng(user.addressLat, user.addressLng) ? { lat: user.addressLat as number, lng: user.addressLng as number } : null;
+}

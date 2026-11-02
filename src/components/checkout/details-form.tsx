@@ -52,7 +52,7 @@ export function DetailsForm({
   initial: DetailsValues;
   initialPin: LatLng | null;
   initialQuote: DeliveryQuote | null;
-  saved: Pick<DetailsValues, "street" | "apartment" | "city" | "postal"> | null;
+  saved: (Pick<DetailsValues, "street" | "apartment" | "city" | "postal"> & { pin: LatLng | null }) | null;
   signInHref: string | null;
   options: { delivery: boolean; pickup: boolean };
   store: {
@@ -129,10 +129,13 @@ export function DetailsForm({
 
   const applySavedAddress = async () => {
     if (!saved) return;
-    setValues((v) => ({ ...v, ...saved }));
+    const { pin: savedAt, ...address } = saved;
+    setValues((v) => ({ ...v, ...address }));
     autoFilled.current = {};
-    // Move the pin to the saved address too, so the fee is for where the order goes; the customer
-    // fine-tunes it on the map. Not found: the pin stays and the label shows where it is.
+    // Move the pin to the saved address too, so the fee is for where the order goes: its own pin when
+    // it was saved with one, else found by search (the customer fine-tunes it on the map). Not found:
+    // the pin stays and the label shows where it is.
+    if (savedAt) return void movePin(savedAt, "saved");
     const found = await findPlaces(`${saved.street}, ${saved.city}`).catch(() => null);
     const first = found && "places" in found ? found.places[0] : undefined;
     if (first) void movePin({ lat: first.lat, lng: first.lng }, "saved", first.label);

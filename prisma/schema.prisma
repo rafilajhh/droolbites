@@ -77,6 +77,9 @@ model User {
   address      String?   @db.VarChar(255)
   city         String?   @db.VarChar(100)
   postalCode   String?   @map("postal_code") @db.VarChar(10)
+  /// Map pin of the saved address (checkout measures the delivery distance from it).
+  addressLat   Float?    @map("address_lat")
+  addressLng   Float?    @map("address_lng")
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime? @updatedAt @map("updated_at")
 
