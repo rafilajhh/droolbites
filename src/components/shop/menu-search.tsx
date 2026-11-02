@@ -63,7 +63,7 @@ export function MenuSearch({ query, onCommit }: { query: string; onCommit: (q: s
             }
           }}
           placeholder={t.placeholder}
-          className="h-full min-w-0 flex-1 bg-transparent pr-4 text-[15px] leading-[23px] font-semibold text-foreground outline-hidden placeholder:font-normal placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+          className="h-full min-w-0 flex-1 bg-transparent pr-4 text-ellipsis text-[15px] leading-[23px] font-semibold text-foreground outline-hidden placeholder:font-normal placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
         {draft ? (
           <button
