@@ -20,6 +20,13 @@ const transport = SMTP_HOST
 
 let warnedMailOff = false;
 
+/**
+ * Reserved test domains (RFC 2606/6761) never receive mail. In production the live verification
+ * runs sign up with addresses like shots+…@example.com; sending to them would only bounce and hurt
+ * the sender's reputation, so they are skipped. Local runs still deliver them to Mailpit.
+ */
+const RESERVED_TEST_DOMAIN = /@(?:[^@]+\.)?(?:example\.(?:com|net|org)|[^@]+\.(?:test|example|invalid|localhost))$/i;
+
 export async function sendMail({ to, subject, text, html }: { to: string; subject: string; text: string; html?: string }) {
   if (!transport) {
     if (!warnedMailOff) {
@@ -28,6 +35,7 @@ export async function sendMail({ to, subject, text, html }: { to: string; subjec
     }
     return false;
   }
+  if (process.env.NODE_ENV === "production" && RESERVED_TEST_DOMAIN.test(to)) return false;
   try {
     await transport.sendMail({
       from: process.env.MAIL_FROM ?? "Droolbites <hello@droolbites.biz.id>",
