@@ -91,8 +91,9 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
       <p aria-live="polite" className="sr-only">
         {filtered ? t.results(shown) : ""}
       </p>
-      {/* Search, then the category chips under it: one left edge for the toolbar and the results. */}
-      <div className="flex w-full flex-col items-start gap-4 px-4 sm:px-8 lg:px-16">
+      {/* One row from lg: the search field fills the left, the category control sits beside it at the
+          same height. Below lg there's no room for both, so the chips scroll sideways under the field. */}
+      <div className="flex w-full flex-col items-start gap-4 px-4 sm:px-8 lg:flex-row lg:items-center lg:gap-3 lg:px-16">
         <MenuSearch query={query} onCommit={commitSearch} />
         <CategoryFilter options={options} active={active} onSelect={selectCategory} />
       </div>

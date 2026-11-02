@@ -10,9 +10,10 @@ export type FilterOption = { slug: string | null; name: string; count: number };
 const hrefFor = (slug: string | null) => (slug ? `/menu?category=${slug}` : "/menu");
 
 /**
- * Category chips under the search field, left-aligned like the results below them. Every category
- * is always in view (a row that scrolls sideways on small screens), each with its logo-colour dot
- * and a count that follows the search. Links, so they work before JS; with JS they filter in place.
+ * The menu's categories, each with its logo-colour dot and a count that follows the search. From lg
+ * a segmented control in one white capsule beside the search field, the same 48px tall; below lg a
+ * row of chips under the field that scrolls sideways. Links, so they work before JS; with JS they
+ * filter in place.
  */
 export function CategoryFilter({
   options,
@@ -35,9 +36,9 @@ export function CategoryFilter({
     <nav
       aria-label={t.open}
       // Bleeds to the screen edge while scrolling sideways, so chips don't clip at the page padding.
-      className="-mx-4 w-[calc(100%+32px)] overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-8 sm:w-[calc(100%+64px)] sm:px-8 lg:mx-0 lg:w-full lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
+      className="-mx-4 w-[calc(100%+32px)] shrink-0 overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-8 sm:w-[calc(100%+64px)] sm:px-8 lg:mx-0 lg:w-auto lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden"
     >
-      <ul className="flex w-max items-center gap-2 lg:w-auto lg:flex-wrap">
+      <ul className="flex w-max items-center gap-2 lg:h-12 lg:gap-1 lg:rounded-pill lg:bg-white lg:p-1 lg:inset-ring-[1.25px] lg:inset-ring-muted-foreground/50">
         {options.map((o) => {
           const isActive = o.slug === active;
           const empty = o.count === 0 && !isActive;
@@ -48,10 +49,10 @@ export function CategoryFilter({
                 onClick={(e) => select(e, o.slug)}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex h-11 shrink-0 items-center gap-2 rounded-pill pr-4 pl-3.5 whitespace-nowrap transition-[background-color,color,opacity] duration-200",
+                  "flex h-11 shrink-0 items-center gap-2 rounded-pill pr-4 pl-3.5 whitespace-nowrap transition-[background-color,color,opacity] duration-200 lg:h-10",
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "bg-white text-foreground inset-ring-1 inset-ring-border-subtle hover:bg-card",
+                    : "bg-white text-foreground inset-ring-1 inset-ring-border-subtle hover:bg-card lg:bg-transparent lg:inset-ring-0 lg:hover:bg-oat",
                   empty && "opacity-55",
                 )}
               >

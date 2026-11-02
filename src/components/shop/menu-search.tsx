@@ -35,7 +35,7 @@ export function MenuSearch({ query, onCommit }: { query: string; onCommit: (q: s
   return (
     <form
       role="search"
-      className="relative w-full max-w-[640px]"
+      className="relative w-full lg:min-w-0 lg:flex-1"
       onSubmit={(e) => {
         e.preventDefault();
         commit(draft, 0);
