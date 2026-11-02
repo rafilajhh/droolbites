@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { getCurrentUser } from "@/lib/auth";
-import { deliveryFeeFor, isLatLng, measureDelivery, withinRange } from "@/lib/delivery";
+import { deliveryFeeFor, isLatLng, measureDelivery, storeKey, withinRange } from "@/lib/delivery";
 import { placeAt, searchPlaces, type Place } from "@/lib/geocode";
 import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
 import { MAX_QTY, readCartEntries, writeCartEntries, type CartEntry } from "@/lib/cart";
@@ -50,6 +50,8 @@ type ErrorKey =
   | "postal"
   | "location"
   | "tooFar"
+  | "lookupBusy"
+  | "feeChanged"
   | "method"
   | "methodUnavailable"
   | "payment"
@@ -90,8 +92,11 @@ export type DeliveryQuote =
   | { status: "tooFar"; distanceM: number; maxKm: number }
   | { status: "invalid" | "busy" };
 
-/** Requests per client per 15 minutes for the map's lookups (each pin move, search or reverse lookup). */
-const LOOKUPS_PER_WINDOW = 60;
+/**
+ * Requests per client per 15 minutes for each kind of map lookup (pin moves, searches, reverse
+ * lookups, saves). Generous for a shopper behind a shared mobile IP, small enough to stop a script.
+ */
+const LOOKUPS_PER_WINDOW = 120;
 
 async function lookupAllowed(kind: string) {
   const ip = await clientIp();
@@ -103,9 +108,9 @@ export async function quoteDelivery(lat: number, lng: number): Promise<DeliveryQ
   if (!isLatLng(lat, lng)) return { status: "invalid" };
   if (!(await lookupAllowed("quote"))) return { status: "busy" };
   const settings = await getStoreSettings();
-  const { distanceM, estimated } = await measureDelivery(settings, { lat, lng });
+  const { distanceM, kind } = await measureDelivery(settings, { lat, lng });
   if (!withinRange(settings, distanceM)) return { status: "tooFar", distanceM, maxKm: settings.deliveryMaxKm };
-  return { status: "ok", distanceM, fee: deliveryFeeFor(settings, distanceM), estimated };
+  return { status: "ok", distanceM, fee: deliveryFeeFor(settings, distanceM), estimated: kind === "estimated" };
 }
 
 /** Address search for the map (submitted, never as-you-type). */
@@ -164,6 +169,8 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
     lng: coord(formData, "lng"),
     // Measured below, never taken from the client.
     distanceM: null,
+    distanceKind: null,
+    storeAt: null,
   });
 
   const errors: DetailsState["errors"] = {};
@@ -187,12 +194,24 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
 
   const details = parsed.data;
   if (details.fulfilment === "pickup") {
-    Object.assign(details, { street: "", apartment: "", city: "", postal: "", lat: null, lng: null, distanceM: null });
+    Object.assign(details, {
+      street: "",
+      apartment: "",
+      city: "",
+      postal: "",
+      lat: null,
+      lng: null,
+      distanceM: null,
+      distanceKind: null,
+      storeAt: null,
+    });
   } else {
+    // Each save may ask the router, so saves share the lookups' per-client limit.
+    if (!(await lookupAllowed("save"))) return { errors: { lat: "lookupBusy" }, attempt: prev.attempt + 1 };
     // The fee is worked out from this distance at every later step, at the store's current rates.
-    const { distanceM } = await measureDelivery(settings, { lat: details.lat!, lng: details.lng! });
+    const { distanceM, kind } = await measureDelivery(settings, { lat: details.lat!, lng: details.lng! });
     if (!withinRange(settings, distanceM)) return { errors: { lat: "tooFar" }, attempt: prev.attempt + 1 };
-    details.distanceM = distanceM;
+    Object.assign(details, { distanceM, distanceKind: kind, storeAt: storeKey(settings) });
   }
   await writeCheckoutDetails(details);
   redirect("/checkout/payment");
@@ -218,7 +237,14 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   if (!details) redirect("/checkout");
   if (!fulfilmentEnabled(settings, details.fulfilment)) return { error: "methodUnavailable", attempt };
   // No distance on file, or now beyond the store's range: back to the details step to re-pin.
-  if (checkoutDeliveryFee(settings, details) === null) redirect("/checkout");
+  const fee = checkoutDeliveryFee(settings, details);
+  if (fee === null) redirect("/checkout");
+  // The rates changed after the payment page was shown: show the new total before charging it.
+  const shownFee = str(formData, "fee");
+  if (shownFee !== "" && Number(shownFee) !== fee) {
+    revalidatePath("/checkout/payment");
+    return { error: "feeChanged", attempt };
+  }
 
   const method = formData.get("method");
   if (!isPaymentMethod(method)) return { error: "payment", attempt };

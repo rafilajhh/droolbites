@@ -7,6 +7,7 @@ export type FaqFacts = {
   opensAt: string;
   /** Base delivery fee, e.g. "Rp10.000". */
   deliveryFee: string;
+  /** How far the store delivers, in km. */
   deliveryMaxKm: number;
   email: string;
   payments: string;

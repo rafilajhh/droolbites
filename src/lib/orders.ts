@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import type { FulfilmentStatus, PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 import { db } from "./db";
-import { deliveryFeeFor, isLatLng, withinRange, type DeliveryRates } from "./delivery";
+import { deliveryFeeFor, isLatLng, storeKey, withinRange, type DeliveryRates } from "./delivery";
 import { getCurrentUser } from "./auth";
 import { deliverLater } from "./mail";
 import { sendOrderCancelledEmail, sendOrderPaidEmail } from "./order-emails";
@@ -51,6 +51,10 @@ export const checkoutDetailsSchema = z
     lng: z.number().nullable().default(null),
     /** Road distance from the store, measured by the server when the details are saved (never sent by the client). */
     distanceM: z.number().int().min(0).nullable().default(null),
+    /** How distanceM was measured, so a restored quote says "estimated" when it was. */
+    distanceKind: z.enum(["road", "estimated", "straight"]).nullable().default(null),
+    /** The store pin it was measured from (storeKey); a moved store pin asks for a new measurement. */
+    storeAt: z.string().max(40).nullable().default(null),
   })
   .superRefine((d, ctx) => {
     if (d.fulfilment === "delivery") {
@@ -83,11 +87,13 @@ export async function clearCheckoutDetails() {
 
 /**
  * The delivery fee for saved checkout details at the store's current rates: 0 for pickup, null when
- * the pin is missing or now beyond the store's maximum distance (the details step asks again).
+ * the pin is missing, was measured from an older store pin, or is now beyond the store's maximum
+ * distance (the details step asks again).
  */
 export function checkoutDeliveryFee(rates: DeliveryRates, details: CheckoutDetails): number | null {
   if (details.fulfilment !== "delivery") return 0;
-  if (details.distanceM === null || !withinRange(rates, details.distanceM)) return null;
+  if (details.distanceM === null || details.storeAt !== storeKey(rates)) return null;
+  if (!withinRange(rates, details.distanceM)) return null;
   return deliveryFeeFor(rates, details.distanceM);
 }
 

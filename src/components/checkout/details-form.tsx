@@ -75,49 +75,67 @@ export function DetailsForm({
   const [values, setValues] = useState(initial);
   const [pin, setPin] = useState<LatLng | null>(initialPin);
   const [quote, setQuote] = useState<QuoteState>(initialQuote ?? { status: "idle" });
+  const [pinLabel, setPinLabel] = useState<string | undefined>(undefined);
+  // The failed submit after which the pin moved: its "pin your address" error no longer applies.
+  const [pinMovedAt, setPinMovedAt] = useState(-1);
   const formRef = useRef<HTMLFormElement>(null);
   // Only the latest pin's answers count when the customer moves it quickly.
   const pinSeq = useRef(0);
   // What the map last filled in: a field still holding it (or empty) follows the next pin.
   const autoFilled = useRef<Partial<Record<AddressKey, string>>>({});
 
-  const fillAddress = (place: Pick<Place, AddressKey>) =>
+  /**
+   * Fill the address from the pin. A chosen search result replaces the address (the customer picked
+   * that place); a tap, drag or GPS fix only fills fields that are empty or still hold what the map
+   * filled before, and clears those when the new spot has no value for them.
+   */
+  const fillAddress = (place: Pick<Place, AddressKey>, replace = false) =>
     setValues((v) => {
       const next = { ...v };
       for (const key of ["street", "city", "postal"] as const) {
         const value = place[key];
-        if (!value) continue;
-        if (v[key].trim() === "" || v[key] === autoFilled.current[key]) {
-          next[key] = value;
-          autoFilled.current[key] = value;
-        }
+        const ours = v[key].trim() === "" || v[key] === autoFilled.current[key];
+        if (!replace && !ours) continue;
+        if (!value && !ours) continue;
+        next[key] = value;
+        autoFilled.current[key] = value;
       }
       return next;
     });
 
-  const movePin = async (at: LatLng, source: PinSource) => {
+  const movePin = async (at: LatLng, source: PinSource, label?: string) => {
     const seq = ++pinSeq.current;
     setPin(at);
+    setPinMovedAt(state.attempt);
+    setPinLabel(label);
     setQuote({ status: "loading" });
     const [q, place] = await Promise.all([
       quoteDelivery(at.lat, at.lng).catch((): DeliveryQuote => ({ status: "busy" })),
-      // A search result already carries its address.
-      source === "search" ? Promise.resolve(null) : addressAt(at.lat, at.lng).catch(() => null),
+      // A search result (or the saved address) already carries its address.
+      source === "map" || source === "gps" ? addressAt(at.lat, at.lng).catch(() => null) : Promise.resolve(null),
     ]);
     if (seq !== pinSeq.current) return;
-    setQuote(q.status === "invalid" ? { status: "busy" } : q);
-    if (place) fillAddress(place);
+    setQuote(q);
+    if (place) {
+      fillAddress(place);
+      setPinLabel(place.label);
+    }
+  };
+
+  const choosePlace = (place: Place) => {
+    fillAddress(place, true);
+    void movePin({ lat: place.lat, lng: place.lng }, "search", place.label);
   };
 
   const applySavedAddress = async () => {
     if (!saved) return;
     setValues((v) => ({ ...v, ...saved }));
     autoFilled.current = {};
-    if (pin) return;
-    // Put the pin near the saved address; the customer fine-tunes it on the map.
+    // Move the pin to the saved address too, so the fee is for where the order goes; the customer
+    // fine-tunes it on the map. Not found: the pin stays and the label shows where it is.
     const found = await findPlaces(`${saved.street}, ${saved.city}`).catch(() => null);
     const first = found && "places" in found ? found.places[0] : undefined;
-    if (first) void movePin({ lat: first.lat, lng: first.lng }, "search");
+    if (first) void movePin({ lat: first.lat, lng: first.lng }, "saved", first.label);
   };
 
   // Move focus to the first field with an error after each failed submit.
@@ -132,6 +150,8 @@ export function DetailsForm({
 
   const err = (key: keyof DetailsState["errors"]) => {
     const code = state.errors[key];
+    // A pin error is answered by moving the pin; the next submit checks again.
+    if (key === "lat" && pinMovedAt === state.attempt) return undefined;
     return code ? t.errors[code] : undefined;
   };
 
@@ -297,10 +317,11 @@ export function DetailsForm({
                     store={{ lat: store.lat, lng: store.lng }}
                     maxKm={store.maxKm}
                     pin={pin}
+                    pinLabel={pinLabel}
                     quote={quote}
                     error={err("lat")}
                     onPin={(at, source) => void movePin(at, source)}
-                    onPlace={fillAddress}
+                    onPlace={choosePlace}
                     onSwitchToPickup={options.pickup ? () => setValues((v) => ({ ...v, fulfilment: "pickup" })) : undefined}
                   />
                   <Field label={d.street} htmlFor="checkout-street" error={err("street")}>

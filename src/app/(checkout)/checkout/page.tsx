@@ -66,7 +66,12 @@ export default async function CheckoutDetailsPage() {
   const quote =
     pin && details?.distanceM != null
       ? withinRange(settings, details.distanceM)
-        ? { status: "ok" as const, distanceM: details.distanceM, fee: deliveryFeeFor(settings, details.distanceM), estimated: false }
+        ? {
+            status: "ok" as const,
+            distanceM: details.distanceM,
+            fee: deliveryFeeFor(settings, details.distanceM),
+            estimated: details.distanceKind === "estimated",
+          }
         : { status: "tooFar" as const, distanceM: details.distanceM, maxKm: settings.deliveryMaxKm }
       : null;
 

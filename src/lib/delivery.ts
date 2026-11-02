@@ -1,11 +1,12 @@
 import "server-only";
 import type { StoreSettings } from "./settings";
+import { serialQueue, sharedCache } from "./throttle";
 
 /**
  * Delivery by distance. The customer pins their spot on the map; the fee follows the road distance
  * from the store (OSRM's public router, the same street data as the map), and nothing is delivered
- * beyond the store's maximum distance. If the router can't be reached the straight-line distance
- * times ROAD_FACTOR stands in, so checkout never stalls on it.
+ * beyond the store's maximum distance. If the router can't be reached in time the straight-line
+ * distance times ROAD_FACTOR stands in (marked as an estimate), so checkout never stalls on it.
  */
 
 export type LatLng = { lat: number; lng: number };
@@ -18,8 +19,10 @@ export type DeliveryRates = Pick<
 const ROAD_FACTOR = 1.3;
 const ROUTER_URL = "https://router.project-osrm.org/route/v1/driving";
 const ROUTER_TIMEOUT_MS = 4000;
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-const CACHE_MAX = 1000;
+
+/** The demo router asks for about one request a second; a short queue keeps us under it. */
+const routerQueue = serialQueue(1000, 6);
+const routes = sharedCache<number | null>(24 * 60 * 60 * 1000, 1000);
 
 /** Roughly Indonesia: anything outside is a bad request, not an address. */
 export function isLatLng(lat: unknown, lng: unknown): boolean {
@@ -35,6 +38,11 @@ export function isLatLng(lat: unknown, lng: unknown): boolean {
   );
 }
 
+/** Which store pin a distance was measured from; a moved store pin invalidates saved distances. */
+export function storeKey(rates: Pick<DeliveryRates, "storeLat" | "storeLng">) {
+  return `${rates.storeLat.toFixed(5)},${rates.storeLng.toFixed(5)}`;
+}
+
 /** Straight-line distance in metres. */
 export function straightLineM(a: LatLng, b: LatLng) {
   const rad = Math.PI / 180;
@@ -44,47 +52,44 @@ export function straightLineM(a: LatLng, b: LatLng) {
   return 2 * 6_371_000 * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-const routes = new Map<string, { m: number; at: number }>();
-
 /** ~1 m precision is plenty; it also lets nearby repeats share one router call. */
-const key = (from: LatLng, to: LatLng) =>
-  [from.lat, from.lng, to.lat, to.lng].map((n) => n.toFixed(5)).join(",");
+const key = (from: LatLng, to: LatLng) => [from.lat, from.lng, to.lat, to.lng].map((n) => n.toFixed(5)).join(",");
+
+async function fetchRoute(from: LatLng, to: LatLng): Promise<number | null> {
+  const res = await fetch(`${ROUTER_URL}/${from.lng},${from.lat};${to.lng},${to.lat}?overview=false`, {
+    headers: { "User-Agent": "Droolbites/1.0 (+https://droolbites.biz.id)" },
+    signal: AbortSignal.timeout(ROUTER_TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`router ${res.status}`);
+  const body = (await res.json()) as { code?: string; routes?: { distance?: number }[] };
+  const m = body.code === "Ok" ? body.routes?.[0]?.distance : undefined;
+  // No route at all (an island, the sea) is an answer worth keeping, not an error.
+  return typeof m === "number" && Number.isFinite(m) ? m : null;
+}
 
 async function roadDistanceM(from: LatLng, to: LatLng): Promise<number | null> {
-  const k = key(from, to);
-  const hit = routes.get(k);
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.m;
   try {
-    const res = await fetch(`${ROUTER_URL}/${from.lng},${from.lat};${to.lng},${to.lat}?overview=false`, {
-      headers: { "User-Agent": "Droolbites/1.0 (+https://droolbites.biz.id)" },
-      signal: AbortSignal.timeout(ROUTER_TIMEOUT_MS),
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { code?: string; routes?: { distance?: number }[] };
-    const m = body.code === "Ok" ? body.routes?.[0]?.distance : undefined;
-    if (typeof m !== "number" || !Number.isFinite(m)) return null;
-    if (routes.size >= CACHE_MAX) routes.delete(routes.keys().next().value!);
-    routes.set(k, { m, at: Date.now() });
-    return m;
+    return await routes(key(from, to), () => routerQueue(() => fetchRoute(from, to)));
   } catch (error) {
-    console.warn("[delivery] router unavailable", (error as Error).name);
+    console.warn("[delivery] router unavailable", (error as Error).message);
     return null;
   }
 }
 
-export type Measured = { distanceM: number; estimated: boolean };
+/** `straight`: beyond the maximum even in a straight line, so the router wasn't asked. */
+export type Measured = { distanceM: number; kind: "road" | "estimated" | "straight" };
 
-/** Road distance from the store to `to`, in whole metres. */
+/** Distance from the store to `to`, in whole metres. */
 export async function measureDelivery(rates: DeliveryRates, to: LatLng): Promise<Measured> {
   const store = { lat: rates.storeLat, lng: rates.storeLng };
   const straight = straightLineM(store, to);
   // A road is never shorter than the straight line, so far-off pins skip the router.
-  if (straight > rates.deliveryMaxKm * 1000) return { distanceM: Math.round(straight), estimated: false };
+  if (straight > rates.deliveryMaxKm * 1000) return { distanceM: Math.round(straight), kind: "straight" };
   const road = await roadDistanceM(store, to);
   return road === null
-    ? { distanceM: Math.round(straight * ROAD_FACTOR), estimated: true }
-    : { distanceM: Math.round(road), estimated: false };
+    ? { distanceM: Math.round(straight * ROAD_FACTOR), kind: "estimated" }
+    : { distanceM: Math.round(road), kind: "road" };
 }
 
 export function withinRange(rates: Pick<DeliveryRates, "deliveryMaxKm">, distanceM: number) {

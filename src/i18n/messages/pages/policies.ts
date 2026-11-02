@@ -44,7 +44,7 @@ export const policyMessages = defineMessages({
           id: "delivery-availability",
           title: "Delivery fees and timing",
           body: (c: PolicyContact) =>
-            `We deliver up to ${c.maxKm} km by road from our store in Sememi. The fee follows the distance: ${c.deliveryFee} covers the first ${c.baseKm} km, then ${c.perKm} for every km after that. Pin your address on the map at checkout to see the distance and fee before you pay; further than ${c.maxKm} km, choose free store pickup. We prepare orders during opening hours, and your order page shows when yours is out for delivery. Contact us if you need an order by a particular date or time.`,
+            `We deliver up to ${c.maxKm} km by road from our store. The fee follows the distance: ${c.deliveryFee} covers the first ${c.baseKm} km, then ${c.perKm} for every km after that. Pin your address on the map at checkout to see the distance and fee before you pay; further than ${c.maxKm} km, choose free store pickup. We prepare orders during opening hours, and your order page shows when yours is out for delivery. Contact us if you need an order by a particular date or time.`,
         },
         {
           id: "store-pickup",
@@ -168,7 +168,7 @@ export const policyMessages = defineMessages({
           id: "delivery-availability",
           title: "Ongkos kirim dan waktu",
           body: (c: PolicyContact) =>
-            `Kami mengantar sampai ${c.maxKm} km lewat jalan dari toko kami di Sememi. Ongkir mengikuti jarak: ${c.deliveryFee} untuk ${c.baseKm} km pertama, lalu ${c.perKm} untuk setiap km berikutnya. Tandai alamatmu di peta saat checkout untuk melihat jarak dan ongkirnya sebelum bayar; lebih dari ${c.maxKm} km, pilih ambil di toko yang gratis. Kami menyiapkan pesanan selama jam buka, dan halaman pesananmu akan menunjukkan kapan pesanan sedang diantar. Hubungi kami jika butuh pesanan tiba pada tanggal atau jam tertentu.`,
+            `Kami mengantar sampai ${c.maxKm} km lewat jalan dari toko kami. Ongkir mengikuti jarak: ${c.deliveryFee} untuk ${c.baseKm} km pertama, lalu ${c.perKm} untuk setiap km berikutnya. Tandai alamatmu di peta saat checkout untuk melihat jarak dan ongkirnya sebelum bayar; lebih dari ${c.maxKm} km, pilih ambil di toko yang gratis. Kami menyiapkan pesanan selama jam buka, dan halaman pesananmu akan menunjukkan kapan pesanan sedang diantar. Hubungi kami jika butuh pesanan tiba pada tanggal atau jam tertentu.`,
         },
         {
           id: "store-pickup",

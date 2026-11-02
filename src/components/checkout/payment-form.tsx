@@ -98,6 +98,8 @@ export function PaymentForm({
         error && "pb-[calc(16rem+env(safe-area-inset-bottom))]",
       )}
     >
+      {/* The delivery fee shown here; if the store's rates changed since, the order asks first. */}
+      <input type="hidden" name="fee" value={review.fee} />
       {/* First in reading order: below lg a toggle bar above the methods; at lg the top of the right column. */}
       <SummaryToggle
         id="payment-summary"

@@ -15,7 +15,8 @@ import { formatDistance, formatRupiah } from "@/lib/format";
 import type { Place } from "@/lib/geocode";
 
 export type LatLng = { lat: number; lng: number };
-export type PinSource = "map" | "search" | "gps";
+/** Where a pin came from; "saved" is the saved address, found by search. */
+export type PinSource = "map" | "search" | "gps" | "saved";
 
 /** The quote panel's states: nothing pinned, measuring, or the server's answer. */
 export type QuoteState = { status: "idle" } | { status: "loading" } | DeliveryQuote;
@@ -34,6 +35,7 @@ export function DeliveryPicker({
   store,
   maxKm,
   pin,
+  pinLabel,
   quote,
   error,
   onPin,
@@ -43,10 +45,12 @@ export function DeliveryPicker({
   store: LatLng;
   maxKm: number;
   pin: LatLng | null;
+  /** What's at the pin, so the customer can check it against the address they typed. */
+  pinLabel?: string;
   quote: QuoteState;
   error?: string;
   onPin: (pin: LatLng, source: PinSource) => void;
-  /** A search result was chosen: its address fills the form. */
+  /** A search result was chosen: the form takes its address and moves the pin there. */
   onPlace: (place: Place) => void;
   onSwitchToPickup?: () => void;
 }) {
@@ -59,6 +63,9 @@ export function DeliveryPicker({
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const onPinRef = useRef(onPin);
   onPinRef.current = onPin;
+  // The latest pin, for the map's async setup (a GPS or saved pin can land before Leaflet loads).
+  const pinRef = useRef(pin);
+  pinRef.current = pin;
   // The pin moved by the map itself (click or drag) doesn't refit the view.
   const fromMap = useRef(false);
 
@@ -110,8 +117,8 @@ export function DeliveryPicker({
       mapRef.current = map;
       // Fit the whole range on first view so the 30 km limit is visible.
       map.fitBounds(range.getBounds(), { padding: [8, 8] });
-      // Restore a pin from an earlier visit.
-      if (pin) placeMarker(pin, true);
+      // Restore a pin from an earlier visit, or one placed while the map was loading.
+      if (pinRef.current) placeMarker(pinRef.current, true);
     })();
     return () => {
       cancelled = true;
@@ -149,13 +156,13 @@ export function DeliveryPicker({
     if (refit) {
       map.fitBounds(L.latLngBounds([store.lat, store.lng], [at.lat, at.lng]), { padding: [48, 48], maxZoom: 16 });
     }
+    fromMap.current = false;
   }
 
   // Follow the pin from the form (search result, GPS, saved address).
   useEffect(() => {
     if (!pin) return;
     placeMarker(pin, !fromMap.current);
-    fromMap.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pin?.lat, pin?.lng]);
 
@@ -169,8 +176,8 @@ export function DeliveryPicker({
 
   function choose(place: Place) {
     setSearch({ status: "idle" });
+    // The form fills the address and moves the pin to the place.
     onPlace(place);
-    onPin({ lat: place.lat, lng: place.lng }, "search");
   }
 
   function locate() {
@@ -287,7 +294,7 @@ export function DeliveryPicker({
         </p>
       ) : null}
 
-      <QuotePanel quote={quote} km={km} maxKm={maxKm} onSwitchToPickup={onSwitchToPickup} />
+      <QuotePanel quote={quote} km={km} maxKm={maxKm} pinLabel={pinLabel} onSwitchToPickup={onSwitchToPickup} />
 
       {error ? (
         <p id="checkout-location-error" role="alert" className="text-[13px] leading-normal text-error">
@@ -302,11 +309,13 @@ function QuotePanel({
   quote,
   km,
   maxKm,
+  pinLabel,
   onSwitchToPickup,
 }: {
   quote: QuoteState;
   km: (m: number) => string;
   maxKm: number;
+  pinLabel?: string;
   onSwitchToPickup?: () => void;
 }) {
   const d = useMessages(checkoutMessages).details;
@@ -324,24 +333,31 @@ function QuotePanel({
       ) : (
         <Route className={cn("size-5 shrink-0", quote.status === "ok" || tooFar ? "text-primary" : "text-muted-foreground")} aria-hidden />
       )}
-      <p
-        className={cn(
-          "min-w-0 flex-1 text-[15px] leading-[22px]",
-          quote.status === "ok" || tooFar ? "font-semibold text-foreground" : "text-muted-foreground",
-        )}
-      >
-        {quote.status === "ok"
-          ? quote.estimated
-            ? d.quoteEstimate(km(quote.distanceM))
-            : d.quoteRoad(km(quote.distanceM))
-          : tooFar
-            ? d.tooFar(km(quote.distanceM), maxKm)
-            : quote.status === "loading"
-              ? d.quoteLoading
-              : quote.status === "idle"
-                ? d.quoteIdle
-                : d.quoteBusy}
-      </p>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <p
+          className={cn(
+            "text-[15px] leading-[22px]",
+            quote.status === "ok" || tooFar ? "font-semibold text-foreground" : "text-muted-foreground",
+          )}
+        >
+          {quote.status === "ok"
+            ? quote.estimated
+              ? d.quoteEstimate(km(quote.distanceM))
+              : d.quoteRoad(km(quote.distanceM))
+            : tooFar
+              ? d.tooFar(km(quote.distanceM), maxKm)
+              : quote.status === "loading"
+                ? d.quoteLoading
+                : quote.status === "idle"
+                  ? d.quoteIdle
+                  : quote.status === "invalid"
+                    ? d.quoteInvalid
+                    : d.quoteBusy}
+        </p>
+        {pinLabel && (quote.status === "ok" || tooFar) ? (
+          <p className="text-[13px] leading-5 text-muted-foreground">{d.pinNear(pinLabel)}</p>
+        ) : null}
+      </div>
       {quote.status === "ok" ? (
         <span className="font-display text-[22px] leading-7 font-bold text-foreground tabular-nums">{formatRupiah(quote.fee)}</span>
       ) : null}

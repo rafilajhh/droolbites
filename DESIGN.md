@@ -391,6 +391,9 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 - **Announcement bar:** static moss strip above the header, white Plex Mono 600 at 12/13px, store news and hours only, spaced by gap (no dot separators, no link); the freshness line hides below `md`. No motion.
 - **USP marquee:** oat band, two identical halves translated -50% over 55s linear; static grid under reduced motion; pause control present.
 
+### Delivery pin (checkout)
+Chosen delivery opens the pin step above the address fields: a search row (input with search icon + secondary Search button; Enter searches instead of submitting), result rows in a white `rounded-sm` list with hairlines, then a 300/340px OpenStreetMap (Leaflet) in a `rounded-sm` frame with the subtle input stroke drawn over the tiles. The map shows the store as the logo badge with a white ring, the delivery range as a dashed 1.5px moss circle at 5% fill, and the customer's pin as a moss teardrop with a white core (draggable). "Use my location" is a floating white pill (floating-layer shadow) on the map's lower right. Below the map, one quote line in a `rounded-sm` band: oat while waiting, mint with the Bricolage 22px fee when priced, tint-salmon with a "Switch to pickup" secondary button when beyond range. The map isolates its own stacking (`isolate`) so Leaflet's z-indexes never cover the header or the pinned Continue bar; the page scroll never zooms the map.
+
 ### Pay page
 One page, content varies by payment-method kind (QR image, virtual-account number with copy button, e-wallet handoff), always with the countdown, order summary, how-to-pay accordion (native `details`) and a change-method form.
 

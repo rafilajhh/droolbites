@@ -21,13 +21,13 @@ Droolbites is a fictional dessert shop built as a university Web Programming (Pe
 
 ## Positioning
 
-A small, focused menu baked fresh daily in Surabaya, with delivery across the city or store pickup, and simple local payments (QRIS, bank virtual accounts, e-wallets).
+A small, focused menu baked fresh daily in Surabaya, with delivery up to 30 km from the store or store pickup, and simple local payments (QRIS, bank virtual accounts, e-wallets).
 
 ## Operating Context
 
 - Store: Jl. Palem Sememi Raya F16, Sememi, Benowo, Surabaya. Open 10:00–21:00 every day (WIB).
 - Contact: hello@droolbites.biz.id, careers@droolbites.biz.id (Join our team), +62 896 7562 4486.
-- Delivery: flat Rp15.000 within Surabaya; store pickup is free.
+- Delivery: priced by road distance from the store, up to 30 km (owner decision, 2 Nov 2026): Rp10.000 for the first 3 km, then Rp2.500 per started km; the customer pins the address on a map at checkout. Rates, the maximum and the store pin are store settings. Store pickup is free.
 - Payment methods: whatever the Belibayar gateway offers and the store settings enable (owner decision, 1 Nov 2026): DANA, OVO, ShopeePay; QRIS; virtual accounts BCA, Mandiri, BNI, BRI first, with Permata, BSI, CIMB Niaga, Neo Commerce, Maybank, Muamalat and Sinarmas folded under "More banks"; Indomaret and Alfamart counters. GoPay is not offered. The live site currently runs the mock provider (demo).
 - Prices in whole Rupiah (Rp5.000 format), times in WIB.
 
