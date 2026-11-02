@@ -55,11 +55,14 @@ export function paragraph(text: string, { muted = false } = {}) {
   return `<p style="margin:0 0 16px;font-family:${font.body};font-size:16px;line-height:24px;color:${muted ? c.muted : c.ink};">${esc(text)}</p>`;
 }
 
-/** The moss button, built as a table cell so Outlook keeps the fill. */
+/**
+ * The moss button, centered in the card. Built as a table cell so Outlook keeps the fill; the link
+ * is a block with a fixed line height, so the label sits in the middle whichever font loads.
+ */
 export function button(label: string, href: string) {
-  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 24px;">
-  <tr><td bgcolor="${c.moss}" style="border-radius:12px;background:${c.moss};">
-    <a href="${esc(href)}" style="display:inline-block;padding:15px 28px;font-family:${font.display};font-size:15px;line-height:18px;font-weight:600;letter-spacing:0.5px;color:${c.white};text-decoration:none;text-transform:uppercase;border-radius:12px;">${esc(label)}</a>
+  return `<table role="presentation" align="center" cellpadding="0" cellspacing="0" border="0" style="margin:8px auto 24px;">
+  <tr><td align="center" bgcolor="${c.moss}" style="border-radius:12px;background:${c.moss};">
+    <a href="${esc(href)}" style="display:block;padding:0 32px;font-family:${font.display};font-size:15px;line-height:50px;font-weight:600;letter-spacing:0.5px;text-align:center;color:${c.white};text-decoration:none;text-transform:uppercase;border-radius:12px;mso-line-height-rule:exactly;">${esc(label)}</a>
   </td></tr>
 </table>`;
 }
@@ -76,7 +79,7 @@ export function highlight(label: string, value: string, rows: [string, string][]
   <tr><td bgcolor="${c.mint}" style="background:${c.mint};border-radius:12px;padding:18px 20px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr><td colspan="2" style="font-family:${font.mono};font-size:11px;line-height:16px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${c.moss};">${esc(label)}</td></tr>
-      <tr><td colspan="2" style="padding-top:4px;font-family:${font.mono};font-size:24px;line-height:32px;font-weight:700;letter-spacing:1px;color:${c.ink};">${esc(value)}</td></tr>
+      <tr><td colspan="2" class="code" style="padding-top:4px;white-space:nowrap;font-family:${font.mono};font-size:24px;line-height:32px;font-weight:700;letter-spacing:1px;color:${c.ink};">${esc(value)}</td></tr>
       ${extra}
     </table>
   </td></tr>
@@ -180,6 +183,7 @@ export function renderEmail({
     .card { padding:28px 22px !important; }
     .title { font-size:26px !important; line-height:30px !important; }
     .foot { padding:24px 22px !important; }
+    .code { font-size:19px !important; letter-spacing:0.5px !important; }
   }
 </style>
 </head>
