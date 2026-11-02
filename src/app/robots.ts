@@ -13,3 +13,6 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: `${base}/sitemap.xml`,
   };
 }
+
+// APP_URL is a runtime setting (the build has no .env), so this is rendered per request.
+export const dynamic = "force-dynamic";
