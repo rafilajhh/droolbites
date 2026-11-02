@@ -3,12 +3,13 @@
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useTransition } from "react";
-import { X } from "lucide-react";
+import { Download, X } from "lucide-react";
 import { suggestOrders } from "@/app/actions/admin/orders";
 import { suggestProducts } from "@/app/actions/admin/products";
 import { categoryName } from "@/content/products";
 import { useLocale, useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
+import { adminExtraMessages } from "@/i18n/messages/admin-extra";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { paymentStatusInfo } from "@/lib/order-status";
@@ -51,6 +52,7 @@ export function OrdersToolbar({
   count: number;
 }) {
   const t = useMessages(adminMessages);
+  const tx = useMessages(adminExtraMessages).export;
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -111,6 +113,16 @@ export function OrdersToolbar({
         </button>
       ) : null}
       <Count pending={pending}>{t.orders.count(count)}</Count>
+      {/* A plain link (not next/link): the route answers with a file download. */}
+      <a
+        href={buildUrl("/admin/orders/export", { q, status, needs: needsAction ? "action" : undefined })}
+        download
+        aria-label={tx.label}
+        className={cn(toolbarFieldClasses, "min-h-11 text-sm leading-[21px] font-semibold text-foreground")}
+      >
+        <Download className="size-4" aria-hidden />
+        {tx.button}
+      </a>
     </div>
   );
 }

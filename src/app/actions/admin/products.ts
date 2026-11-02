@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { slugify } from "@/lib/slug";
 import { MAX_UPLOAD_BYTES, sniffImageType, UPLOAD_TYPES } from "@/components/admin/rules";
 
 export type ProductErrorKey =
@@ -56,19 +57,6 @@ const productSchema = z.object({
     )
     .min(1),
 });
-
-/** "Matcha Tiramisu" → "matcha-tiramisu". */
-function slugify(name: string) {
-  const slug = name
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 100)
-    .replace(/-+$/, "");
-  return slug || "product";
-}
 
 async function uniqueSlug(name: string, ownId: bigint | null) {
   const base = slugify(name);

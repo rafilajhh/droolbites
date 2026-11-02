@@ -43,7 +43,12 @@ export default async function AdminOverviewPage() {
 
   const [awaiting, paid, productsOnMenu, variantsOnMenu, needsAction, recent, categories] = await Promise.all([
     db.order.count({ where: { paymentStatus: "awaiting" } }),
-    db.order.aggregate({ where: { paymentStatus: "paid" }, _sum: { total: true }, _count: true }),
+    // Paid but later cancelled by the store (a refund) is not money kept.
+    db.order.aggregate({
+      where: { paymentStatus: "paid", fulfilmentStatus: { not: "cancelled" } },
+      _sum: { total: true },
+      _count: true,
+    }),
     db.product.count({ where: { isAvailable: true } }),
     db.productVariant.count({ where: { product: { isAvailable: true } } }),
     db.order.findMany({
@@ -137,6 +142,7 @@ export default async function AdminOverviewPage() {
           iconBg="bg-mint"
           value={formatRupiah(paid._sum.total ?? 0)}
           sub={`${o.receivedSub(paid._count)} · ${o.allTime}`}
+          href="/admin/reports"
         />
         <Kpi
           label={o.onMenu}

@@ -1,0 +1,118 @@
+import { defineMessages } from "../config";
+
+/** Admin / Sales report: period switch, totals, revenue by day, top products and categories. */
+export const adminReportsMessages = defineMessages({
+  en: {
+    metaTitle: "Sales report",
+    title: "Sales report",
+    sub: "Revenue and best sellers, counted in Surabaya time (WIB).",
+    allTime: "ALL TIME",
+    periods: {
+      label: "Report period",
+      today: "Today",
+      "7d": "7 days",
+      "30d": "30 days",
+      all: "All time",
+    },
+    kpi: {
+      revenue: "Revenue",
+      revenueSub: (items: string, delivery: string) => `${items} items + ${delivery} delivery`,
+      paidOrders: "Paid orders",
+      paidOrdersSub: "Orders the store cancelled aren't counted",
+      average: "Average order",
+      averageSub: "Revenue divided by paid orders",
+      itemsSold: "Items sold",
+      itemsSoldSub: (n: number) => `Across ${n} ${n === 1 ? "product" : "products"}`,
+    },
+    notCounted: {
+      title: "Not counted as revenue",
+      awaiting: "Awaiting payment",
+      awaitingSub: "Placed but not paid yet",
+      expired: "Payment failed",
+      expiredSub: "Payment window closed",
+      cancelled: "Cancelled by the store",
+      cancelledSub: (paid: number) =>
+        paid === 0 ? "None of them were paid" : `${paid} of them ${paid === 1 ? "was" : "were"} paid (refund)`,
+    },
+    daily: {
+      title: "Revenue by day",
+      sub: "Paid orders, by the day they were placed",
+      orders: (n: number) => `${n} ${n === 1 ? "order" : "orders"}`,
+      empty: "No paid orders in this period yet.",
+    },
+    top: {
+      title: "Top products",
+      sub: "Most items sold, then highest revenue",
+      product: "Product",
+      sold: "Sold",
+      revenue: "Revenue",
+      rank: "Rank",
+      empty: "Nothing sold in this period yet.",
+    },
+    categories: {
+      title: "Revenue by category",
+      sub: "Item sales, before delivery fees",
+      share: (pct: number) => `${pct}% of item sales`,
+      items: (n: number) => `${n} ${n === 1 ? "item" : "items"}`,
+      empty: "No category sales in this period yet.",
+    },
+    footnote:
+      "Revenue is the order total (items plus delivery) of paid orders placed in this period, leaving out orders the store cancelled. Payment gateway fees aren't included.",
+  },
+  id: {
+    metaTitle: "Laporan penjualan",
+    title: "Laporan penjualan",
+    sub: "Pendapatan dan produk terlaris, dihitung dalam waktu Surabaya (WIB).",
+    allTime: "SEPANJANG WAKTU",
+    periods: {
+      label: "Periode laporan",
+      today: "Hari ini",
+      "7d": "7 hari",
+      "30d": "30 hari",
+      all: "Sepanjang waktu",
+    },
+    kpi: {
+      revenue: "Pendapatan",
+      revenueSub: (items: string, delivery: string) => `${items} produk + ${delivery} ongkir`,
+      paidOrders: "Pesanan lunas",
+      paidOrdersSub: "Pesanan yang dibatalkan toko tidak dihitung",
+      average: "Rata-rata pesanan",
+      averageSub: "Pendapatan dibagi jumlah pesanan lunas",
+      itemsSold: "Item terjual",
+      itemsSoldSub: (n: number) => `Dari ${n} produk`,
+    },
+    notCounted: {
+      title: "Tidak dihitung sebagai pendapatan",
+      awaiting: "Menunggu pembayaran",
+      awaitingSub: "Sudah dipesan, belum dibayar",
+      expired: "Pembayaran gagal",
+      expiredSub: "Batas waktu pembayaran habis",
+      cancelled: "Dibatalkan toko",
+      cancelledSub: (paid: number) => (paid === 0 ? "Tidak ada yang sudah dibayar" : `${paid} di antaranya sudah dibayar (perlu refund)`),
+    },
+    daily: {
+      title: "Pendapatan per hari",
+      sub: "Pesanan lunas, menurut hari pesanan dibuat",
+      orders: (n: number) => `${n} pesanan`,
+      empty: "Belum ada pesanan lunas di periode ini.",
+    },
+    top: {
+      title: "Produk terlaris",
+      sub: "Paling banyak terjual, lalu pendapatan tertinggi",
+      product: "Produk",
+      sold: "Terjual",
+      revenue: "Pendapatan",
+      rank: "Peringkat",
+      empty: "Belum ada produk yang terjual di periode ini.",
+    },
+    categories: {
+      title: "Pendapatan per kategori",
+      sub: "Penjualan produk, belum termasuk ongkir",
+      share: (pct: number) => `${pct}% dari penjualan produk`,
+      items: (n: number) => `${n} item`,
+      empty: "Belum ada penjualan per kategori di periode ini.",
+    },
+    footnote:
+      "Pendapatan adalah total pesanan (produk ditambah ongkir) dari pesanan lunas yang dibuat di periode ini, tanpa pesanan yang dibatalkan toko. Biaya payment gateway tidak termasuk.",
+  },
+});

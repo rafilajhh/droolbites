@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CircleAlert, Store, Truck, User } from "lucide-react";
+import { ArrowLeft, CircleAlert, Printer, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
-import { AdminMain, Card } from "@/components/admin/ui";
+import { AdminMain, Card, smallButtonClasses } from "@/components/admin/ui";
 import { variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -16,6 +16,7 @@ import { payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
+import { adminExtraMessages } from "@/i18n/messages/admin-extra";
 
 export async function generateMetadata({ params }: PageProps<"/admin/orders/[orderNumber]">): Promise<Metadata> {
   const [{ orderNumber }, t] = await Promise.all([params, getMessages(adminMessages)]);
@@ -45,7 +46,12 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   });
   if (!order) notFound();
 
-  const [t, locale, settings] = await Promise.all([getMessages(adminMessages), getLocale(), getStoreSettings()]);
+  const [t, locale, settings, tx] = await Promise.all([
+    getMessages(adminMessages),
+    getLocale(),
+    getStoreSettings(),
+    getMessages(adminExtraMessages),
+  ]);
   const o = t.order;
   // The paid attempt if any, else the latest one (changing method creates a new attempt).
   const payment = order.payments.find((p) => p.status === "paid") ?? order.payments[0];
@@ -110,7 +116,17 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           </h1>
           <p className="text-[15px] leading-[23px] text-muted-foreground">{subParts.filter(Boolean).join(" · ")}</p>
         </div>
-        <StatusBadge tone={fs.tone}>{fs[locale]}</StatusBadge>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/admin/invoice/${order.orderNumber}`}
+            aria-label={tx.invoice.openInvoiceLabel(order.orderNumber)}
+            className={smallButtonClasses}
+          >
+            <Printer className="size-3.5" aria-hidden />
+            {tx.invoice.openInvoice}
+          </Link>
+          <StatusBadge tone={fs.tone}>{fs[locale]}</StatusBadge>
+        </div>
       </div>
 
       {refund ? (

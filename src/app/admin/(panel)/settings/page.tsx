@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PasswordForm } from "@/components/admin/password-form";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { AdminMain } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
@@ -13,7 +14,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** pen: Admin / Store settings (j3evM). */
 export default async function AdminSettingsPage() {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const s = await getStoreSettings();
   return (
     <AdminMain>
@@ -36,6 +37,8 @@ export default async function AdminSettingsPage() {
           ewalletEnabled: s.ewalletEnabled,
         }}
       />
+      {/* Below lg the settings form ends in a sticky save bar that eats the gap (-mb-6), so add it back. */}
+      <PasswordForm email={admin.email} className="max-lg:mt-6" />
     </AdminMain>
   );
 }

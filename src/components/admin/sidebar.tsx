@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
-import { Cookie, ExternalLink, LayoutDashboard, LogOut, Menu, Receipt, Settings, X, type LucideIcon } from "lucide-react";
+import { ChartColumn, Cookie, ExternalLink, LayoutDashboard, LogOut, Menu, Receipt, Settings, Tags, Users, X, type LucideIcon } from "lucide-react";
 import { adminSignOut } from "@/app/actions/admin/auth";
 import { useModal } from "@/components/layout/shop-ui";
 import { LanguageSwitch } from "@/components/layout/language-switch";
@@ -14,10 +14,15 @@ import { cn } from "@/lib/cn";
 
 type Props = { storeName: string; city: string; openNow: boolean };
 
-const NAV: { href: string; key: "overview" | "orders" | "products" | "settings"; icon: LucideIcon }[] = [
+type NavKey = "overview" | "orders" | "products" | "categories" | "customers" | "reports" | "settings";
+
+const NAV: { href: string; key: NavKey; icon: LucideIcon }[] = [
   { href: "/admin", key: "overview", icon: LayoutDashboard },
   { href: "/admin/orders", key: "orders", icon: Receipt },
   { href: "/admin/products", key: "products", icon: Cookie },
+  { href: "/admin/categories", key: "categories", icon: Tags },
+  { href: "/admin/customers", key: "customers", icon: Users },
+  { href: "/admin/reports", key: "reports", icon: ChartColumn },
   { href: "/admin/settings", key: "settings", icon: Settings },
 ];
 

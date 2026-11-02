@@ -7,9 +7,14 @@ const productInclude = {
   variants: { orderBy: { price: "asc" as const }, select: { id: true, name: true, price: true } },
 };
 
-/** Categories (in seed order) with their available products and variants. */
+/**
+ * Categories (in seed order) with their available products and variants.
+ * Categories with nothing on the menu (new, or every product hidden) are left
+ * out, so they never show as an empty chip or group on the storefront.
+ */
 export const getMenu = cache(async () => {
   return db.category.findMany({
+    where: { products: { some: { isAvailable: true } } },
     orderBy: { id: "asc" },
     include: {
       products: {

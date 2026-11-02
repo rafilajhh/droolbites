@@ -203,6 +203,8 @@ export const categoryNames: Record<string, Text> = {
   tiramisu: { en: "Tiramisu", id: "Tiramisu" },
 };
 
+/** The built-in translation while the admin keeps the original name; a renamed category shows its new name. */
 export function categoryName(slug: string, dbName: string, locale: Locale): string {
-  return categoryNames[slug]?.[locale] ?? dbName;
+  const known = categoryNames[slug];
+  return known && known.en === dbName ? known[locale] : dbName;
 }
