@@ -76,10 +76,34 @@ function toPlace(p: NominatimPlace): Place | null {
   return { lat, lng, label, street: street.slice(0, 180), city: city.slice(0, 100), postal };
 }
 
-/** Up to 5 places in Indonesia for `query`, nearest the store first. */
+/**
+ * Looser versions of an address for when the exact one finds nothing: OpenStreetMap rarely knows
+ * house numbers in Indonesia, so "Jl. Raya Darmo No. 50, Wonokromo, Surabaya" becomes
+ * "Jl. Raya Darmo, Wonokromo, Surabaya", then "Wonokromo, Surabaya".
+ */
+function looser(query: string): string[] {
+  const parts = (s: string) => s.split(",").map((p) => p.trim()).filter(Boolean);
+  const noNumbers = parts(
+    query
+      .replace(/\b(no|nomor|blok|kav|rt|rw)\.?\s*[\w/-]+/gi, "")
+      .replace(/\b[a-z]?\d+[a-z]?\b/gi, ""),
+  ).join(", ");
+  const tail = parts(noNumbers).slice(-2).join(", ");
+  return [...new Set([noNumbers, tail])].filter((q) => q.length >= 3 && q !== query);
+}
+
+/** Up to 5 places in Indonesia for `query`, nearest the store first; looser tries if none match. */
 export async function searchPlaces(query: string, near: LatLng, lang: string): Promise<Place[]> {
   const q = query.trim().replace(/\s+/g, " ").slice(0, 120);
   if (q.length < 3) return [];
+  for (const attempt of [q, ...looser(q)]) {
+    const found = await searchExact(attempt, near, lang);
+    if (found.length > 0) return found;
+  }
+  return [];
+}
+
+async function searchExact(q: string, near: LatLng, lang: string): Promise<Place[]> {
   // A box ~45 km around the store to rank local matches first (not a hard limit).
   const d = 0.4;
   const viewbox = [near.lng - d, near.lat + d, near.lng + d, near.lat - d].map((n) => n.toFixed(4)).join(",");
