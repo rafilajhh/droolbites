@@ -106,7 +106,7 @@ export default async function OurStoryPage() {
         </ol>
       </section>
 
-      {/* Founders: the two first recipes, then the sisters in their own words. */}
+      {/* Founder: the two first recipes, then Olivia in her own words. */}
       <section
         className={cn("flex w-full flex-col items-center gap-10 pb-12 lg:flex-row lg:gap-16 lg:pb-20", px)}
         aria-labelledby="story-founders"
@@ -163,33 +163,35 @@ export default async function OurStoryPage() {
         </div>
       </section>
 
-      {/* Numbers: where the story stands today. */}
-      <section
-        className={cn(
-          "panel-y flex w-full flex-col gap-8 bg-primary [--focus-ring:var(--white)] lg:flex-row lg:items-center lg:gap-16",
-          px,
-        )}
-        aria-labelledby="story-numbers"
-      >
-        <div className="flex flex-col gap-3 lg:w-[360px] lg:shrink-0">
-          <h2
-            id="story-numbers"
-            className="type-section font-display text-balance font-bold text-foreground-inverse"
-          >
-            {t.numbersTitle}
-          </h2>
-          <p className="text-pretty text-base leading-6 text-mint lg:text-lg lg:leading-[27px]">{t.numbersSub}</p>
+      {/* Numbers: where the story stands today. A moss panel like the visit card below it:
+          the heading on top, then four equal stat columns, each under a hairline. */}
+      <section className="w-full px-3 md:px-6" aria-labelledby="story-numbers">
+        <div className="flex w-full flex-col gap-10 rounded-m bg-primary px-6 panel-y [--focus-ring:var(--white)] sm:px-10 lg:gap-14 lg:px-16">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between lg:gap-16">
+            <h2
+              id="story-numbers"
+              className="type-section font-display text-balance font-bold text-foreground-inverse"
+            >
+              {t.numbersTitle}
+            </h2>
+            <p className="max-w-[420px] text-pretty text-base leading-6 text-mint lg:text-right lg:text-lg lg:leading-[27px]">
+              {t.numbersSub}
+            </p>
+          </div>
+          <dl className="grid w-full grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4 lg:gap-x-8">
+            {numbers.map((stat) => (
+              <div
+                key={stat.label}
+                className="flex flex-col-reverse justify-end gap-3 pt-5 shadow-[inset_0_1px_0_color-mix(in_srgb,var(--mint)_40%,transparent)]"
+              >
+                <dt className="text-pretty text-[15px] leading-[22px] text-mint">{stat.label}</dt>
+                <dd className="font-display text-[44px] leading-none font-bold tracking-[-1px] text-foreground-inverse tabular-nums sm:text-[52px] xl:text-[64px]">
+                  {stat.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
-        <dl className="grid flex-1 grid-cols-2 gap-x-6 gap-y-8 lg:grid-cols-4">
-          {numbers.map((stat) => (
-            <div key={stat.label} className="flex flex-col-reverse justify-end gap-2">
-              <dt className="text-pretty text-[15px] leading-[23px] text-mint">{stat.label}</dt>
-              <dd className="flex items-center gap-2 font-display text-[52px] leading-none font-bold tracking-[-1px] text-foreground-inverse lg:text-[64px]">
-                {stat.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
       </section>
 
       {/* Visit CTA: the story ends at the counter. */}

@@ -8,13 +8,13 @@ export const storyMessages = defineMessages({
   en: {
     metaTitle: "Our story",
     metaDescription:
-      "How two sisters went from one oven in a Sememi home kitchen to a dessert counter on Jl. Palem Sememi, Surabaya.",
+      "How Olivia went from one oven in a Sememi home kitchen to a dessert counter on Jl. Palem Sememi, Surabaya.",
     eyebrow: "OUR STORY",
     title: "A little dessert shop with a big sweet tooth.",
     body: "Droolbites is a dessert shop in Surabaya, with a menu of soft cookies, fudgy brownies, and creamy tiramisu. We bring these familiar favorites together so you can find something for a quick treat, dessert after dinner, or a table to share.",
 
     intro:
-      "It started with one oven, two sisters and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter of our own, and the first tray still comes out at 06:00.",
+      "It started with one oven, Olivia and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter of our own, and the first tray still comes out at 06:00.",
 
     timelineTitle: "From a home kitchen to your table.",
     timelineSub: "One street, and a lot of cookie dough.",
@@ -22,7 +22,7 @@ export const storyMessages = defineMessages({
       {
         year: "2021",
         title: "A home kitchen in Sememi",
-        body: "Rani baked, Dewi took the orders over WhatsApp. Chocolate chunk, one tray at a time.",
+        body: "Olivia baked at night and took the orders over WhatsApp by day. Chocolate chunk, one tray at a time.",
       },
       {
         year: "2023",
@@ -37,19 +37,19 @@ export const storyMessages = defineMessages({
       {
         year: "Today",
         title: "Bigger crew, same recipes",
-        body: "Rani still tastes every batch of dough, and Dewi still answers your messages herself.",
+        body: "Olivia still tastes every batch of dough, and still answers your messages in person.",
       },
     ],
 
-    foundersTitle: "Meet Rani & Dewi.",
+    foundersTitle: "Meet Olivia.",
     foundersBody:
-      "Rani runs the kitchen: she spent years tweaking one chocolate chunk recipe until the middle stayed soft all day. Dewi turned it into a shop: the orders, the counter, and a brownie recipe she still won't share.",
-    firstCookie: "Rani's cookie",
-    firstBrownie: "Dewi's brownie",
+      "Olivia spent years tweaking one chocolate chunk recipe until the middle stayed soft all day, then turned it into a shop: the orders, the counter, and a brownie recipe that still isn't for sharing.",
+    firstCookie: "Olivia's cookie",
+    firstBrownie: "Olivia's brownie",
     quote:
-      "We never wanted a long menu. We wanted the cookie you think about on the way home, and the brownie that makes you order one more tray.",
-    quoteName: "Rani & Dewi",
-    quoteRole: "Founders, Droolbites",
+      "I never wanted a long menu. I wanted the cookie you think about on the way home, and the brownie that makes you order one more tray.",
+    quoteName: "Olivia",
+    quoteRole: "Founder, Droolbites",
 
     numbersTitle: "Droolbites, in numbers.",
     numbersSub: "Still small on purpose. Just a little busier.",
@@ -70,13 +70,13 @@ export const storyMessages = defineMessages({
   id: {
     metaTitle: "Cerita kami",
     metaDescription:
-      "Cerita dua kakak-adik, dari satu oven di dapur rumah di Sememi sampai punya counter dessert di Jl. Palem Sememi, Surabaya.",
+      "Cerita Olivia, dari satu oven di dapur rumah di Sememi sampai punya counter dessert di Jl. Palem Sememi, Surabaya.",
     eyebrow: "CERITA KAMI",
     title: "Toko dessert kecil buat kamu yang doyan manis.",
     body: "Droolbites adalah toko dessert di Surabaya dengan menu soft cookies, brownies fudgy dan tiramisu yang creamy. Semua favorit yang sudah akrab ini kami kumpulkan di satu tempat, jadi selalu ada pilihan buat ngemil sebentar, pencuci mulut habis makan malam, atau suguhan untuk ramai-ramai.",
 
     intro:
-      "Awalnya cuma satu oven, dua kakak-adik, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter sendiri, dan loyang pertama tetap keluar oven jam 06:00.",
+      "Awalnya cuma satu oven, Olivia, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter sendiri, dan loyang pertama tetap keluar oven jam 06:00.",
 
     timelineTitle: "Dari dapur rumah sampai ke mejamu.",
     timelineSub: "Satu jalan yang sama, dan adonan cookies yang nggak ada habisnya.",
@@ -84,7 +84,7 @@ export const storyMessages = defineMessages({
       {
         year: "2021",
         title: "Dapur rumah di Sememi",
-        body: "Rani yang memanggang, Dewi yang mencatat pesanan lewat WhatsApp. Chocolate chunk, seloyang demi seloyang.",
+        body: "Olivia memanggang malam hari dan mencatat pesanan lewat WhatsApp siang harinya. Chocolate chunk, seloyang demi seloyang.",
       },
       {
         year: "2023",
@@ -99,18 +99,18 @@ export const storyMessages = defineMessages({
       {
         year: "Sekarang",
         title: "Tim makin ramai, resep tetap sama",
-        body: "Rani masih mencicipi tiap adonan, dan Dewi masih membalas sendiri pesan-pesan kamu.",
+        body: "Olivia masih mencicipi tiap adonan, dan masih membalas sendiri pesan-pesan kamu.",
       },
     ],
 
-    foundersTitle: "Kenalan sama Rani & Dewi.",
+    foundersTitle: "Kenalan sama Olivia.",
     foundersBody:
-      "Rani pegang dapur: bertahun-tahun ia mengutak-atik satu resep chocolate chunk sampai bagian tengahnya tetap lembut seharian. Dewi yang menjadikannya toko: urusan pesanan, counter, dan resep brownies yang sampai sekarang nggak mau ia bagi.",
-    firstCookie: "Cookie Rani",
-    firstBrownie: "Brownies Dewi",
+      "Bertahun-tahun Olivia mengutak-atik satu resep chocolate chunk sampai bagian tengahnya tetap lembut seharian, lalu menjadikannya toko: urusan pesanan, counter, dan resep brownies yang sampai sekarang nggak dibagi ke siapa pun.",
+    firstCookie: "Cookie Olivia",
+    firstBrownie: "Brownies Olivia",
     quote:
-      "Dari awal kami nggak pernah pengin menu yang panjang. Kami cuma pengin bikin cookie yang kepikiran terus di jalan pulang, dan brownies yang bikin kamu pesan satu loyang lagi.",
-    quoteName: "Rani & Dewi",
+      "Dari awal aku nggak pernah pengin menu yang panjang. Aku cuma pengin bikin cookie yang kepikiran terus di jalan pulang, dan brownies yang bikin kamu pesan satu loyang lagi.",
+    quoteName: "Olivia",
     quoteRole: "Pendiri Droolbites",
 
     numbersTitle: "Droolbites dalam angka.",
