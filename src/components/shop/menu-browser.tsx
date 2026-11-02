@@ -120,7 +120,8 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
             const title = single ? g.cats[0].name : t.group.join(g.cats.map((c) => c.name));
             // Full menu: a group of three gets three equal columns at lg. Below lg its tray-size product
             // (at an even index, so it never splits a pair) takes a landscape row and the other two pair up
-            // like the cookies. Filtered and search results keep the 2 / 4 widths and centre the last row.
+            // like the cookies. Filtered and search results keep the 2 / 4 widths and start at the left,
+            // reading on from the search field; the full menu centres its last row.
             const thirds = !filteredView && g.products.length === 3;
             const bannerId = thirds
               ? g.products.find((p, i) => i % 2 === 0 && p.variants.length > 1)?.id
@@ -135,8 +136,13 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
                     {title}
                   </h2>
                 </div>
-                {/* Same widths as a 2 / 4 column grid; wrapping and centring leave no hole in the last row. */}
-                <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-8 lg:gap-6">
+                {/* Same widths as a 2 / 4 column grid; on the full menu, centring leaves no hole in the last row. */}
+                <div
+                  className={cn(
+                    "flex w-full flex-wrap gap-x-4 gap-y-8 lg:gap-6",
+                    filteredView ? "justify-start" : "justify-center",
+                  )}
+                >
                   {g.products.map((p) => {
                     const banner = p.id === bannerId;
                     return (

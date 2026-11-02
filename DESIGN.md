@@ -376,7 +376,7 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 
 ### Cards / Containers
 - Storefront cards: oat fill, 20px radius, no border. Admin `Card`: white, 20px radius, 1px subtle inset ring.
-- **No wedged cards.** A grid of real items holds only real items: no promo, CTA, filler or decorative card to plug a hole or pad a column. A short last row centers (filtered menu); a menu group of three gets three equal columns, with its tray-size product taking a landscape row below lg. Menu group headings carry no count or unit line. Say each store fact once, in its home (hours in the announcement bar and /location, freshness in the hero, rating in the review band and product pages, ordering steps in the FAQ); checkout carries no security reassurance copy.
+- **No wedged cards.** A grid of real items holds only real items: no promo, CTA, filler or decorative card to plug a hole or pad a column. A short last row centers on the full menu; search and category results start at the left edge, under the search field (owner decision 2026-11-02); a menu group of three gets three equal columns, with its tray-size product taking a landscape row below lg. Menu group headings carry no count or unit line. Say each store fact once, in its home (hours in the announcement bar and /location, freshness in the hero, rating in the review band and product pages, ordering steps in the FAQ); checkout carries no security reassurance copy.
 - Cart drawer: paper body, hairline-separated rows, oat footer; slides in, fades under reduced motion.
 
 ### Inputs / Fields
