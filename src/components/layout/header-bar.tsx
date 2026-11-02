@@ -45,9 +45,15 @@ export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accou
       {/* 40px icons with 44px hit areas; gaps chosen so the icons sit 20px apart like the pen header. */}
       <div className="flex flex-1 items-center justify-end gap-0.5">
         <LanguageSwitch className="mr-3 hidden sm:inline-flex" />
-        <Link href="/menu?search=1" className={`${iconLink} hidden sm:flex`} aria-label={t.search}>
+        <button
+          type="button"
+          className={`${iconLink} hidden sm:flex`}
+          onClick={() => open("search")}
+          aria-label={t.search}
+          aria-haspopup="dialog"
+        >
           <Search className="size-[22px]" aria-hidden />
-        </Link>
+        </button>
         <Link href={accountHref} className={iconLink} aria-label={t.account}>
           <User className="size-[22px]" aria-hidden />
         </Link>

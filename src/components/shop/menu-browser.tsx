@@ -48,9 +48,6 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
   const requested = params.get("category");
   const active = categories.some((c) => c.slug === requested) ? requested : null;
 
-  // The header search icon links to /menu?search=1, which opens the search panel.
-  const [searchState, setSearchOpen] = useState(false);
-  const searchOpen = searchState || params.get("search") === "1";
   const [filterOpen, setFilterOpen] = useState(false);
   // The result count is announced only after the shopper filters or searches.
   const [filtered, setFiltered] = useState(false);
@@ -58,18 +55,14 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
   const allProducts = categories.flatMap((c) => c.products);
   const matching = new Set((query ? rankProducts(allProducts, query) : allProducts).map((p) => p.id));
 
-  const closeSearch = useCallback(() => {
-    setSearchOpen(false);
-    if (new URLSearchParams(window.location.search).has("search")) setMenuParams({ search: null }, "replace");
-  }, [setSearchOpen]);
   const closeFilter = useCallback(() => setFilterOpen(false), [setFilterOpen]);
+  // Only the toolbar's clear button commits here; typing happens in the site-wide search sheet.
   const commitSearch = useCallback(
     (q: string) => {
-      setSearchOpen(false);
       setFiltered(true);
-      setMenuParams({ q: q || null, search: null });
+      setMenuParams({ q: q || null });
     },
-    [setSearchOpen, setFiltered],
+    [setFiltered],
   );
   const selectCategory = useCallback(
     (slug: string | null) => {
@@ -101,14 +94,7 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
         {filtered ? t.results(shown) : ""}
       </p>
       <div className="flex w-full flex-col gap-3 px-4 sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-16">
-        <MenuSearch
-          products={allProducts}
-          query={query}
-          open={searchOpen}
-          onOpen={() => setSearchOpen(true)}
-          onClose={closeSearch}
-          onCommit={commitSearch}
-        />
+        <MenuSearch query={query} onCommit={commitSearch} />
         <CategoryFilter
           options={options}
           active={active}

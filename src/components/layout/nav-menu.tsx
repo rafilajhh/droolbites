@@ -14,7 +14,7 @@ import { useModal, useShopUI } from "./shop-ui";
 /** pen: Navigation menu (wNl2v) → Menu Drawer (g3WhFx), 520px from the left. */
 export function NavMenu({ accountHref, email }: { accountHref: string; email: string }) {
   const t = useMessages(commonMessages).nav;
-  const { panel, close } = useShopUI();
+  const { panel, open, close } = useShopUI();
   const pathname = usePathname();
   const isOpen = panel === "menu";
   const panelRef = useModal(isOpen, close);
@@ -98,14 +98,14 @@ export function NavMenu({ accountHref, email }: { accountHref: string; email: st
           {/* The header hides language and search below sm, so the drawer carries them there. */}
           <div className="flex w-full items-center justify-between gap-4 sm:hidden">
             <LanguageSwitch />
-            <Link
-              href="/menu?search=1"
-              onClick={close}
+            <button
+              type="button"
+              onClick={() => open("search")}
               className="relative flex items-center gap-2 text-[15px] leading-normal font-semibold text-foreground after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] hover:text-primary"
             >
               <Search className="size-[18px] shrink-0" aria-hidden />
               {t.search}
-            </Link>
+            </button>
           </div>
           <Link href="/menu" onClick={close} className={buttonClasses("primary", "w-full")}>
             {t.orderNow}

@@ -2,8 +2,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 
-/** Which storefront overlay is open: the nav menu or the cart drawer. */
-type Panel = "menu" | "cart" | null;
+/** Which storefront overlay is open: the nav menu, the cart drawer or the search sheet. */
+type Panel = "menu" | "cart" | "search" | null;
 
 const ShopUIContext = createContext<{ panel: Panel; open: (p: Exclude<Panel, null>) => void; close: () => void }>({
   panel: null,
