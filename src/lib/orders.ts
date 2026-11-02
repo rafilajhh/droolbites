@@ -207,6 +207,9 @@ export async function markPaymentExpired(paymentId: bigint) {
   return count > 0;
 }
 
+/** The "expired" email only goes out this soon after the deadline. */
+const EXPIRED_EMAIL_WITHIN_MS = 3 * 24 * 60 * 60 * 1000;
+
 /**
  * Deadline passed without payment: the order expires and a new one is cancelled. The customer
  * gets one "expired" email, from whichever caller made the change.
@@ -220,7 +223,10 @@ export async function expireOrder(orderId: bigint) {
   if (expired.count > 0 && cancelled.count > 0) {
     deliverLater(async () => {
       const order = await db.order.findUnique({ where: { id: orderId }, include: orderInclude });
-      if (order) await sendOrderCancelledEmail(order, "expired");
+      // An order abandoned long ago (closed only now, when someone opened it) gets no email.
+      if (order && orderDeadline(order).getTime() > Date.now() - EXPIRED_EMAIL_WITHIN_MS) {
+        await sendOrderCancelledEmail(order, "expired");
+      }
     });
   }
   return expired.count > 0;

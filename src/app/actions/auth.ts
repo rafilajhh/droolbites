@@ -43,6 +43,9 @@ const BCRYPT_COST = 10;
 const DUMMY_HASH = "$2b$10$AqPy5BV1eLUua.Jm0t.M4OIjT9XOn89xLCvvJSt3aupnAsbENx1Q6";
 
 const emailSchema = z.email().max(150);
+/** New accounts per 15 minutes per client (see allowRequest); each one sends a welcome email. */
+const SIGN_UP_MAX_PER_IP = 5;
+
 /** Password-reset emails per 15 minutes (see allowRequest). */
 const RESET_MAX_PER_EMAIL = 3;
 const RESET_MAX_PER_IP = 10;
@@ -102,6 +105,12 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   else if (password !== confirm) errors.confirm = "mismatch";
   if (Object.keys(errors).length) return { errors, values, attempt };
 
+  // Every new account sends an email, so a client can't open accounts (and mail addresses) in bulk.
+  const ip = await clientIp();
+  if (!allowRequest(`signup:ip:${ip}`, perClientMax(ip, SIGN_UP_MAX_PER_IP))) {
+    return { formError: "tooManyAttempts", values, attempt };
+  }
+
   if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
     return { errors: { email: "emailTaken" }, values, attempt };
   }
@@ -119,7 +128,7 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   }
 
   const lang = await getLocale();
-  deliverLater(() => sendAccountWelcomeEmail({ fullName, email }, lang));
+  deliverLater(() => sendAccountWelcomeEmail({ email }, lang));
   await createSession({ userId: userId.toString(), role: "customer" });
   redirect(safeNext(text(formData, "next")));
 }

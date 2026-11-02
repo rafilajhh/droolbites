@@ -6,7 +6,8 @@ const FIRST_RUN_MS = 60_000;
 const EVERY_MS = 5 * 60_000;
 
 export async function register() {
-  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  // Production only: a dev server pointed at a copy of the live data must not email customers.
+  if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.NODE_ENV !== "production") return;
   const flag = globalThis as typeof globalThis & { __droolbitesCron?: boolean };
   if (flag.__droolbitesCron) return;
   flag.__droolbitesCron = true;
@@ -16,12 +17,17 @@ export async function register() {
   if (!key) return;
   const url = `http://127.0.0.1:${process.env.PORT ?? 3000}/api/cron/orders`;
 
+  let running = false;
   const run = async () => {
+    if (running) return; // the last run is still going (slow gateway): skip this tick
+    running = true;
     try {
       const res = await fetch(url, { method: "POST", headers: { "x-cron-key": key } });
       if (!res.ok) console.warn(`[cron] orders: HTTP ${res.status}`);
     } catch (error) {
-      console.warn("[cron] orders: could not reach the app", error instanceof Error ? error.message : error);
+      console.warn(`[cron] orders: could not reach ${url}`, error instanceof Error ? error.message : error);
+    } finally {
+      running = false;
     }
   };
   setTimeout(() => {

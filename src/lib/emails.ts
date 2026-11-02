@@ -8,16 +8,16 @@ import { signToken, verifyToken } from "./session";
 
 /** Account and newsletter emails (order emails are in ./order-emails). */
 
-export async function sendAccountWelcomeEmail(user: { fullName: string; email: string }, lang: Locale) {
+/** No name in it: sign-up doesn't verify addresses, so the email carries nothing a stranger typed. */
+export async function sendAccountWelcomeEmail(user: { email: string }, lang: Locale) {
   const t = pickMessages(emailMessages, lang).accountWelcome;
-  const first = user.fullName.trim().split(/\s+/)[0] || user.fullName;
   const menu = appUrl("/menu");
   const html = renderEmail({
     lang,
     baseUrl: appUrl("/"),
     preheader: t.preheader,
     eyebrow: t.eyebrow,
-    title: t.title(first),
+    title: t.title,
     body: [paragraph(t.body), paragraph(t.next, { muted: true }), button(t.button, menu)].join("\n"),
     footer: await emailFooter(),
     reason: t.reason,
@@ -25,7 +25,7 @@ export async function sendAccountWelcomeEmail(user: { fullName: string; email: s
   await sendMail({
     to: user.email,
     subject: t.subject,
-    text: `${t.title(first)}\n\n${t.body}\n${t.next}\n\n${menu}\n\nDroolbites · Surabaya`,
+    text: `${t.title}\n\n${t.body}\n${t.next}\n\n${menu}\n\nDroolbites · Surabaya`,
     html,
   });
 }
@@ -34,16 +34,16 @@ export async function sendAccountWelcomeEmail(user: { fullName: string; email: s
 /* Newsletter                                                           */
 /* ------------------------------------------------------------------ */
 
-type UnsubscribeClaims = { nl?: string };
+type UnsubscribeClaims = { typ?: string; nl?: string };
 
 /** A signed link that takes exactly this address off the list, with no sign-in. */
 export async function newsletterUnsubscribeToken(email: string) {
-  return signToken({ nl: email }, "400d");
+  return signToken({ typ: "unsub", nl: email }, "400d");
 }
 
 export async function readUnsubscribeToken(token: string | null | undefined) {
   const claims = await verifyToken<UnsubscribeClaims>(token ?? undefined);
-  return typeof claims?.nl === "string" ? claims.nl : null;
+  return claims?.typ === "unsub" && typeof claims.nl === "string" ? claims.nl : null;
 }
 
 export async function sendNewsletterWelcomeEmail(email: string, lang: Locale) {

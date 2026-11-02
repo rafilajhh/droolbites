@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 
 /** Orders closed per run; the next run picks up the rest. */
 const BATCH = 25;
+/** Only orders whose deadline passed within this long; older ones close lazily, as before. */
+const LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Housekeeping, called every few minutes by the app itself (src/instrumentation.ts): unpaid orders
@@ -16,9 +18,15 @@ const BATCH = 25;
  */
 export async function POST(request: Request) {
   if (!isCronRequest(request)) return new Response(null, { status: 404 });
+  const now = Date.now();
 
   const overdue = await db.order.findMany({
-    where: { paymentStatus: "awaiting", createdAt: { lt: new Date(Date.now() - PAYMENT_WINDOW_MS) } },
+    where: {
+      paymentStatus: "awaiting",
+      // Store-cancelled orders are closed already; leave their history alone.
+      fulfilmentStatus: "pending",
+      createdAt: { lt: new Date(now - PAYMENT_WINDOW_MS), gt: new Date(now - PAYMENT_WINDOW_MS - LOOKBACK_MS) },
+    },
     orderBy: { createdAt: "asc" },
     take: BATCH,
     select: { orderNumber: true },
