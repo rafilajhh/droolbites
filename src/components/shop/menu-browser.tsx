@@ -48,14 +48,12 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
   const requested = params.get("category");
   const active = categories.some((c) => c.slug === requested) ? requested : null;
 
-  const [filterOpen, setFilterOpen] = useState(false);
   // The result count is announced only after the shopper filters or searches.
   const [filtered, setFiltered] = useState(false);
 
   const allProducts = categories.flatMap((c) => c.products);
   const matching = new Set((query ? rankProducts(allProducts, query) : allProducts).map((p) => p.id));
 
-  const closeFilter = useCallback(() => setFilterOpen(false), [setFilterOpen]);
   // The toolbar field commits here as you type (debounced), filtering the grid in place.
   const commitSearch = useCallback(
     (q: string) => {
@@ -66,16 +64,16 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
   );
   const selectCategory = useCallback(
     (slug: string | null) => {
-      setFilterOpen(false);
       setFiltered(true);
       setMenuParams({ category: slug });
     },
-    [setFilterOpen, setFiltered],
+    [setFiltered],
   );
 
+  // Counts follow the search: how many matches each chip would show.
   const options: FilterOption[] = [
-    { slug: null, name: t.filter.all, count: allProducts.length },
-    ...categories.map((c) => ({ slug: c.slug, name: c.name, count: c.products.length })),
+    { slug: null, name: t.filter.all, count: matching.size },
+    ...categories.map((c) => ({ slug: c.slug, name: c.name, count: c.products.filter((p) => matching.has(p.id)).length })),
   ];
 
   const groups = groupCategories(categories)
@@ -93,16 +91,10 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
       <p aria-live="polite" className="sr-only">
         {filtered ? t.results(shown) : ""}
       </p>
-      <div className="flex w-full flex-col gap-3 px-4 sm:px-8 lg:flex-row lg:items-center lg:gap-6 lg:px-16">
+      {/* Search, then the category chips under it: one left edge for the toolbar and the results. */}
+      <div className="flex w-full flex-col items-start gap-4 px-4 sm:px-8 lg:px-16">
         <MenuSearch query={query} onCommit={commitSearch} />
-        <CategoryFilter
-          options={options}
-          active={active}
-          open={filterOpen}
-          onToggle={() => setFilterOpen((o) => !o)}
-          onClose={closeFilter}
-          onSelect={selectCategory}
-        />
+        <CategoryFilter options={options} active={active} onSelect={selectCategory} />
       </div>
 
       <div className="flex w-full flex-col gap-14 px-4 pt-10 pb-12 sm:px-8 lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-20">

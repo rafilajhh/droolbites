@@ -35,14 +35,14 @@ export function MenuSearch({ query, onCommit }: { query: string; onCommit: (q: s
   return (
     <form
       role="search"
-      className="relative w-full lg:flex-1"
+      className="relative w-full max-w-[640px]"
       onSubmit={(e) => {
         e.preventDefault();
         commit(draft, 0);
         inputRef.current?.blur();
       }}
     >
-      <label className="flex h-[47px] w-full cursor-text items-center gap-2.5 rounded-pill bg-white pl-4 inset-ring-[1.25px] inset-ring-muted-foreground/50 transition-shadow focus-within:inset-ring-[1.5px] focus-within:inset-ring-border">
+      <label className="flex h-12 w-full cursor-text items-center gap-2.5 rounded-pill bg-white pl-4 inset-ring-[1.25px] inset-ring-muted-foreground/50 transition-shadow focus-within:inset-ring-[1.5px] focus-within:inset-ring-border">
         <Search className="size-[18px] shrink-0 text-foreground" aria-hidden />
         <span className="sr-only">{t.label}</span>
         <input
