@@ -25,7 +25,7 @@ export async function SiteHeader() {
     <>
       <AnnouncementBar />
       <HeaderBar cartCount={cart.count} accountHref={accountHref} />
-      <NavMenu accountHref={accountHref} email={settings.email} />
+      <NavMenu accountHref={accountHref} />
       <CartDrawer cart={cart} deliveryFee={settings.deliveryFee} />
       <SearchOverlay categories={toShopCategories(menu, locale)} />
     </>

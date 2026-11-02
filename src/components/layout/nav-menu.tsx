@@ -12,7 +12,7 @@ import { LanguageSwitch } from "./language-switch";
 import { useModal, useShopUI } from "./shop-ui";
 
 /** pen: Navigation menu (wNl2v) → Menu Drawer (g3WhFx), 520px from the left. */
-export function NavMenu({ accountHref, email }: { accountHref: string; email: string }) {
+export function NavMenu({ accountHref }: { accountHref: string }) {
   const t = useMessages(commonMessages).nav;
   const { panel, open, close } = useShopUI();
   const pathname = usePathname();
@@ -118,12 +118,6 @@ export function NavMenu({ accountHref, email }: { accountHref: string; email: st
             >
               {t.account}
             </Link>
-            <a
-              href={`mailto:${email}`}
-              className="relative text-muted-foreground after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] hover:text-foreground"
-            >
-              {email}
-            </a>
           </div>
         </div>
       </div>
