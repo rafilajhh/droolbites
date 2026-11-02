@@ -116,13 +116,23 @@ export function DeliveryPicker({
       map.getContainer().setAttribute("aria-label", d.mapLabel);
       mapRef.current = map;
       // Fit the whole range on first view so the 30 km limit is visible.
-      map.fitBounds(range.getBounds(), { padding: [8, 8] });
+      map.fitBounds(range.getBounds(), { padding: [8, 8], animate: false });
       // Restore a pin from an earlier visit, or one placed while the map was loading.
       if (pinRef.current) placeMarker(pinRef.current, true);
     })();
     return () => {
       cancelled = true;
-      mapRef.current?.remove();
+      // Stop any pan/zoom first: Leaflet's zoom animation finishes on a timer and would read the
+      // removed map panes if the customer moves on (e.g. Continue) mid-animation.
+      const map = mapRef.current;
+      if (map) {
+        map.stop();
+        // A zoom (the + button, a double tap) ends on a 250 ms timer that returns early when this
+        // flag is off; Leaflet has no public way to cancel it.
+        (map as unknown as { _animatingZoom: boolean })._animatingZoom = false;
+        map.off();
+        map.remove();
+      }
       mapRef.current = null;
       markerRef.current = null;
       range = null;
@@ -154,7 +164,8 @@ export function DeliveryPicker({
       markerRef.current.setLatLng([at.lat, at.lng]);
     }
     if (refit) {
-      map.fitBounds(L.latLngBounds([store.lat, store.lng], [at.lat, at.lng]), { padding: [48, 48], maxZoom: 16 });
+      // Jump, don't animate: the form may leave the page right after (see the cleanup above).
+      map.fitBounds(L.latLngBounds([store.lat, store.lng], [at.lat, at.lng]), { padding: [48, 48], maxZoom: 16, animate: false });
     }
     fromMap.current = false;
   }
