@@ -21,6 +21,7 @@ export type SettingsValues = {
   storeName: string;
   city: string;
   email: string;
+  notifyEmail: string;
   phone: string;
   address: string;
   pickupEnabled: boolean;
@@ -171,6 +172,21 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
             />
             <p id="settings-address-help" className={helperClasses}>
               {t.addressHelp}
+            </p>
+          </Field>
+          <Field label={t.notifyEmail} htmlFor="settings-notifyEmail" error={err("notifyEmail")}>
+            <TextInput
+              id="settings-notifyEmail"
+              name="notifyEmail"
+              type="email"
+              defaultValue={values.notifyEmail}
+              maxLength={150}
+              placeholder={values.email}
+              aria-describedby={errors.notifyEmail ? "settings-notifyEmail-error" : "settings-notifyEmail-help"}
+              aria-invalid={errors.notifyEmail ? true : undefined}
+            />
+            <p id="settings-notifyEmail-help" className={helperClasses}>
+              {t.notifyEmailHelp}
             </p>
           </Field>
         </Card>

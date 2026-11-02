@@ -7,7 +7,7 @@ import { db } from "./db";
 import { deliveryFeeFor, isLatLng, storeKey, withinRange, type DeliveryRates } from "./delivery";
 import { getCurrentUser } from "./auth";
 import { deliverLater } from "./mail";
-import { sendOrderCancelledEmail, sendOrderPaidEmail } from "./order-emails";
+import { sendOrderCancelledEmail, sendOrderPaidEmail, sendStoreNewOrderEmail } from "./order-emails";
 import { getPaymentProvider, PAYMENT_WINDOW_MS, PaymentGatewayError } from "./payments";
 import { signToken, verifyToken } from "./session";
 
@@ -304,8 +304,11 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
       data: { paymentStatus: "paid" },
     });
     if (orderCount === 0) return null;
-    const toBaking = order.fulfilmentStatus === "pending" || (order.paymentStatus === "expired" && order.fulfilmentStatus === "cancelled");
-    if (toBaking) await tx.order.update({ where: { id: orderId }, data: { fulfilmentStatus: "baking" } });
+    // A paid order waits as a new order until the store accepts (baking) or declines it. A late
+    // payment for an order that had expired on its own reopens it the same way.
+    if (order.paymentStatus === "expired" && order.fulfilmentStatus === "cancelled") {
+      await tx.order.update({ where: { id: orderId }, data: { fulfilmentStatus: "pending" } });
+    }
     return { refund: null };
   });
   if (result?.refund) {
@@ -315,7 +318,10 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
   if (result && !result.refund) {
     deliverLater(async () => {
       const order = await db.order.findUnique({ where: { id: orderId }, include: orderInclude });
-      if (order) await sendOrderPaidEmail(order);
+      if (!order) return;
+      await sendOrderPaidEmail(order);
+      // The store hears about it too, so it can accept or decline.
+      await sendStoreNewOrderEmail(order);
     });
   }
   return changed;

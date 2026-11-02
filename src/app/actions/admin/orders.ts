@@ -10,6 +10,7 @@ import { NOTIFIED_STATUSES, sendOrderCancelledEmail, sendOrderStatusEmail, type 
 import { getOrderByNumber, markOrderPaid, paymentSnapshot, withOrderLock } from "@/lib/orders";
 import { getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { fulfilmentOptions } from "@/components/admin/rules";
+import { CANCEL_REASONS } from "@/lib/order-status";
 
 export type FulfilmentState = { status: "idle" | "saved" | "unchanged" | "invalid" | "busy" };
 
@@ -32,10 +33,7 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
   if (!fulfilmentOptions(order).includes(parsed.data.status)) return { status: "invalid" };
 
   const n = parsed.data.orderNumber;
-  const revalidate = () => {
-    // Admin pages plus the customer's order pages (account, tracking).
-    for (const p of ["/admin", "/admin/orders", `/admin/orders/${n}`, `/orders/${n}`, "/account"]) revalidatePath(p);
-  };
+  const revalidate = () => revalidateOrder(n);
 
   // Cancelling an unpaid order closes its payment too, so it can't be paid afterwards.
   const closePayment = parsed.data.status === "cancelled" && order.paymentStatus === "awaiting";
@@ -84,7 +82,39 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
   return (await withOrderLock(order.id, apply)) ?? { status: "busy" };
 }
 
-/** Tell the customer about the store's change: ready, on its way, complete or cancelled. */
+/** Admin pages plus the customer's order pages (account, tracking). */
+function revalidateOrder(n: string) {
+  for (const p of ["/admin", "/admin/orders", `/admin/orders/${n}`, `/orders/${n}`, "/account"]) revalidatePath(p);
+}
+
+export type DecisionState = { status: "idle" | "accepted" | "declined" | "changed" | "reason" };
+
+/**
+ * The store's answer to a new paid order: accept (it goes to Baking) or decline with a reason (it's
+ * cancelled; the payment is owed back). Only a paid order still waiting as "new" can be decided.
+ */
+export async function decideOrder(_prev: DecisionState, formData: FormData): Promise<DecisionState> {
+  await requireAdmin();
+  const n = String(formData.get("orderNumber") ?? "").slice(0, 12);
+  const decision = formData.get("decision");
+  if (decision !== "accept" && decision !== "decline") return { status: "changed" };
+  const preset = String(formData.get("reason") ?? "");
+  const other = String(formData.get("other") ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
+  const reason = decision === "decline" ? ((CANCEL_REASONS as readonly string[]).includes(preset) ? preset : other) : null;
+  if (decision === "decline" && (!reason || reason.length < 3)) return { status: "reason" };
+
+  const next: FulfilmentStatus = decision === "accept" ? "baking" : "cancelled";
+  const { count } = await db.order.updateMany({
+    where: { orderNumber: n, paymentStatus: "paid", fulfilmentStatus: "pending" },
+    data: { fulfilmentStatus: next, cancelReason: reason },
+  });
+  if (count === 0) return { status: "changed" };
+  revalidateOrder(n);
+  notifyCustomer(n, next);
+  return { status: decision === "accept" ? "accepted" : "declined" };
+}
+
+/** Tell the customer about the store's change: accepted, ready, on its way, complete or cancelled. */
 function notifyCustomer(orderNumber: string, status: FulfilmentStatus) {
   const notified = (NOTIFIED_STATUSES as readonly FulfilmentStatus[]).includes(status);
   if (!notified && status !== "cancelled") return;

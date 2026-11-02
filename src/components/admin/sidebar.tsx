@@ -12,7 +12,7 @@ import { useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
 
-type Props = { storeName: string; city: string; openNow: boolean };
+type Props = { storeName: string; city: string; openNow: boolean; /** Paid orders waiting for the store to accept or decline. */ newOrders: number };
 
 type NavKey = "overview" | "orders" | "products" | "categories" | "customers" | "reports" | "settings";
 
@@ -47,7 +47,7 @@ function Brand({ storeName, sub, size = 48 }: { storeName: string; sub: string; 
 }
 
 /** pen: Admin Sidebar (b1FcOS). */
-function SidebarContent({ storeName, city, openNow, onNavigate }: Props & { onNavigate?: () => void }) {
+function SidebarContent({ storeName, city, openNow, newOrders, onNavigate }: Props & { onNavigate?: () => void }) {
   const t = useMessages(adminMessages).sidebar;
   const pathname = usePathname();
 
@@ -73,7 +73,13 @@ function SidebarContent({ storeName, city, openNow, onNavigate }: Props & { onNa
                     )}
                   >
                     <Icon className="size-5 shrink-0" aria-hidden />
-                    {t[key]}
+                    <span className="flex-1">{t[key]}</span>
+                    {key === "orders" && newOrders > 0 ? (
+                      <span className="flex h-6 min-w-6 items-center justify-center rounded-pill bg-highlight px-2 font-mono text-xs leading-none font-semibold text-ink tabular-nums">
+                        <span aria-hidden>{newOrders}</span>
+                        <span className="sr-only">{t.newOrders(newOrders)}</span>
+                      </span>
+                    ) : null}
                   </Link>
                 </li>
               );
@@ -136,11 +142,20 @@ export function AdminSidebar(props: Props) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          aria-label={t.openMenu}
+          aria-label={props.newOrders > 0 ? `${t.openMenu} · ${t.newOrders(props.newOrders)}` : t.openMenu}
           aria-expanded={open}
-          className="flex size-11 items-center justify-center rounded-sm text-white transition-colors hover:bg-white/10"
+          className="relative flex size-11 items-center justify-center rounded-sm text-white transition-colors hover:bg-white/10"
         >
           <Menu className="size-6" aria-hidden />
+          {/* New orders wait inside the menu: a mustard count on the button says so. */}
+          {props.newOrders > 0 ? (
+            <span
+              aria-hidden
+              className="absolute top-1 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-highlight px-1 font-mono text-[11px] leading-none font-semibold text-ink"
+            >
+              {props.newOrders}
+            </span>
+          ) : null}
         </button>
       </div>
 

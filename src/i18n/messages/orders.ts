@@ -17,6 +17,7 @@ export const ordersMessages = defineMessages({
     steps: {
       placed: "Order placed",
       payment: "Payment",
+      confirmed: "Confirmed",
       baking: "Baking",
       out: "Out for delivery",
       ready: "Ready for pickup",
@@ -28,6 +29,11 @@ export const ordersMessages = defineMessages({
     stepCurrent: "in progress",
     paidTitle: "Payment received",
     paidBody: (method: string, when: string) => `Paid via ${method} on ${when} WIB.`,
+    confirmingTitle: "Waiting for the shop to confirm",
+    confirmingBody: (method: string, when: string) =>
+      `Paid via ${method} on ${when} WIB. The shop checks each new order before baking; we'll email you as soon as it's accepted.`,
+    acceptedTitle: "The shop accepted your order",
+    acceptedBody: (method: string, when: string) => `Paid via ${method} on ${when} WIB. Your order is in the kitchen.`,
     awaitingTitle: "Awaiting payment",
     awaitingBody: (method: string, when: string) => `Pay with ${method} before ${when} WIB to confirm your order.`,
     awaitingChoose: (when: string) => `Choose how to pay before ${when} WIB to confirm your order.`,
@@ -37,6 +43,8 @@ export const ordersMessages = defineMessages({
     cancelledTitle: "Order cancelled",
     cancelledBody: "This order was cancelled. Contact us if you have any questions.",
     cancelledPaidBody: "This order was cancelled and we've received your payment. Contact us and we'll arrange your refund.",
+    declinedBody: (why: string) => `The shop couldn't take this order: ${why}. Your payment will be refunded in full; contact us to arrange it.`,
+    reasons: { sold_out: "some items sold out today", fully_booked: "it's fully booked for today", closed: "the shop is closed right now" },
     orderAgain: "ORDER AGAIN",
     reordering: "ADDING…",
     viewHistory: "VIEW ORDER HISTORY",
@@ -58,6 +66,7 @@ export const ordersMessages = defineMessages({
     steps: {
       placed: "Pesanan dibuat",
       payment: "Pembayaran",
+      confirmed: "Dikonfirmasi",
       baking: "Dipanggang",
       out: "Sedang diantar",
       ready: "Siap diambil",
@@ -69,6 +78,11 @@ export const ordersMessages = defineMessages({
     stepCurrent: "sedang berjalan",
     paidTitle: "Pembayaran diterima",
     paidBody: (method: string, when: string) => `Dibayar lewat ${method} pada ${when} WIB.`,
+    confirmingTitle: "Menunggu konfirmasi toko",
+    confirmingBody: (method: string, when: string) =>
+      `Dibayar lewat ${method} pada ${when} WIB. Toko mengecek setiap pesanan baru sebelum dipanggang; kami kabari lewat email begitu pesananmu diterima.`,
+    acceptedTitle: "Pesananmu diterima toko",
+    acceptedBody: (method: string, when: string) => `Dibayar lewat ${method} pada ${when} WIB. Pesananmu sedang diproses di dapur.`,
     awaitingTitle: "Menunggu pembayaran",
     awaitingBody: (method: string, when: string) =>
       `Bayar dengan ${method} sebelum ${when} WIB untuk mengonfirmasi pesananmu.`,
@@ -79,6 +93,8 @@ export const ordersMessages = defineMessages({
     cancelledTitle: "Pesanan dibatalkan",
     cancelledBody: "Pesanan ini dibatalkan. Hubungi kami kalau ada pertanyaan.",
     cancelledPaidBody: "Pesanan ini dibatalkan dan pembayaranmu sudah kami terima. Hubungi kami untuk pengembalian dana.",
+    declinedBody: (why: string) => `Toko belum bisa menerima pesanan ini: ${why}. Pembayaranmu dikembalikan penuh; hubungi kami untuk mengaturnya.`,
+    reasons: { sold_out: "ada menu yang habis hari ini", fully_booked: "kapasitas hari ini sudah penuh", closed: "toko sedang tutup" },
     orderAgain: "PESAN LAGI",
     reordering: "MENAMBAHKAN…",
     viewHistory: "LIHAT RIWAYAT PESANAN",

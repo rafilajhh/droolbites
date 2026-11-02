@@ -9,6 +9,7 @@ import {
   CircleX,
   Cookie,
   ShoppingBag,
+  Store,
   Timer,
   Truck,
   Wallet,
@@ -26,7 +27,7 @@ import { ordersMessages } from "@/i18n/messages/orders";
 import { getCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatItemCount, formatRupiah } from "@/lib/format";
-import { fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { awaitingConfirmationInfo, cancelReasonText, fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { cancelledByStore, formatAddress, getOrderForViewer, itemCount, orderDeadline, payable, shortMethodName, withOrderToken } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -65,8 +66,10 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   // A payment that lapsed while the order is still open no longer says what the customer will pay.
   const pay = payable(order, payment?.status === "expired" ? null : payment);
   const f = order.fulfilmentStatus;
+  // Paid, but the shop hasn't accepted (or declined) it yet.
+  const confirming = paid && f === "pending";
 
-  // Progress: placed → payment → baking → out for delivery / ready → delivered / picked up.
+  // Progress: placed → payment → confirmed by the shop → baking → out for delivery / ready → delivered / picked up.
   const rank = { pending: 0, baking: 1, out_for_delivery: 2, ready_for_pickup: 2, completed: 3, cancelled: -1 }[f];
   // A cancelled order ends at a Cancelled step; the steps it will never reach are left out.
   const steps: { label: string; state: StepState; icon: LucideIcon }[] = f === "cancelled" ? [
@@ -76,6 +79,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   ] : [
     { label: t.steps.placed, state: "done", icon: Check },
     { label: t.steps.payment, state: paid ? "done" : order.paymentStatus === "awaiting" ? "current" : "todo", icon: Wallet },
+    { label: t.steps.confirmed, state: confirming ? "current" : paid && rank >= 1 ? "done" : "todo", icon: Store },
     { label: t.steps.baking, state: paid && rank > 1 ? "done" : paid && rank === 1 ? "current" : "todo", icon: Cookie },
     {
       label: delivery ? t.steps.out : t.steps.ready,
@@ -85,7 +89,13 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
     { label: delivery ? t.steps.delivered : t.steps.collected, state: paid && rank === 3 ? "done" : "todo", icon: Check },
   ];
 
-  const badge = paid || f === "cancelled" ? fulfilmentStatusInfo[f] : paymentStatusInfo[order.paymentStatus];
+  const badge = confirming
+    ? awaitingConfirmationInfo
+    : paid || f === "cancelled"
+      ? fulfilmentStatusInfo[f]
+      : paymentStatusInfo[order.paymentStatus];
+  // The shop's reason when it declined the order (a preset, or its own words).
+  const declinedWhy = f === "cancelled" ? cancelReasonText(order.cancelReason, t.reasons) : null;
   const meta = [
     t.placed(formatDate(order.createdAt, locale)),
     formatItemCount(itemCount(order), locale),
@@ -101,16 +111,24 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
         icon: CircleX,
         iconClass: "text-error",
         title: t.cancelledTitle,
-        body: paidSomething ? t.cancelledPaidBody : t.cancelledBody,
+        body: declinedWhy && paidSomething ? t.declinedBody(declinedWhy) : paidSomething ? t.cancelledPaidBody : t.cancelledBody,
       }
     : paid && payment?.paidAt
-      ? {
-          tone: "bg-mint",
-          icon: CircleCheck,
-          iconClass: "text-primary",
-          title: t.paidTitle,
-          body: t.paidBody(methodName, formatDateTime(payment.paidAt, locale)),
-        }
+      ? confirming
+        ? {
+            tone: "bg-tint-mustard",
+            icon: Store,
+            iconClass: "text-foreground",
+            title: t.confirmingTitle,
+            body: t.confirmingBody(methodName, formatDateTime(payment.paidAt, locale)),
+          }
+        : {
+            tone: "bg-mint",
+            icon: CircleCheck,
+            iconClass: "text-primary",
+            title: f === "baking" ? t.acceptedTitle : t.paidTitle,
+            body: (f === "baking" ? t.acceptedBody : t.paidBody)(methodName, formatDateTime(payment.paidAt, locale)),
+          }
       : order.paymentStatus === "awaiting"
         ? {
             tone: "bg-tint-mustard",

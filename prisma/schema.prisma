@@ -142,6 +142,8 @@ model Order {
   shippingLng       Float?           @map("shipping_lng")
   /// Road distance from the store in metres; the delivery fee was worked out from it.
   deliveryDistanceM Int?             @map("delivery_distance_m")
+  /// Why the store declined or cancelled it: a reason key (sold_out, fully_booked, closed) or the store's own words.
+  cancelReason      String?          @map("cancel_reason") @db.VarChar(200)
   subtotal          Int
   deliveryFee       Int              @default(0) @map("delivery_fee")
   total             Int
@@ -230,6 +232,8 @@ model StoreSettings {
   /// Where deliveries start from (the shop's pin).
   storeLat        Float    @default(-7.2375) @map("store_lat")
   storeLng        Float    @default(112.6365) @map("store_lng")
+  /// Where "new paid order" emails go; empty means the store email.
+  notifyEmail     String?  @map("notify_email") @db.VarChar(150)
   vaEnabled       Boolean  @default(true) @map("va_enabled")
   qrisEnabled     Boolean  @default(true) @map("qris_enabled")
   ewalletEnabled  Boolean  @default(true) @map("ewallet_enabled")

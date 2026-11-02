@@ -6,7 +6,7 @@ import { emailMessages } from "@/i18n/messages/emails";
 import { formatDateTime, formatDistance, formatRupiah } from "./format";
 import { button, fallbackLink, highlight, infoBox, itemsTable, paragraph, renderEmail, type EmailItem } from "./email-template";
 import { appUrl, sendMail } from "./mail";
-import { paymentMethodInfo } from "./order-status";
+import { cancelReasonText, paymentMethodInfo } from "./order-status";
 import { formatAddress, orderAccessToken, orderDeadline, payable, type FullOrder } from "./orders";
 import { getStoreSettings } from "./settings";
 
@@ -172,8 +172,8 @@ export async function sendOrderPaidEmail(order: FullOrder) {
 }
 
 /** The store moved the order along. Statuses without a message of their own send nothing. */
-export type NotifiedStatus = "ready_for_pickup" | "out_for_delivery" | "completed";
-export const NOTIFIED_STATUSES: readonly NotifiedStatus[] = ["ready_for_pickup", "out_for_delivery", "completed"];
+export type NotifiedStatus = "baking" | "ready_for_pickup" | "out_for_delivery" | "completed";
+export const NOTIFIED_STATUSES: readonly NotifiedStatus[] = ["baking", "ready_for_pickup", "out_for_delivery", "completed"];
 
 export async function sendOrderStatusEmail(order: FullOrder, status: NotifiedStatus) {
   const { lang, t, settings, link, items, where, footer, itemsText, signature } = await context(order);
@@ -223,7 +223,9 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
   const c = t.cancelled;
   const n = order.orderNumber;
   const paid = why === "store" && order.payments.some((x) => x.status === "paid");
-  const lines = why === "expired" ? [c.expiredBody(n)] : [c.storeBody(n), ...(paid ? [c.storePaid] : [])];
+  const reason = why === "store" ? cancelReasonText(order.cancelReason, c.reasons) : null;
+  const lines =
+    why === "expired" ? [c.expiredBody(n)] : [c.storeBody(n), ...(reason ? [c.reason(reason)] : []), ...(paid ? [c.storePaid] : [])];
   const menu = appUrl("/menu");
 
   const text = [
@@ -258,4 +260,68 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
   });
 
   await sendMail({ to: order.email, subject: why === "expired" ? c.expiredSubject(n) : c.storeSubject(n), text, html });
+}
+
+/**
+ * To the store when an order is paid: who, what, where, and a button to accept or decline it.
+ * Goes to the notification email in store settings (the store email when that's empty), in
+ * Indonesian, the shop's own language.
+ */
+export async function sendStoreNewOrderEmail(order: FullOrder) {
+  const lang: Locale = "id";
+  const t = pickMessages(emailMessages, lang);
+  const s = t.storeNew;
+  const settings = await getStoreSettings();
+  const to = settings.notifyEmail?.trim() || settings.email;
+  const link = appUrl(`/admin/orders/${order.orderNumber}`);
+  const payment = order.payments.find((x) => x.status === "paid");
+  const via = payment ? ` (${paymentMethodInfo[payment.method].name})` : "";
+  const total = formatRupiah(payable(order, payment).amount);
+  const delivery = order.fulfilmentMethod === "delivery";
+  const items: EmailItem[] = order.items.map((item) => ({
+    qty: item.qty,
+    name: item.variant.product.name,
+    detail: variantLabel(item.variant.name, item.variant.product.category.slug, lang),
+    price: formatRupiah(item.unitPrice * item.qty),
+  }));
+  const rows: Row[] = [
+    [s.customer, order.customerName],
+    [s.phone, order.phone],
+    [s.method, delivery ? s.delivery(order.deliveryDistanceM !== null ? formatDistance(order.deliveryDistanceM, lang) : null) : s.pickup],
+    ...(delivery
+      ? ([[s.address, formatAddress({ address: order.shippingAddress, city: order.shippingCity, postal: order.shippingPostal })]] as Row[])
+      : []),
+    ...(delivery && order.shippingLat !== null && order.shippingLng !== null
+      ? ([[s.pin, `https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`]] as Row[])
+      : []),
+  ];
+
+  const text = [
+    s.intro(order.customerName, via),
+    "",
+    ...items.map((i) => `- ${i.qty} × ${i.name} (${i.detail})  ${i.price}`),
+    "",
+    ...rowsText([...rows, [s.totalPaid, total]]),
+    "",
+    `${s.textLink}: ${link}`,
+  ].join("\n");
+
+  const html = renderEmail({
+    lang,
+    baseUrl: appUrl("/"),
+    preheader: s.preheader(order.customerName, total),
+    eyebrow: s.eyebrow(order.orderNumber),
+    title: s.title,
+    body: [
+      paragraph(s.intro(order.customerName, via)),
+      button(s.button, link),
+      itemsTable(items, [[s.totalPaid, total]]),
+      ...rows.map(([label, value]) => infoBox(label, value)),
+      fallbackLink(t.common.fallback, link),
+    ].join("\n"),
+    footer: { storeName: settings.storeName, address: settings.address, phone: settings.phone, email: settings.email },
+    reason: s.reason,
+  });
+
+  await sendMail({ to, subject: s.subject(order.orderNumber, total), text, html });
 }

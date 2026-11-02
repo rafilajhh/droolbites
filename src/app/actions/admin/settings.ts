@@ -10,6 +10,7 @@ export type SettingsErrorKey =
   | "storeName"
   | "city"
   | "email"
+  | "notifyEmail"
   | "phone"
   | "address"
   | "time"
@@ -26,6 +27,7 @@ export type SettingsField =
   | "storeName"
   | "city"
   | "email"
+  | "notifyEmail"
   | "phone"
   | "address"
   | "opensAt"
@@ -54,6 +56,7 @@ const schema = z
     storeName: z.string().trim().min(1).max(100),
     city: z.string().trim().min(1).max(100),
     email: z.email().max(150),
+    notifyEmail: z.union([z.literal(""), z.email().max(150)]),
     phone: z.string().trim().min(6).max(20),
     address: z.string().trim().min(1).max(255),
     opensAt: time,
@@ -84,6 +87,7 @@ const fieldError: Record<string, [SettingsField, SettingsErrorKey]> = {
   storeName: ["storeName", "storeName"],
   city: ["city", "city"],
   email: ["email", "email"],
+  notifyEmail: ["notifyEmail", "notifyEmail"],
   phone: ["phone", "phone"],
   address: ["address", "address"],
   opensAt: ["opensAt", "time"],
@@ -115,6 +119,7 @@ export async function saveStoreSettings(_prev: SettingsState, formData: FormData
     storeName: formData.get("storeName") ?? "",
     city: formData.get("city") ?? "",
     email: String(formData.get("email") ?? "").trim(),
+    notifyEmail: String(formData.get("notifyEmail") ?? "").trim().toLowerCase(),
     phone: formData.get("phone") ?? "",
     address: formData.get("address") ?? "",
     opensAt: String(formData.get("opensAt") ?? "").trim(),
@@ -147,7 +152,8 @@ export async function saveStoreSettings(_prev: SettingsState, formData: FormData
     return { status: "error", errors };
   }
 
-  const { openDays, ...rest } = parsed.data;
+  const { openDays, notifyEmail, ...fields } = parsed.data;
+  const rest = { ...fields, notifyEmail: notifyEmail || null };
   try {
     await db.storeSettings.upsert({
       where: { id: 1 },

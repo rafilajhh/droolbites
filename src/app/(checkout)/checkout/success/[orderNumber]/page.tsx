@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CircleCheckBig, CircleX, Cookie, House, ShoppingBag, Store, Truck } from "lucide-react";
+import { CircleCheckBig, CircleX, ClipboardCheck, Cookie, House, ShoppingBag, Store, Truck } from "lucide-react";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import { FulfilmentCard, InfoGrid, StoreContact } from "@/components/checkout/order-info";
 import { OrderSummary } from "@/components/checkout/order-summary";
@@ -35,16 +35,19 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
   const payment = order.payments.find((pay) => pay.status === "paid") ?? order.payments[0];
   const pay = payable(order, payment);
 
-  // What happens next: baking → out for delivery / ready → delivered / picked up.
+  // What happens next: the shop confirms → baking → out for delivery / ready → delivered / picked up.
   const stage =
     order.fulfilmentStatus === "completed"
-      ? 3
+      ? 4
       : order.fulfilmentStatus === "out_for_delivery" || order.fulfilmentStatus === "ready_for_pickup"
-        ? 2
-        : order.fulfilmentStatus === "cancelled"
-          ? -1
-          : 1;
+        ? 3
+        : order.fulfilmentStatus === "baking"
+          ? 2
+          : order.fulfilmentStatus === "cancelled"
+            ? -1
+            : 1;
   const next = [
+    { icon: ClipboardCheck, ...s.steps.confirm },
     { icon: Cookie, ...s.steps.baking },
     delivery ? { icon: Truck, ...s.steps.out } : { icon: ShoppingBag, ...s.steps.ready },
     delivery ? { icon: House, ...s.steps.delivered } : { icon: Store, ...s.steps.collected },
@@ -53,13 +56,15 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
   const cancelled = stage === -1;
   const hero = cancelled
     ? { title: s.titleCancelled, sub: s.subCancelled }
-    : stage === 3
+    : stage === 4
       ? { title: s.titleDone, sub: s.subDone }
-      : stage === 2
+      : stage === 3
         ? delivery
           ? { title: s.titleOut, sub: s.subOut }
           : { title: s.titleReady, sub: s.subReady }
-        : { title: s.title, sub: delivery ? s.subDelivery : s.subPickup };
+        : stage === 2
+          ? { title: s.title, sub: delivery ? s.subDelivery : s.subPickup }
+          : { title: s.titleConfirming, sub: s.subConfirming };
   const HeroIcon = cancelled ? CircleX : CircleCheckBig;
 
   return (

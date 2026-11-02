@@ -5,7 +5,7 @@ import { accountMessages } from "@/i18n/messages/account";
 import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDate, formatItemCount, formatRupiah } from "@/lib/format";
-import { fulfilmentStatusInfo, paymentStatusInfo, statusLabel } from "@/lib/order-status";
+import { awaitingConfirmationInfo, fulfilmentStatusInfo, paymentStatusInfo, statusLabel } from "@/lib/order-status";
 import { AccountCard } from "./account-card";
 
 type OrderRow = Awaited<ReturnType<typeof getOrders>>[number];
@@ -29,9 +29,10 @@ function getOrders(userId: bigint) {
   });
 }
 
-/** Unpaid orders show the payment state; otherwise the kitchen/fulfilment state. */
+/** Unpaid orders show the payment state; a paid one waits for the shop to accept it; then the kitchen state. */
 function orderStatus(order: OrderRow) {
   if (order.fulfilmentStatus !== "cancelled" && order.paymentStatus !== "paid") return paymentStatusInfo[order.paymentStatus];
+  if (order.fulfilmentStatus === "pending") return awaitingConfirmationInfo;
   return fulfilmentStatusInfo[order.fulfilmentStatus];
 }
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CircleAlert, MapPin, Printer, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
+import { OrderDecision } from "@/components/admin/order-decision";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
 import { AdminMain, Card, smallButtonClasses } from "@/components/admin/ui";
@@ -11,7 +12,7 @@ import { variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
-import { fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { cancelReasonText, fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -230,13 +231,22 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         <div className="flex w-full flex-col gap-5 max-xl:contents xl:w-[360px] xl:shrink-0">
           <Card className="flex w-full flex-col gap-4 p-6 max-xl:order-first">
             <h2 className="font-display text-xl leading-[30px] font-bold">{o.status}</h2>
-            <StatusForm
-              orderNumber={order.orderNumber}
-              current={order.fulfilmentStatus}
-              options={options}
-              note={note}
-              paidAmount={order.paymentStatus === "paid" ? formatRupiah(pay.amount) : undefined}
-            />
+            {order.paymentStatus === "paid" && order.fulfilmentStatus === "pending" ? (
+              <OrderDecision orderNumber={order.orderNumber} note={note.text} paidAmount={formatRupiah(pay.amount)} />
+            ) : (
+              <StatusForm
+                orderNumber={order.orderNumber}
+                current={order.fulfilmentStatus}
+                options={options}
+                note={note}
+                paidAmount={order.paymentStatus === "paid" ? formatRupiah(pay.amount) : undefined}
+              />
+            )}
+            {order.fulfilmentStatus === "cancelled" && order.cancelReason ? (
+              <p className="text-sm leading-[21px] text-muted-foreground">
+                {o.cancelReason(cancelReasonText(order.cancelReason, o.decision.reasons) ?? order.cancelReason)}
+              </p>
+            ) : null}
           </Card>
           <Card className="flex w-full flex-col gap-4 p-6">
             <div className="flex w-full items-center justify-between gap-3">

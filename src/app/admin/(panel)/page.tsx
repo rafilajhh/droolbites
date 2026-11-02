@@ -105,14 +105,14 @@ export default async function AdminOverviewPage() {
               {single ? o.alertOne[first.fulfilmentStatus as (typeof ACTIVE_FULFILMENT)[number]] : o.alertMany(needsAction.length)}
             </p>
             <p className="text-sm leading-[21px] text-muted-foreground">
-              {(single ? o.paidAt : o.paidAtMany)(first.orderNumber, formatTime(paidAt), paidDate)}
+              {(single ? (first.fulfilmentStatus === "pending" ? o.paidAtNew : o.paidAt) : o.paidAtMany)(first.orderNumber, formatTime(paidAt), paidDate)}
             </p>
           </div>
           <Link
             href={single ? `/admin/orders/${first.orderNumber}` : "/admin/orders?needs=action"}
             className="inline-flex items-center justify-center rounded-sm bg-primary px-5 py-3 font-display text-[13px] leading-4 font-semibold tracking-[0.5px] text-primary-foreground transition-colors hover:bg-primary-hover"
           >
-            {single ? o.viewOrder : o.viewOrders}
+            {single ? (first.fulfilmentStatus === "pending" ? o.confirmOrder : o.viewOrder) : o.viewOrders}
           </Link>
         </div>
       ) : (

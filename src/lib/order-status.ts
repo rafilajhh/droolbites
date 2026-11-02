@@ -13,7 +13,7 @@ export const paymentStatusInfo: Record<PaymentStatus, Entry> = {
 };
 
 export const fulfilmentStatusInfo: Record<FulfilmentStatus, Entry> = {
-  pending: { en: "New order", id: "Pesanan baru", tone: "muted" },
+  pending: { en: "New order", id: "Pesanan baru", tone: "mustard" },
   baking: { en: "Baking", id: "Dipanggang", tone: "lavender" },
   ready_for_pickup: { en: "Ready for pickup", id: "Siap diambil", tone: "teal" },
   out_for_delivery: { en: "Out for delivery", id: "Sedang diantar", tone: "cobalt" },
@@ -95,6 +95,17 @@ export const needsActionWhere = {
   paymentStatus: "paid",
   fulfilmentStatus: { in: [...ACTIVE_FULFILMENT] },
 } satisfies Prisma.OrderWhereInput;
+
+/** What the customer sees while a paid order waits for the store to accept it. */
+export const awaitingConfirmationInfo: Entry = { en: "Awaiting confirmation", id: "Menunggu konfirmasi", tone: "mustard" };
+
+/** Preset reasons the store gives when it declines an order (anything else is stored as its own words). */
+export const CANCEL_REASONS = ["sold_out", "fully_booked", "closed"] as const;
+export type CancelReasonKey = (typeof CANCEL_REASONS)[number];
+export function cancelReasonText(reason: string | null, labels: Record<CancelReasonKey, string>) {
+  if (!reason) return null;
+  return (CANCEL_REASONS as readonly string[]).includes(reason) ? labels[reason as CancelReasonKey] : reason;
+}
 
 const unpaidFulfilmentInfo: Record<Exclude<PaymentStatus, "paid">, Entry> = {
   awaiting: { en: "Unpaid", id: "Belum dibayar", tone: "muted" },

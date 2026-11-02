@@ -23,6 +23,7 @@ export default async function AdminSettingsPage() {
           storeName: s.storeName,
           city: s.city,
           email: s.email,
+          notifyEmail: s.notifyEmail ?? "",
           phone: s.phone,
           address: s.address,
           pickupEnabled: s.pickupEnabled,

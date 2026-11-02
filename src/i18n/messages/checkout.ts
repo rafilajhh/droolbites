@@ -214,6 +214,9 @@ export const checkoutMessages = defineMessages({
     },
     success: {
       title: "Payment received. We're baking!",
+      // Paid, waiting for the shop to accept the order.
+      titleConfirming: "Payment received!",
+      subConfirming: "The shop checks every new order before baking. We'll email you as soon as yours is accepted.",
       // Later visits: the page follows the order's real state.
       // The order number has its own row below, so these lines don't repeat it.
       titleOut: "Your order is on its way!",
@@ -233,6 +236,7 @@ export const checkoutMessages = defineMessages({
       next: "What happens next",
       stepState: { done: "Done", current: "Current step", upcoming: "Upcoming" },
       steps: {
+        confirm: { title: "Shop confirms", sub: "Usually within a few minutes during opening hours." },
         baking: { title: "Baking now", sub: "Fresh from the oven today." },
         out: { title: "Out for delivery", sub: "Your order is on its way." },
         delivered: { title: "Delivered", sub: "Enjoy while they're still soft!" },
@@ -654,6 +658,8 @@ export const checkoutMessages = defineMessages({
     },
     success: {
       title: "Pembayaran diterima. Kami mulai memanggang!",
+      titleConfirming: "Pembayaran diterima!",
+      subConfirming: "Toko mengecek setiap pesanan baru sebelum dipanggang. Kami kabari lewat email begitu pesananmu diterima.",
       titleOut: "Pesananmu sedang diantar!",
       subOut: "Pesananmu sedang dalam perjalanan. Sebentar lagi sampai.",
       titleReady: "Pesananmu siap diambil!",
@@ -671,6 +677,7 @@ export const checkoutMessages = defineMessages({
       next: "Langkah selanjutnya",
       stepState: { done: "Selesai", current: "Tahap sekarang", upcoming: "Berikutnya" },
       steps: {
+        confirm: { title: "Dikonfirmasi toko", sub: "Biasanya beberapa menit selama jam buka." },
         baking: { title: "Sedang dipanggang", sub: "Fresh dari oven hari ini." },
         out: { title: "Sedang diantar", sub: "Pesananmu sedang dalam perjalanan." },
         delivered: { title: "Sampai", sub: "Nikmati selagi masih lembut!" },
