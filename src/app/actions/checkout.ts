@@ -27,14 +27,15 @@ import {
   paymentSnapshot,
   readCheckoutDetails,
   rememberOrder,
-  sendOrderPlacedEmail,
   withOrderLock,
   withOrderToken,
   writeCheckoutDetails,
   type CheckoutField,
 } from "@/lib/orders";
+import { sendOrderPlacedEmail } from "@/lib/order-emails";
 import { canSimulatePayment, getPaymentOptions, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { getStoreSettings, type StoreSettings } from "@/lib/settings";
+import { getLocale } from "@/i18n/server";
 
 /** Keys of checkoutMessages.errors. */
 type ErrorKey =
@@ -198,6 +199,8 @@ async function createOrder(
   method: PaymentMethod,
 ): Promise<Placed> {
   const delivery = details.fulfilment === "delivery";
+  // Its emails go out in the language the shopper is browsing in.
+  const locale = await getLocale();
   let orderNumber: string | null = null;
 
   for (let tries = 0; tries < 3 && !orderNumber; tries++) {
@@ -233,6 +236,7 @@ async function createOrder(
             subtotal,
             deliveryFee,
             total: subtotal + deliveryFee,
+            locale,
             items: { create: items },
           },
         });

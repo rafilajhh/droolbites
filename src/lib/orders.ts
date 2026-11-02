@@ -1,19 +1,14 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { after } from "next/server";
 import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import type { FulfilmentStatus, PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 import { db } from "./db";
 import { getCurrentUser } from "./auth";
-import { formatDateTime, formatRupiah } from "./format";
-import { appUrl, sendMail } from "./mail";
-import { button, fallbackLink, highlight, infoBox, itemsTable, paragraph, renderEmail } from "./email-template";
-import { paymentMethodInfo } from "./order-status";
+import { deliverLater } from "./mail";
+import { sendOrderCancelledEmail, sendOrderPaidEmail } from "./order-emails";
 import { getPaymentProvider, PAYMENT_WINDOW_MS, PaymentGatewayError } from "./payments";
 import { signToken, verifyToken } from "./session";
-import { getStoreSettings } from "./settings";
-import { variantLabel } from "@/content/products";
 
 export const ORDER_NUMBER_RE = /^DB-\d{4,9}$/;
 
@@ -212,13 +207,22 @@ export async function markPaymentExpired(paymentId: bigint) {
   return count > 0;
 }
 
-/** Deadline passed without payment: the order expires and a new one is cancelled. */
+/**
+ * Deadline passed without payment: the order expires and a new one is cancelled. The customer
+ * gets one "expired" email, from whichever caller made the change.
+ */
 export async function expireOrder(orderId: bigint) {
-  const [, expired] = await db.$transaction([
+  const [, expired, cancelled] = await db.$transaction([
     db.payment.updateMany({ where: { orderId, status: "awaiting" }, data: { status: "expired" } }),
     db.order.updateMany({ where: { id: orderId, paymentStatus: "awaiting" }, data: { paymentStatus: "expired" } }),
     db.order.updateMany({ where: { id: orderId, paymentStatus: "expired", fulfilmentStatus: "pending" }, data: { fulfilmentStatus: "cancelled" } }),
   ]);
+  if (expired.count > 0 && cancelled.count > 0) {
+    deliverLater(async () => {
+      const order = await db.order.findUnique({ where: { id: orderId }, include: orderInclude });
+      if (order) await sendOrderCancelledEmail(order, "expired");
+    });
+  }
   return expired.count > 0;
 }
 
@@ -287,7 +291,7 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
   }
   const changed = result !== null;
   if (result && !result.refund) {
-    after(async () => {
+    deliverLater(async () => {
       const order = await db.order.findUnique({ where: { id: orderId }, include: orderInclude });
       if (order) await sendOrderPaidEmail(order);
     });
@@ -412,179 +416,6 @@ export async function nextOrderNumber(tx: Prisma.TransactionClient) {
 
 export function itemCount(order: Pick<FullOrder, "items">) {
   return order.items.reduce((sum, item) => sum + item.qty, 0);
-}
-
-/* ------------------------------------------------------------------ */
-/* Emails (English): plain text plus the HTML version                  */
-/* ------------------------------------------------------------------ */
-
-function emailLineItems(order: FullOrder) {
-  return order.items.map((item) => ({
-    qty: item.qty,
-    name: item.variant.product.name,
-    detail: variantLabel(item.variant.name, item.variant.product.category.slug, "en"),
-    price: formatRupiah(item.unitPrice * item.qty),
-  }));
-}
-
-function emailItems(order: FullOrder) {
-  return emailLineItems(order)
-    .map((item) => `- ${item.qty} × ${item.name} (${item.detail})  ${item.price}`)
-    .join("\n");
-}
-
-async function emailFooter(order: FullOrder) {
-  const settings = await getStoreSettings();
-  const link = appUrl(`/orders/${order.orderNumber}?t=${await orderAccessToken(order.orderNumber)}`);
-  return {
-    settings,
-    link,
-    signature: `${settings.storeName}\n${settings.address}\nWhatsApp ${settings.phone} · ${settings.email}`,
-    footer: { storeName: settings.storeName, address: settings.address, phone: settings.phone, email: settings.email },
-  };
-}
-
-function fulfilment(order: FullOrder, storeAddress: string): [label: string, value: string] {
-  return order.fulfilmentMethod === "delivery"
-    ? ["Delivery to", formatAddress({ address: order.shippingAddress, city: order.shippingCity, postal: order.shippingPostal })]
-    : ["Store pickup at", storeAddress];
-}
-
-const ORDER_EMAIL_REASON = "You're getting this email because you placed an order at droolbites.biz.id.";
-
-export async function sendOrderPlacedEmail(order: FullOrder) {
-  const payment = order.payments[0];
-  const pay = payable(order, payment);
-  const { settings, link, signature, footer } = await emailFooter(order);
-  const method = payment ? paymentMethodInfo[payment.method].name : "";
-  const payLine = payment
-    ? payment.expiresAt
-      ? `Pay with ${method} before ${formatDateTime(payment.expiresAt, "en")} WIB.`
-      : `Pay with ${method}.`
-    : `Choose how to pay before ${formatDateTime(orderDeadline(order), "en")} WIB.`;
-  const codeLabel = payment?.vaNumber
-    ? paymentMethodInfo[payment.method].kind === "retail"
-      ? "Payment code"
-      : "Virtual account number"
-    : null;
-  const totals: [string, string][] = [
-    ["Subtotal", formatRupiah(order.subtotal)],
-    [order.fulfilmentMethod === "delivery" ? "Delivery" : "Pickup", order.deliveryFee ? formatRupiah(order.deliveryFee) : "Free"],
-    ["Total", formatRupiah(order.total)],
-  ];
-  const [where, whereValue] = fulfilment(order, settings.address);
-  const feeRow: [string, string][] = pay.serviceFee > 0 ? [["Service fee", formatRupiah(pay.serviceFee)]] : [];
-
-  const lines = [
-    `Hi ${order.customerName},`,
-    "",
-    `Thanks for your order! Order ${order.orderNumber} is waiting for payment.`,
-    "",
-    emailItems(order),
-    "",
-    ...totals.map(([k, v]) => `${k}: ${v}`),
-    "",
-    payLine,
-    ...(payment
-      ? [
-          ...(payment.vaNumber ? [`${codeLabel}: ${payment.vaNumber}`] : []),
-          ...feeRow.map(([k, v]) => `${k}: ${v}`),
-          `Amount to pay: ${formatRupiah(pay.amount)}`,
-        ]
-      : []),
-    "",
-    `${where}: ${whereValue}`,
-    "",
-    `Payment instructions and order status: ${link}`,
-    "",
-    signature,
-  ];
-
-  // The one thing to copy goes in the mint box: the VA number or payment code, else the amount.
-  const payBox = !payment
-    ? ""
-    : payment.vaNumber && codeLabel
-      ? highlight(codeLabel, payment.vaNumber, [...feeRow, ["Amount to pay", formatRupiah(pay.amount)]])
-      : highlight("Amount to pay", formatRupiah(pay.amount), feeRow);
-
-  const html = renderEmail({
-    lang: "en",
-    baseUrl: appUrl("/"),
-    preheader: `${order.orderNumber} is waiting for payment: ${formatRupiah(payment ? pay.amount : order.total)}.`,
-    eyebrow: `ORDER ${order.orderNumber}`,
-    title: "Thanks for your order!",
-    body: [
-      paragraph(`Hi ${order.customerName}, your order is in. It's waiting for payment, and we start baking as soon as it's paid.`),
-      payBox,
-      paragraph(payLine, { muted: true }),
-      button(payment ? "SEE HOW TO PAY" : "CHOOSE HOW TO PAY", link),
-      itemsTable(emailLineItems(order), totals),
-      infoBox(where, whereValue),
-      fallbackLink("Button not working? Open this link:", link),
-    ].join("\n"),
-    footer,
-    reason: ORDER_EMAIL_REASON,
-  });
-
-  await sendMail({
-    to: order.email,
-    subject: `Your Droolbites order ${order.orderNumber}`,
-    text: lines.join("\n"),
-    html,
-  });
-}
-
-export async function sendOrderPaidEmail(order: FullOrder) {
-  const payment = order.payments.find((p) => p.status === "paid");
-  const { settings, link, signature, footer } = await emailFooter(order);
-  const via = payment ? ` (${paymentMethodInfo[payment.method].name})` : "";
-  const next =
-    order.fulfilmentMethod === "delivery"
-      ? "We'll email you again when it's out for delivery."
-      : "We'll email you again when it's ready for pickup.";
-  const totalPaid = formatRupiah(payable(order, payment).amount);
-  const [where, whereValue] = fulfilment(order, settings.address);
-
-  const lines = [
-    `Hi ${order.customerName},`,
-    "",
-    `We've received your payment for order ${order.orderNumber}${via}. We're baking!`,
-    next,
-    "",
-    emailItems(order),
-    "",
-    `Total paid: ${totalPaid}`,
-    `${where}: ${whereValue}`,
-    "",
-    `Track your order: ${link}`,
-    "",
-    signature,
-  ];
-
-  const html = renderEmail({
-    lang: "en",
-    baseUrl: appUrl("/"),
-    preheader: `Payment received for ${order.orderNumber}. We're baking!`,
-    eyebrow: `ORDER ${order.orderNumber} · PAID`,
-    title: "Payment received. We're baking!",
-    body: [
-      paragraph(`Hi ${order.customerName}, we've received your payment for order ${order.orderNumber}${via}.`),
-      paragraph(next, { muted: true }),
-      button("TRACK YOUR ORDER", link),
-      itemsTable(emailLineItems(order), [["Total paid", totalPaid]]),
-      infoBox(where, whereValue),
-      fallbackLink("Button not working? Open this link:", link),
-    ].join("\n"),
-    footer,
-    reason: ORDER_EMAIL_REASON,
-  });
-
-  await sendMail({
-    to: order.email,
-    subject: `Payment received for ${order.orderNumber}`,
-    text: lines.join("\n"),
-    html,
-  });
 }
 
 /** Keep the email token on links between the pay, success and order pages. */

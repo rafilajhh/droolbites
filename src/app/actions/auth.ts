@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { safeNext } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { appUrl, emailFooter, sendMail } from "@/lib/mail";
+import { sendAccountWelcomeEmail } from "@/lib/emails";
+import { appUrl, deliverLater, emailFooter, sendMail } from "@/lib/mail";
 import { button, fallbackLink, paragraph, renderEmail } from "@/lib/email-template";
 import { allowRequest, clientIp, isSignInLocked, perClientMax, recordSignInFailure, resetSignInFailures } from "@/lib/rate-limit";
 import { createSession, deleteSession } from "@/lib/session";
@@ -117,6 +118,8 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
     return { errors: { email: "emailTaken" }, values, attempt };
   }
 
+  const lang = await getLocale();
+  deliverLater(() => sendAccountWelcomeEmail({ fullName, email }, lang));
   await createSession({ userId: userId.toString(), role: "customer" });
   redirect(safeNext(text(formData, "next")));
 }

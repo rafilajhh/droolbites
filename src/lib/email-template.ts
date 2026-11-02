@@ -143,6 +143,7 @@ export function renderEmail({
   body,
   footer,
   reason,
+  unsubscribe,
 }: {
   lang: EmailLang;
   /** Absolute site URL ending in "/", for the logo and footer links. */
@@ -156,6 +157,8 @@ export function renderEmail({
   footer: EmailFooter;
   /** Small print under the footer: why this email arrived. */
   reason: string;
+  /** Newsletter mail only: the one-click way off the list, under the small print. */
+  unsubscribe?: { label: string; href: string };
 }) {
   const t = chrome[lang];
   const url = (path: string) => new URL(path, baseUrl).toString();
@@ -209,7 +212,7 @@ export function renderEmail({
         <p style="margin:0 0 14px;font-family:${font.body};font-size:14px;line-height:21px;color:${c.mint};">${esc(footer.address)}<br>${esc(t.whatsapp)} <a href="${esc(wa)}" style="color:${c.mint};">${esc(footer.phone)}</a> · <a href="mailto:${esc(footer.email)}" style="color:${c.mint};">${esc(footer.email)}</a></p>
         <p style="margin:0;font-family:${font.mono};font-size:12px;line-height:18px;font-weight:600;letter-spacing:0.5px;color:${c.white};">${footLink(t.menu, url("/menu"))} &nbsp;·&nbsp; ${footLink(t.story, url("/our-story"))} &nbsp;·&nbsp; ${footLink(t.location, url("/location"))}</p>
       </td></tr>
-      <tr><td align="center" style="padding:18px 16px 0;font-family:${font.body};font-size:12px;line-height:18px;color:${c.muted};">${esc(reason)}</td></tr>
+      <tr><td align="center" style="padding:18px 16px 0;font-family:${font.body};font-size:12px;line-height:18px;color:${c.muted};">${esc(reason)}${unsubscribe ? `<br><a href="${esc(unsubscribe.href)}" style="color:${c.muted};text-decoration:underline;">${esc(unsubscribe.label)}</a>` : ""}</td></tr>
     </table>
   </td></tr>
 </table>

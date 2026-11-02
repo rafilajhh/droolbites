@@ -5,7 +5,9 @@ import { z } from "zod";
 import { FulfilmentStatus } from "@/generated/prisma/enums";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { markOrderPaid, paymentSnapshot, withOrderLock } from "@/lib/orders";
+import { deliverLater } from "@/lib/mail";
+import { NOTIFIED_STATUSES, sendOrderCancelledEmail, sendOrderStatusEmail, type NotifiedStatus } from "@/lib/order-emails";
+import { getOrderByNumber, markOrderPaid, paymentSnapshot, withOrderLock } from "@/lib/orders";
 import { getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { fulfilmentOptions } from "@/components/admin/rules";
 
@@ -72,6 +74,7 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
     if (count === 0) return { status: "invalid" };
 
     revalidate();
+    notifyCustomer(n, parsed.data.status);
     return { status: "saved" };
   };
 
@@ -79,6 +82,18 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
   // can't cancel one payment while the customer is creating the next one.
   if (!closePayment) return apply();
   return (await withOrderLock(order.id, apply)) ?? { status: "busy" };
+}
+
+/** Tell the customer about the store's change: ready, on its way, complete or cancelled. */
+function notifyCustomer(orderNumber: string, status: FulfilmentStatus) {
+  const notified = (NOTIFIED_STATUSES as readonly FulfilmentStatus[]).includes(status);
+  if (!notified && status !== "cancelled") return;
+  deliverLater(async () => {
+    const order = await getOrderByNumber(orderNumber);
+    if (!order) return;
+    if (status === "cancelled") await sendOrderCancelledEmail(order, "store");
+    else await sendOrderStatusEmail(order, status as NotifiedStatus);
+  });
 }
 
 export type OrderSuggestion = {

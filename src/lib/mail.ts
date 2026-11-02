@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import nodemailer from "nodemailer";
 import type { EmailFooter } from "./email-template";
 import { getStoreSettings } from "./settings";
@@ -29,7 +30,19 @@ let warnedMailOff = false;
  */
 const RESERVED_TEST_DOMAIN = /@(?:[^@]+\.)?(?:example\.(?:com|net|org)|[^@]+\.(?:test|example|invalid|localhost))$/i;
 
-export async function sendMail({ to, subject, text, html }: { to: string; subject: string; text: string; html?: string }) {
+export async function sendMail({
+  to,
+  subject,
+  text,
+  html,
+  headers,
+}: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  headers?: Record<string, string>;
+}) {
   if (!transport) {
     if (!warnedMailOff) {
       warnedMailOff = true;
@@ -45,6 +58,7 @@ export async function sendMail({ to, subject, text, html }: { to: string; subjec
       subject,
       text,
       html,
+      headers,
     });
     return true;
   } catch (error) {
@@ -61,4 +75,17 @@ export function appUrl(path = "/") {
 export async function emailFooter(): Promise<EmailFooter> {
   const { storeName, address, phone, email } = await getStoreSettings();
   return { storeName, address, phone, email };
+}
+
+/**
+ * Send after the response when there is one (a page, action or route), else right away in the
+ * background (the order sweeper). Emails never hold up or break the work that triggered them.
+ */
+export function deliverLater(task: () => Promise<unknown>) {
+  const run = () => task().catch((error) => console.error("[mail] background send failed", error));
+  try {
+    after(run);
+  } catch {
+    void run();
+  }
 }
