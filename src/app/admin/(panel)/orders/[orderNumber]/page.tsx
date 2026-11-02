@@ -59,9 +59,12 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const pay = payable(order, payment);
   // Gateway details only for real gateway payments (the demo provider has nothing to look up).
   const gateway = Boolean(payment?.provider && payment.provider !== "mock");
-  // Money that arrived after the order was cancelled: the order stays cancelled and unpaid (see markOrderPaid).
-  const refund =
-    order.fulfilmentStatus === "cancelled" && order.paymentStatus !== "paid" ? order.payments.find((p) => p.status === "paid") : undefined;
+  // Money taken for a cancelled order is owed back: declined or cancelled after payment, or paid after
+  // the cancel (that order stays unpaid, see markOrderPaid). Every paid attempt counts.
+  const paidAttempts = order.fulfilmentStatus === "cancelled" ? order.payments.filter((p) => p.status === "paid") : [];
+  const refund = paidAttempts[0];
+  const refundAmount = paidAttempts.reduce((sum, p) => sum + payable(order, p).amount, 0);
+  const paidLate = order.paymentStatus !== "paid";
   const fs = fulfilmentBadgeInfo(order);
   const ps = paymentStatusInfo[refund ? "paid" : order.paymentStatus];
   const isDelivery = order.fulfilmentMethod === "delivery";
@@ -134,11 +137,11 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         <div role="alert" className="flex w-full items-start gap-4 rounded-m bg-tint-salmon px-6 py-[18px]">
           <CircleAlert className="mt-0.5 size-6 shrink-0 text-error" aria-hidden />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
-            <p className="text-base leading-6 font-bold text-foreground">{o.refundTitle}</p>
+            <p className="text-base leading-6 font-bold text-foreground">{paidLate ? o.refundTitle : o.refundCancelledTitle}</p>
             <p className="text-sm leading-[21px] text-muted-foreground">
-              {o.refundBody(
-                formatRupiah(payable(order, refund).amount),
-                paymentMethodInfo[refund.method].name,
+              {(paidLate ? o.refundBody : o.refundCancelledBody)(
+                formatRupiah(refundAmount),
+                [...new Set(paidAttempts.map((p) => paymentMethodInfo[p.method].name))].join(" + "),
                 formatDateTime(refund.paidAt ?? refund.createdAt, locale),
               )}
             </p>

@@ -30,17 +30,14 @@ export const locationMessages = defineMessages({
       {
         title: "By motorbike or car",
         body: "Turn into Jl. Palem Sememi Raya from Jl. Raya Sememi; we're at F16. There's room out front for about eight motorbikes and two cars.",
-        tags: ["Free parking", "Shaded spots"],
       },
       {
         title: "By Gojek or Grab",
         body: "Search for us in the app and the pin lands right at the door. Drivers can wait at the counter while we pack.",
-        tags: ["Search “Droolbites Sememi”"],
       },
       {
         title: "Coming from nearby",
         body: "Rough driving times on a normal afternoon. Add ten minutes when it rains.",
-        tags: ["Gelora Bung Tomo · 15 min", "Pakuwon Mall · 20 min", "Citraland · 20 min"],
       },
     ],
 
@@ -100,17 +97,14 @@ export const locationMessages = defineMessages({
       {
         title: "Naik motor atau mobil",
         body: "Masuk ke Jl. Palem Sememi Raya dari Jl. Raya Sememi, kami di nomor F16. Di depan toko muat sekitar delapan motor dan dua mobil.",
-        tags: ["Parkir gratis", "Ada yang teduh"],
       },
       {
         title: "Naik Gojek atau Grab",
         body: "Cari nama kami di aplikasi, pin-nya pas di depan pintu. Driver bisa tunggu di kasir selama pesanan dikemas.",
-        tags: ["Cari “Droolbites Sememi”"],
       },
       {
         title: "Dari sekitar sini",
         body: "Perkiraan waktu berkendara di sore hari biasa. Tambah sepuluh menit kalau hujan.",
-        tags: ["Gelora Bung Tomo · 15 mnt", "Pakuwon Mall · 20 mnt", "Citraland · 20 mnt"],
       },
     ],
 

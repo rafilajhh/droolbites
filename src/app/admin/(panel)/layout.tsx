@@ -21,7 +21,7 @@ export default async function AdminPanelLayout({ children }: LayoutProps<"/admin
       <main id="main" tabIndex={-1} className="flex min-w-0 flex-1 flex-col outline-hidden">
         {children}
       </main>
-      <AdminPulse newOrders={pulse.newOrders} latest={pulse.latest} />
+      <AdminPulse {...pulse} />
     </div>
   );
 }

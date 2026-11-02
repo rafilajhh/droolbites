@@ -372,7 +372,7 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 ### Chips, Stickers, Status Badges
 - **Chip:** pill, oat fill, Plex Mono 600 13px, 8/14px padding. Hero chip overrides to mustard.
 - **Sticker:** pill, paper fill, 1.25px moss ring, rotated -8deg; rating stickers sit at 0deg.
-- **Status badge:** pill, tinted fill, 13px 600 label, no dot (owner rule, 28 Oct 2026: the site shows no status dots anywhere, including open/closed indicators and admin status filters; the pen still draws them). Tone map: tint-mustard awaiting payment, mint paid/completed/ready/out for delivery, lavender baking, salmon failed/expired/cancelled, oat new/hidden.
+- **Status badge:** pill, tinted fill, 13px 600 label, no dot (owner rule, 28 Oct 2026: the site shows no status dots anywhere, including open/closed indicators and admin status filters; the pen still draws them). Tone map: tint-mustard awaiting payment, new order and awaiting confirmation, mint paid/completed/ready/out for delivery, lavender baking, salmon failed/expired/cancelled, oat new/hidden.
 
 ### Cards / Containers
 - Storefront cards: oat fill, 20px radius, no border. Admin `Card`: white, 20px radius, 1px subtle inset ring.

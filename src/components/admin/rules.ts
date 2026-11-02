@@ -4,7 +4,8 @@ import { paymentMethodInfo } from "@/lib/order-status";
 /**
  * Which fulfilment statuses an order may move to (the current one first).
  * Orders only move forward; pickup orders use "Ready for pickup", delivery
- * orders use "Out for delivery". Unpaid orders can only be cancelled.
+ * orders use "Out for delivery". Unpaid orders can only be cancelled. A paid order that is still
+ * new is accepted or declined with a reason (decideOrder), not moved here.
  */
 export function fulfilmentOptions(order: {
   fulfilmentMethod: FulfilmentMethod;
@@ -17,7 +18,7 @@ export function fulfilmentOptions(order: {
   const handOff: FulfilmentStatus = order.fulfilmentMethod === "pickup" ? "ready_for_pickup" : "out_for_delivery";
   switch (current) {
     case "pending":
-      return ["pending", "baking", "cancelled"];
+      return ["pending"];
     case "baking":
       return ["baking", handOff, "completed"];
     default:

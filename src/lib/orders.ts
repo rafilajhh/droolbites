@@ -319,9 +319,9 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
     deliverLater(async () => {
       const order = await db.order.findUnique({ where: { id: orderId }, include: orderInclude });
       if (!order) return;
-      await sendOrderPaidEmail(order);
-      // The store hears about it too, so it can accept or decline.
-      await sendStoreNewOrderEmail(order);
+      // The store hears about it too, so it can accept or decline, even if the customer's email fails.
+      const sent = await Promise.allSettled([sendOrderPaidEmail(order), sendStoreNewOrderEmail(order)]);
+      for (const r of sent) if (r.status === "rejected") console.warn(`[orders] ${order.orderNumber}: email failed`, r.reason);
     });
   }
   return changed;

@@ -108,8 +108,8 @@ export async function decideOrder(_prev: DecisionState, formData: FormData): Pro
     where: { orderNumber: n, paymentStatus: "paid", fulfilmentStatus: "pending" },
     data: { fulfilmentStatus: next, cancelReason: reason },
   });
-  if (count === 0) return { status: "changed" };
   revalidateOrder(n);
+  if (count === 0) return { status: "changed" };
   notifyCustomer(n, next);
   return { status: decision === "accept" ? "accepted" : "declined" };
 }

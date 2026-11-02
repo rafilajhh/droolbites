@@ -3,14 +3,14 @@ import Image from "next/image";
 import { Landmark, MapPin, Motorbike, Quote, Smartphone, Star } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
 import { directionsUrl, formatOpeningHours, halfHourBefore } from "@/components/content/hours";
-import { Chip, Sticker } from "@/components/ui/badges";
+import { Sticker } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink, buttonClasses } from "@/components/ui/button";
 import { Snapshot, photoFrame } from "@/components/ui/snapshot";
 import { locationMessages } from "@/i18n/messages/pages/location";
 import { getLocale, getMessages } from "@/i18n/server";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
-import { getStoreSettings, isOpenNow } from "@/lib/settings";
+import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(locationMessages);
@@ -36,7 +36,6 @@ const regulars = [
 /** pen: Location (QwcUD), plus owner-approved sections below the storefront. */
 export default async function LocationPage() {
   const [t, locale, settings] = await Promise.all([getMessages(locationMessages), getLocale(), getStoreSettings()]);
-  const open = isOpenNow(settings);
   // "Jl. Palem Sememi Raya F16," / "Sememi, Benowo, Surabaya" as drawn.
   const [street, ...rest] = settings.address.split(",").map((part) => part.trim());
   const tel = `tel:${settings.phone.replace(/\s/g, "")}`;
@@ -84,9 +83,6 @@ export default async function LocationPage() {
               <p className="text-sm leading-5 font-semibold text-mint">{t.hoursTitle}</p>
               <p className="font-mono text-base leading-6 font-semibold text-foreground-inverse">
                 {formatOpeningHours(settings, locale)} WIB
-              </p>
-              <p className="rounded-pill bg-white/15 px-3 py-1 text-sm leading-5 font-semibold text-foreground-inverse">
-                {open ? t.openNow : t.closedNow}
               </p>
               <p className="text-pretty pt-1 text-sm leading-[21px] text-mint">{t.hoursNote}</p>
             </div>
@@ -142,11 +138,6 @@ export default async function LocationPage() {
                     {route.title}
                   </h3>
                   <p className="max-w-[600px] text-pretty text-base leading-normal text-muted-foreground">{route.body}</p>
-                  <div className="flex flex-wrap gap-2 pt-1 lg:flex-col lg:items-start">
-                    {route.tags.map((tag) => (
-                      <Chip key={tag}>{tag}</Chip>
-                    ))}
-                  </div>
                 </div>
               </li>
             );

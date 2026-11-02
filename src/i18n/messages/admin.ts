@@ -210,6 +210,9 @@ export const adminMessages = defineMessages({
       transactionId: "Gateway transaction",
       reference: "Reference",
       noPayment: "Not started",
+      refundCancelledTitle: "Cancelled after payment — refund needed",
+      refundCancelledBody: (amount: string, method: string, when: string) =>
+        `The customer paid ${amount} via ${method} on ${when} WIB and this order was cancelled. Refund them from the payment gateway dashboard or by bank transfer.`,
       refundTitle: "Paid after cancellation — refund needed",
       refundBody: (amount: string, method: string, when: string) =>
         `${amount} via ${method} arrived on ${when} WIB, after this order was cancelled. Refund the customer from the payment gateway dashboard or by bank transfer.`,
@@ -585,6 +588,9 @@ export const adminMessages = defineMessages({
       transactionId: "Transaksi gateway",
       reference: "Referensi",
       noPayment: "Belum dimulai",
+      refundCancelledTitle: "Dibatalkan setelah dibayar — perlu refund",
+      refundCancelledBody: (amount: string, method: string, when: string) =>
+        `Pelanggan sudah membayar ${amount} lewat ${method} pada ${when} WIB dan pesanan ini dibatalkan. Kembalikan dananya lewat dashboard payment gateway atau transfer bank.`,
       refundTitle: "Dibayar setelah dibatalkan — perlu refund",
       refundBody: (amount: string, method: string, when: string) =>
         `${amount} lewat ${method} masuk ${when} WIB, setelah pesanan ini dibatalkan. Kembalikan dana pelanggan lewat dashboard payment gateway atau transfer bank.`,

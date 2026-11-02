@@ -13,7 +13,7 @@ Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + Prisma 7 + MySQL 8. Cho
 ## Users
 
 - **Customers:** people in Surabaya who want to order desserts (soft cookies, fudgy brownies, tiramisu) online, either delivered to their address or picked up at the store. They can check out as a guest or with an account (saved address, order history).
-- **Store admin:** the shop owner/staff who checks paid orders, moves them through fulfilment (Baking → Out for delivery / Ready for pickup → Completed), manages the menu and store settings.
+- **Store admin:** the shop owner/staff who gets alerted to each new paid order (email to the notify address, sidebar badge, tab-title count, live toast), accepts it or declines it with a reason the customer sees, moves accepted orders through fulfilment (Baking → Out for delivery / Ready for pickup → Completed), and manages the menu and store settings.
 
 ## Product Purpose
 
@@ -36,6 +36,7 @@ A small, focused menu baked fresh daily in Surabaya, with delivery up to 30 km f
 - Menu: 3 categories (Soft cookies, Brownies, Tiramisu), 7 products, 10 variants (cookies Rp5.000 per piece; brownies 10×10 / 15×15 / 20×20 / 20×30 cm at Rp15.000 / 35.000 / 60.000 / 90.000; tiramisu Rp20.000 per portion).
 - Data model follows the PDM (`Pemweb/Figma/droolbites-pdm.dbml`): users, categories, products, product_variants, orders, order_items, payments, plus `store_settings` (approved 28 Oct 2026).
 - Order numbers use the format DB-0001. Payment status (awaiting/paid/expired) and fulfilment status are separate.
+- A paid order waits as "New order" (customer sees "Awaiting confirmation") until the shop accepts it (→ Baking) or declines it (→ Cancelled, with a preset or written reason; the payment is owed back).
 - Bilingual: English is the primary language; visitors can switch to Indonesian. Product names stay as they are.
 - Cart lives in a cookie until checkout; guest checkout is allowed.
 - Undecided: real payment gateway; production email provider.
