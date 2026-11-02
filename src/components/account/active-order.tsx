@@ -23,7 +23,7 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
   const o = t.orders;
   const delivery = order.fulfilmentMethod === "delivery";
   const f = order.fulfilmentStatus;
-  const unpaid = order.paymentStatus === "awaiting";
+  const unpaid = order.bucket === "active" && order.paymentStatus === "awaiting";
 
   // Where it is now: 0 paying, 1 waiting for the shop, 2 baking, 3 on its way / ready.
   const at = unpaid ? 0 : f === "pending" ? 1 : f === "baking" ? 2 : 3;

@@ -80,13 +80,19 @@ async function roadDistanceM(from: LatLng, to: LatLng): Promise<number | null> {
 /** `straight`: beyond the maximum even in a straight line, so the router wasn't asked. */
 export type Measured = { distanceM: number; kind: "road" | "estimated" | "straight" };
 
-/** Distance from the store to `to`, in whole metres. */
-export async function measureDelivery(rates: DeliveryRates, to: LatLng): Promise<Measured> {
+/**
+ * Distance from the store to `to`, in whole metres. `waitMs` caps how long a page render waits for
+ * the router: a slower answer counts as an estimate now, and still lands in the cache for next time.
+ */
+export async function measureDelivery(rates: DeliveryRates, to: LatLng, waitMs?: number): Promise<Measured> {
   const store = { lat: rates.storeLat, lng: rates.storeLng };
   const straight = straightLineM(store, to);
   // A road is never shorter than the straight line, so far-off pins skip the router.
   if (straight > rates.deliveryMaxKm * 1000) return { distanceM: Math.round(straight), kind: "straight" };
-  const road = await roadDistanceM(store, to);
+  const asked = roadDistanceM(store, to);
+  const road = waitMs
+    ? await Promise.race([asked, new Promise<null>((done) => setTimeout(() => done(null), waitMs))])
+    : await asked;
   return road === null
     ? { distanceM: Math.round(straight * ROAD_FACTOR), kind: "estimated" }
     : { distanceM: Math.round(road), kind: "road" };
@@ -106,9 +112,9 @@ export type PinQuote =
   | { status: "ok"; distanceM: number; fee: number; estimated: boolean }
   | { status: "tooFar"; distanceM: number; maxKm: number };
 
-/** Road distance and fee for a pin, or how far beyond the delivery range it is. */
+/** Road distance and fee for a pin shown on page load (waits at most 1.5 s for the router). */
 export async function quotePin(rates: DeliveryRates, to: LatLng): Promise<PinQuote> {
-  const { distanceM, kind } = await measureDelivery(rates, to);
+  const { distanceM, kind } = await measureDelivery(rates, to, 1500);
   if (!withinRange(rates, distanceM)) return { status: "tooFar", distanceM, maxKm: rates.deliveryMaxKm };
   return { status: "ok", distanceM, fee: deliveryFeeFor(rates, distanceM), estimated: kind === "estimated" };
 }

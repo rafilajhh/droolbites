@@ -68,7 +68,7 @@ export default async function CheckoutDetailsPage() {
   const firstPin = !details && saved?.pin && initial.fulfilment === "delivery" ? saved.pin : null;
   const pin = backPin ?? firstPin;
   const quote = firstPin
-    ? await quotePin(settings, firstPin).catch(() => null)
+    ? await quotePin(settings, firstPin)
     : pin && details?.distanceM != null
       ? withinRange(settings, details.distanceM)
         ? {

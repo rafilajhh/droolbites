@@ -34,9 +34,12 @@ export const getAccountOrders = cache(async (userId: bigint) => {
   const now = Date.now();
   return rows.map((order) => {
     const deadline = orderDeadline(order);
-    const payBy = order.payments[0]?.expiresAt ?? deadline;
-    // An unpaid order past its window has failed even before the payment check marks it expired.
-    const lapsed = order.paymentStatus === "awaiting" && Math.min(payBy.getTime(), deadline.getTime()) <= now;
+    // An attempt can lapse before the order (e-wallet requests are short): the order stays payable with
+    // another method until its own window closes, so only that window fails it. "Pay before" shows the
+    // attempt's time while it still runs.
+    const attemptEnds = order.payments[0]?.expiresAt;
+    const payBy = attemptEnds && attemptEnds.getTime() > now && attemptEnds < deadline ? attemptEnds : deadline;
+    const lapsed = order.paymentStatus === "awaiting" && deadline.getTime() <= now;
     const paymentStatus = lapsed ? ("expired" as const) : order.paymentStatus;
     const bucket: OrderBucket =
       order.fulfilmentStatus === "completed"

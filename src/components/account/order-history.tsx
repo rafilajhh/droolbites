@@ -68,7 +68,7 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
                 <Link
                   href={f === "all" ? "/account#order-history" : `/account?status=${f}#order-history`}
                   scroll={false}
-                  aria-current={current ? "page" : undefined}
+                  aria-current={current ? "true" : undefined}
                   className={cn(
                     "relative inline-flex h-9 items-center gap-2 rounded-pill px-4 text-sm leading-[18px] font-semibold transition-colors after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] motion-reduce:transition-none",
                     current ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:inset-ring-[1.25px] hover:inset-ring-border",
@@ -111,7 +111,7 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
           <tbody className="block xl:table-row-group">
             {orders.map((order) => {
               const status = orderStatus(order);
-              const unpaid = order.paymentStatus === "awaiting";
+              const unpaid = order.bucket === "active" && order.paymentStatus === "awaiting";
               return (
                 <tr
                   key={order.orderNumber}

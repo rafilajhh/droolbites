@@ -81,6 +81,7 @@ export const accountMessages = defineMessages({
       postalCodePlaceholder: "Enter your postal code",
       submit: "SAVE ADDRESS",
       saved: "Address saved.",
+      checkPin: "You changed the address: check that the pin is still at your door.",
     },
     errors: {
       pin: "Pin your address on the map.",
@@ -171,6 +172,7 @@ export const accountMessages = defineMessages({
       postalCodePlaceholder: "Masukkan kode posmu",
       submit: "SIMPAN ALAMAT",
       saved: "Alamat tersimpan.",
+      checkPin: "Alamatnya kamu ubah: pastikan pin di peta masih di depan rumahmu.",
     },
     errors: {
       pin: "Taruh pin alamatmu di peta.",

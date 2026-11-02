@@ -21,7 +21,7 @@ export async function AddressSection({ user }: { user: CurrentUser }) {
   const [t, settings] = await Promise.all([getMessages(accountMessages), getStoreSettings()]);
   const pin = savedPin(user);
   // The saved pin's distance and fee as checkout would charge them today (rates or the store pin may have changed).
-  const quote = pin ? await quotePin(settings, pin).catch(() => null) : null;
+  const quote = pin ? await quotePin(settings, pin) : null;
   return (
     <AccountCard id="saved-address" title={t.address.title}>
       <AddressForm

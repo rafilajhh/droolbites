@@ -39,6 +39,7 @@ A small, focused menu baked fresh daily in Surabaya, with delivery up to 30 km f
 - A paid order waits as "New order" (customer sees "Awaiting confirmation") until the shop accepts it (→ Baking) or declines it (→ Cancelled, with a preset or written reason; the payment is owed back).
 - Bilingual: English is the primary language; visitors can switch to Indonesian. Product names stay as they are.
 - Cart lives in a cookie until checkout; guest checkout is allowed.
+- Account (owner decision 2 Nov 2026): tabs for orders, account information and saved address; the order in progress leads with its next action; history has filters and Pay / Order again; the saved address carries a map pin that checkout starts from.
 - Undecided: real payment gateway; production email provider.
 
 ## Brand Commitments

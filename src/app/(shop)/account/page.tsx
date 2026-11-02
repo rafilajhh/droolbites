@@ -27,7 +27,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const query = await searchParams;
   const tab = pick<AccountTab>(query.tab, ACCOUNT_TABS, "orders");
   const filter = pick<OrderFilter>(query.status, ORDER_FILTERS, "all");
-  const user = await requireUser(tab === "orders" ? "/account" : `/account?tab=${tab}`);
+  const user = await requireUser(tab !== "orders" ? `/account?tab=${tab}` : filter !== "all" ? `/account?status=${filter}` : "/account");
   const t = await getMessages(accountMessages);
   const firstName = user.fullName.trim().split(/\s+/)[0] || user.fullName;
 

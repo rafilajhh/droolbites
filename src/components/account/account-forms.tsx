@@ -167,6 +167,11 @@ export function AddressForm({
   const [pin, setPin] = useState<LatLng | null>(savedPin);
   const [quote, setQuote] = useState<QuoteState>(savedQuote ?? { status: "idle" });
   const [pinLabel, setPinLabel] = useState<string | undefined>(undefined);
+  // The save the form changed after: its "saved" note and pin error no longer describe what's shown.
+  const [changedAt, setChangedAt] = useState(-1);
+  const [pinMovedAt, setPinMovedAt] = useState(-1);
+  // The address was retyped by hand after the pin was placed: the pin may still be at the old place.
+  const [retyped, setRetyped] = useState(false);
   const pinSeq = useRef(0);
   // What the map last filled in: a field still holding it (or empty) follows the next pin.
   const autoFilled = useRef<Partial<Record<keyof typeof values, string>>>({});
@@ -193,6 +198,9 @@ export function AddressForm({
     setPin(at);
     setPinLabel(label);
     setQuote({ status: "loading" });
+    setPinMovedAt(state.attempt ?? 0);
+    setChangedAt(state.attempt ?? 0);
+    setRetyped(false);
     const [q, place] = await Promise.all([
       quoteDelivery(at.lat, at.lng).catch((): DeliveryQuote => ({ status: "busy" })),
       source === "map" || source === "gps" ? addressAt(at.lat, at.lng).catch(() => null) : Promise.resolve(null),
@@ -212,7 +220,12 @@ export function AddressForm({
         id={name}
         name={name}
         value={values[name]}
-        onChange={(e) => setValues((v) => ({ ...v, [name]: e.target.value }))}
+        onChange={(e) => {
+          const value = e.target.value;
+          setValues((v) => ({ ...v, [name]: value }));
+          setChangedAt(state.attempt ?? 0);
+          if (pin && name !== "postalCode" && value !== autoFilled.current[name]) setRetyped(true);
+        }}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy(name, { error })}
         {...extra}
@@ -229,13 +242,18 @@ export function AddressForm({
           pin={pin}
           pinLabel={pinLabel}
           quote={quote}
-          error={err("pin")}
+          error={pinMovedAt === (state.attempt ?? 0) ? undefined : err("pin")}
           onPin={(at, source) => void movePin(at, source)}
           onPlace={(place) => {
             fill(place, true);
             void movePin({ lat: place.lat, lng: place.lng }, "search", place.label);
           }}
         />
+        {retyped ? (
+          <p role="status" className="rounded-sm bg-tint-mustard px-4 py-3 text-sm leading-[21px] font-semibold text-foreground">
+            {t.address.checkPin}
+          </p>
+        ) : null}
         <input type="hidden" name="lat" value={pin?.lat ?? ""} />
         <input type="hidden" name="lng" value={pin?.lng ?? ""} />
       </div>
@@ -257,7 +275,13 @@ export function AddressForm({
         </Field>
       </div>
       {state.formError ? <FormAlert id="address-alert">{t.errors[state.formError]}</FormAlert> : null}
-      <SaveRow label={t.address.submit} saved={state.saved ? t.address.saved : undefined} pending={pending} variant="primary" />
+      {/* Saving waits for the pin's lookup, so the pin and the fields it fills are saved together. */}
+      <SaveRow
+        label={t.address.submit}
+        saved={state.saved && changedAt !== state.attempt ? t.address.saved : undefined}
+        pending={pending || quote.status === "loading"}
+        variant="primary"
+      />
     </form>
   );
 }
