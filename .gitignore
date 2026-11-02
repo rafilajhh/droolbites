@@ -49,3 +49,6 @@ next-env.d.ts
 /.shots/
 /.omc/
 /backups/
+
+# HTML email previews (scripts/email-preview.ts)
+/email-preview/
