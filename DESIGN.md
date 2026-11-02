@@ -348,7 +348,7 @@ Touch targets are 44px minimum. Visible controls smaller than that (28px stepper
 
 ## Elevation & Depth
 
-Flat by default. Depth is tonal: paper under oat under white, mint and tint panels, plus 1px hairlines drawn as inset box-shadows (`inset 0 -1px 0 stroke-subtle`) for row and header separators. The only drop shadow is a soft ink-tinted lift for floating layers (admin dropdowns, search popover, category filter, add-to-cart popover): `0 12px 32px` at 15% ink, with a tighter `0 4px 12px` variant. Overlays (cart drawer, mobile menu) use a 50% ink scrim and no shadow.
+Flat by default. Depth is tonal: paper under oat under white, mint and tint panels, plus 1px hairlines drawn as inset box-shadows (`inset 0 -1px 0 stroke-subtle`) for row and header separators. The only drop shadow is a soft ink-tinted lift for floating layers (admin dropdowns, search popover, add-to-cart popover): `0 12px 32px` at 15% ink, with a tighter `0 4px 12px` variant. Overlays (cart drawer, mobile menu) use a 50% ink scrim and no shadow.
 
 ### Named Rules
 **The Hairline-Not-Border Rule.** Separators are inset shadows or inset rings, so they never change a box's size.
@@ -376,7 +376,7 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 
 ### Cards / Containers
 - Storefront cards: oat fill, 20px radius, no border. Admin `Card`: white, 20px radius, 1px subtle inset ring.
-- **No wedged cards.** A grid of real items holds only real items: no promo, CTA, filler or decorative card to plug a hole or pad a column. A short last row centers on the full menu; search and category results start at the left edge, under the search field (owner decision 2026-11-02); a menu group of three gets three equal columns, with its tray-size product taking a landscape row below lg. Menu group headings carry no count or unit line. Say each store fact once, in its home (hours in the announcement bar and /location, freshness in the hero, rating in the review band and product pages, ordering steps in the FAQ); checkout carries no security reassurance copy.
+- **No wedged cards.** A grid of real items holds only real items: no promo, CTA, filler or decorative card to plug a hole or pad a column. A short last row centers on the full menu; search and category results start at the left edge, under the search field, and the menu toolbar is the search field on top with a row of category chips under it (logo-colour dot, live match count; a sideways-scrolling row on phones) (owner decision 2026-11-02); a menu group of three gets three equal columns, with its tray-size product taking a landscape row below lg. Menu group headings carry no count or unit line. Say each store fact once, in its home (hours in the announcement bar and /location, freshness in the hero, rating in the review band and product pages, ordering steps in the FAQ); checkout carries no security reassurance copy.
 - Cart drawer: paper body, hairline-separated rows, oat footer; slides in, fades under reduced motion.
 
 ### Inputs / Fields
