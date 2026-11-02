@@ -12,7 +12,7 @@ export const productMessages = defineMessages({
     decrease: "Decrease quantity",
     increase: "Increase quantity",
     /** `fee` is the store's delivery fee, formatted. */
-    perkDelivery: (fee: string) => `Delivery ${fee}`,
+    perkDelivery: (fee: string) => `Delivery from ${fee}`,
     perkPickup: "Free pickup",
     ingredients: "Ingredients",
     /** Start of the ingredients placeholder, linked to the store email. */
@@ -54,7 +54,7 @@ export const productMessages = defineMessages({
     error: "Gagal menambahkan ke keranjang. Coba lagi ya.",
     decrease: "Kurangi jumlah",
     increase: "Tambah jumlah",
-    perkDelivery: (fee: string) => `Ongkir ${fee}`,
+    perkDelivery: (fee: string) => `Ongkir mulai ${fee}`,
     perkPickup: "Ambil di toko gratis",
     ingredients: "Bahan",
     ingredientsContact: "Hubungi kami",

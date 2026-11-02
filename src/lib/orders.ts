@@ -4,6 +4,7 @@ import { z } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import type { FulfilmentStatus, PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 import { db } from "./db";
+import { deliveryFeeFor, isLatLng, withinRange, type DeliveryRates } from "./delivery";
 import { getCurrentUser } from "./auth";
 import { deliverLater } from "./mail";
 import { sendOrderCancelledEmail, sendOrderPaidEmail } from "./order-emails";
@@ -28,10 +29,6 @@ const DETAILS_MAX_AGE = 60 * 60 * 6; // 6 hours
 
 const text = (max: number) => z.string().trim().max(max);
 
-/** Local delivery only covers Surabaya: the city is fixed and the postal code must be 601xx–602xx. */
-export const DELIVERY_CITY = "Surabaya";
-export const DELIVERY_POSTAL_RE = /^60[12]\d{2}$/;
-
 /** Indonesian mobile numbers: 08…, +628… or 628… (spaces, dashes and brackets allowed). E-wallets need one. */
 const ID_MOBILE_RE = /^(?:\+?62|0)8\d{7,11}$/;
 export function isIdMobile(phone: string) {
@@ -49,15 +46,18 @@ export const checkoutDetailsSchema = z
     apartment: text(70),
     city: text(100),
     postal: text(10),
+    /** The delivery pin on the map. */
+    lat: z.number().nullable().default(null),
+    lng: z.number().nullable().default(null),
+    /** Road distance from the store, measured by the server when the details are saved (never sent by the client). */
+    distanceM: z.number().int().min(0).nullable().default(null),
   })
   .superRefine((d, ctx) => {
     if (d.fulfilment === "delivery") {
       if (d.street.length < 3) ctx.addIssue({ code: "custom", path: ["street"], message: "street" });
-      if (d.city !== DELIVERY_CITY) ctx.addIssue({ code: "custom", path: ["city"], message: "city" });
+      if (d.city.length < 2) ctx.addIssue({ code: "custom", path: ["city"], message: "city" });
       if (!/^\d{5}$/.test(d.postal)) ctx.addIssue({ code: "custom", path: ["postal"], message: "postal" });
-      else if (!DELIVERY_POSTAL_RE.test(d.postal)) {
-        ctx.addIssue({ code: "custom", path: ["postal"], message: "postalArea" });
-      }
+      if (!isLatLng(d.lat, d.lng)) ctx.addIssue({ code: "custom", path: ["lat"], message: "location" });
     }
   });
 
@@ -79,6 +79,16 @@ export async function writeCheckoutDetails(details: CheckoutDetails) {
 
 export async function clearCheckoutDetails() {
   (await cookies()).delete(DETAILS_COOKIE);
+}
+
+/**
+ * The delivery fee for saved checkout details at the store's current rates: 0 for pickup, null when
+ * the pin is missing or now beyond the store's maximum distance (the details step asks again).
+ */
+export function checkoutDeliveryFee(rates: DeliveryRates, details: CheckoutDetails): number | null {
+  if (details.fulfilment !== "delivery") return 0;
+  if (details.distanceM === null || !withinRange(rates, details.distanceM)) return null;
+  return deliveryFeeFor(rates, details.distanceM);
 }
 
 /** "Jl. Raya Darmo No. 12, Wonokromo, Surabaya 60241" */

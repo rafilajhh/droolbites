@@ -69,8 +69,8 @@ export const locationMessages = defineMessages({
     tryProduct: (name: string) => `Try the ${name}`,
 
     ctaTitle: "Order ahead, pick up warm.",
-    ctaBody: (fee: string) =>
-      `Choose store pickup at checkout and your order is boxed and waiting when you walk in. Pickup is free; delivery anywhere in Surabaya is a flat ${fee}.`,
+    ctaBody: (fee: string, maxKm: number) =>
+      `Choose store pickup at checkout and your order is boxed and waiting when you walk in. Pickup is free; delivery starts at ${fee} and reaches up to ${maxKm} km from the store.`,
     pickupCutoff: (time: string) => `Pickup orders close at ${time}, 30 minutes before we do.`,
     ctaOrder: "ORDER FOR PICKUP",
     ctaCall: "CALL THE SHOP",
@@ -139,8 +139,8 @@ export const locationMessages = defineMessages({
     tryProduct: (name: string) => `Coba ${name}`,
 
     ctaTitle: "Pesan dulu, ambil masih hangat.",
-    ctaBody: (fee: string) =>
-      `Pilih ambil di toko saat checkout, pesananmu sudah dikemas dan siap begitu kamu datang. Ambil di toko gratis; antar ke seluruh Surabaya cukup ${fee}.`,
+    ctaBody: (fee: string, maxKm: number) =>
+      `Pilih ambil di toko saat checkout, pesananmu sudah dikemas dan siap begitu kamu datang. Ambil di toko gratis; ongkir antar mulai ${fee}, sampai ${maxKm} km dari toko.`,
     pickupCutoff: (time: string) => `Pesanan ambil di toko ditutup pukul ${time}, 30 menit sebelum toko tutup.`,
     ctaOrder: "PESAN UNTUK DIAMBIL",
     ctaCall: "TELEPON TOKO",

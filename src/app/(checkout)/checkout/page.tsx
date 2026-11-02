@@ -7,7 +7,8 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCurrentUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
-import { DELIVERY_CITY, readCheckoutDetails, shortStoreAddress } from "@/lib/orders";
+import { deliveryFeeFor, withinRange } from "@/lib/delivery";
+import { readCheckoutDetails, shortStoreAddress } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,7 +35,7 @@ export default async function CheckoutDetailsPage() {
         phone: details.phone,
         street: details.street,
         apartment: details.apartment,
-        city: DELIVERY_CITY,
+        city: details.city,
         postal: details.postal,
       }
     : {
@@ -44,7 +45,7 @@ export default async function CheckoutDetailsPage() {
         phone: user?.phone ?? "",
         street: user?.address ?? "",
         apartment: "",
-        city: DELIVERY_CITY,
+        city: user?.city ?? "",
         postal: user?.postalCode ?? "",
       };
   if (initial.fulfilment === "delivery" && !settings.deliveryEnabled && settings.pickupEnabled) initial.fulfilment = "pickup";
@@ -55,9 +56,18 @@ export default async function CheckoutDetailsPage() {
       ? {
           street: user.address,
           apartment: "",
-          city: DELIVERY_CITY,
+          city: user.city,
           postal: user.postalCode,
         }
+      : null;
+
+  // Coming back from the payment step: the pin and its distance are already known.
+  const pin = details?.fulfilment === "delivery" && details.lat !== null && details.lng !== null ? { lat: details.lat, lng: details.lng } : null;
+  const quote =
+    pin && details?.distanceM != null
+      ? withinRange(settings, details.distanceM)
+        ? { status: "ok" as const, distanceM: details.distanceM, fee: deliveryFeeFor(settings, details.distanceM), estimated: false }
+        : { status: "tooFar" as const, distanceM: details.distanceM, maxKm: settings.deliveryMaxKm }
       : null;
 
   return (
@@ -66,6 +76,8 @@ export default async function CheckoutDetailsPage() {
       <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <DetailsForm
           initial={initial}
+          initialPin={pin}
+          initialQuote={quote}
           saved={saved}
           signInHref={user ? null : "/sign-in?next=/checkout"}
           options={{ delivery: settings.deliveryEnabled, pickup: settings.pickupEnabled }}
@@ -75,7 +87,10 @@ export default async function CheckoutDetailsPage() {
             fullAddress: settings.address,
             opensAt: settings.opensAt,
             closesAt: settings.closesAt,
-            deliveryFee: settings.deliveryFee,
+            baseFee: settings.deliveryFee,
+            maxKm: settings.deliveryMaxKm,
+            lat: settings.storeLat,
+            lng: settings.storeLng,
           }}
           summary={{ lines: cartSummaryLines(cart, locale), itemCount: cart.count, subtotal: cart.subtotal }}
         />

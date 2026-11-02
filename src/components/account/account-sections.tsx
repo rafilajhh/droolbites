@@ -1,7 +1,6 @@
 import type { CurrentUser } from "@/lib/auth";
 import { getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
-import { DELIVERY_CITY } from "@/lib/orders";
 import { AccountCard } from "./account-card";
 import { AddressForm, ProfileForm } from "./account-forms";
 
@@ -14,7 +13,7 @@ export async function AccountForms({ user }: { user: CurrentUser }) {
         <ProfileForm fullName={user.fullName} phone={user.phone ?? ""} email={user.email} />
       </AccountCard>
       <AccountCard id="saved-address" title={t.address.title}>
-        <AddressForm address={user.address ?? ""} city={DELIVERY_CITY} postalCode={user.postalCode ?? ""} />
+        <AddressForm address={user.address ?? ""} city={user.city ?? ""} postalCode={user.postalCode ?? ""} />
       </AccountCard>
     </>
   );

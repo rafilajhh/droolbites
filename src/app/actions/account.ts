@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { DELIVERY_CITY, DELIVERY_POSTAL_RE } from "@/lib/orders";
 import { getSession } from "@/lib/session";
 
 /** Keys into accountMessages.errors; the client renders them in the active language. */
-export type AccountErrorKey = "fullName" | "phone" | "email" | "emailTaken" | "address" | "postalCode" | "postalArea" | "generic";
+export type AccountErrorKey = "fullName" | "phone" | "email" | "emailTaken" | "address" | "city" | "postalCode" | "generic";
 
 export type AccountState<F extends string> = {
   errors?: Partial<Record<F, AccountErrorKey>>;
@@ -20,7 +19,7 @@ export type AccountState<F extends string> = {
 };
 
 export type ProfileField = "fullName" | "phone" | "email";
-export type AddressField = "address" | "postalCode";
+export type AddressField = "address" | "city" | "postalCode";
 
 /**
  * Fresh read of the signed-in user. getCurrentUser() is cached per request, and
@@ -73,9 +72,9 @@ export async function updateProfile(_prev: AccountState<ProfileField>, formData:
 }
 
 /**
- * Saved delivery address: users.address/city/postal_code. We only deliver within
- * Surabaya, so the city is always DELIVERY_CITY whatever the client sends; the
- * country (Indonesia) has no column and the name on orders stays users.full_name.
+ * Saved delivery address: users.address/city/postal_code. Whether it can be delivered to is decided
+ * at checkout from the map pin (distance from the store), not from the city; the country (Indonesia)
+ * has no column and the name on orders stays users.full_name.
  */
 export async function updateAddress(_prev: AccountState<AddressField>, formData: FormData): Promise<AccountState<AddressField>> {
   const attempt = Date.now();
@@ -83,17 +82,17 @@ export async function updateAddress(_prev: AccountState<AddressField>, formData:
   if (!user) return { formError: "generic", attempt };
 
   const address = text(formData, "address");
+  const city = text(formData, "city");
   const postalCode = text(formData, "postalCode");
 
-  const values = { address, postalCode };
+  const values = { address, city, postalCode };
   const errors: AccountState<AddressField>["errors"] = {};
   if (address.length < 5 || address.length > 255) errors.address = "address";
+  if (city.length < 2 || city.length > 100) errors.city = "city";
   if (!/^\d{5}$/.test(postalCode)) errors.postalCode = "postalCode";
-  // Same rule as checkout, so a saved address always pre-fills a valid delivery.
-  else if (!DELIVERY_POSTAL_RE.test(postalCode)) errors.postalCode = "postalArea";
   if (Object.keys(errors).length) return { errors, values, attempt };
 
-  await db.user.update({ where: { id: user.id }, data: { address, city: DELIVERY_CITY, postalCode } });
+  await db.user.update({ where: { id: user.id }, data: { address, city, postalCode } });
   revalidatePath("/account");
   return { saved: true, values, attempt };
 }

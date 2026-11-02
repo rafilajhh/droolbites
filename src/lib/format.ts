@@ -34,6 +34,13 @@ export function formatDateTime(date: Date, locale: Locale): string {
   return `${formatDate(date, locale)}, ${formatTime(date)}`;
 }
 
+/** 8400 → "8.4 km" (EN) / "8,4 km" (ID); one decimal, whole km from 100 km. */
+export function formatDistance(metres: number, locale: Locale): string {
+  const km = metres / 1000;
+  const digits = km >= 100 ? 0 : 1;
+  return `${km.toLocaleString(locale === "id" ? "id-ID" : "en-GB", { minimumFractionDigits: digits, maximumFractionDigits: digits })} km`;
+}
+
 /** "6 items" / "1 item" (EN) or "6 item" (ID). */
 export function formatItemCount(count: number, locale: Locale): string {
   if (locale === "id") return `${count} item`;

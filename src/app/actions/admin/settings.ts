@@ -15,6 +15,8 @@ export type SettingsErrorKey =
   | "time"
   | "closesAt"
   | "fee"
+  | "km"
+  | "coords"
   | "days"
   | "fulfilment"
   | "payments"
@@ -29,6 +31,11 @@ export type SettingsField =
   | "opensAt"
   | "closesAt"
   | "deliveryFee"
+  | "deliveryBaseKm"
+  | "deliveryPerKm"
+  | "deliveryMaxKm"
+  | "storeLat"
+  | "storeLng"
   | "openDays"
   | "fulfilment"
   | "payments"
@@ -52,6 +59,12 @@ const schema = z
     opensAt: time,
     closesAt: time,
     deliveryFee: z.number().int().min(0).max(10_000_000),
+    deliveryBaseKm: z.number().int().min(0).max(100),
+    deliveryPerKm: z.number().int().min(0).max(10_000_000),
+    deliveryMaxKm: z.number().int().min(1).max(100),
+    // Roughly Indonesia, so a swapped or mistyped pair is caught.
+    storeLat: z.number().min(-11.5).max(6.5),
+    storeLng: z.number().min(94.5).max(141.5),
     openDays: z.array(z.enum(WEEK_DAYS)).min(1),
     pickupEnabled: z.boolean(),
     deliveryEnabled: z.boolean(),
@@ -76,6 +89,11 @@ const fieldError: Record<string, [SettingsField, SettingsErrorKey]> = {
   opensAt: ["opensAt", "time"],
   closesAt: ["closesAt", "time"],
   deliveryFee: ["deliveryFee", "fee"],
+  deliveryBaseKm: ["deliveryBaseKm", "km"],
+  deliveryPerKm: ["deliveryPerKm", "fee"],
+  deliveryMaxKm: ["deliveryMaxKm", "km"],
+  storeLat: ["storeLat", "coords"],
+  storeLng: ["storeLng", "coords"],
   openDays: ["openDays", "days"],
   fulfilment: ["fulfilment", "fulfilment"],
   payments: ["payments", "payments"],
@@ -83,7 +101,15 @@ const fieldError: Record<string, [SettingsField, SettingsErrorKey]> = {
 
 export async function saveStoreSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
   await requireAdmin();
-  const fee = String(formData.get("deliveryFee") ?? "").replace(/\D/g, "");
+  // Amounts and km are whole numbers ("Rp12.500" → 12500); coordinates are decimals ("-7.2375").
+  const whole = (name: string) => {
+    const digits = String(formData.get(name) ?? "").replace(/\D/g, "");
+    return digits === "" ? Number.NaN : Number(digits);
+  };
+  const decimal = (name: string) => {
+    const raw = String(formData.get(name) ?? "").trim().replace(",", ".");
+    return raw === "" ? Number.NaN : Number(raw);
+  };
   const on = (name: string) => formData.get(name) === "on";
   const parsed = schema.safeParse({
     storeName: formData.get("storeName") ?? "",
@@ -93,7 +119,12 @@ export async function saveStoreSettings(_prev: SettingsState, formData: FormData
     address: formData.get("address") ?? "",
     opensAt: String(formData.get("opensAt") ?? "").trim(),
     closesAt: String(formData.get("closesAt") ?? "").trim(),
-    deliveryFee: fee === "" ? Number.NaN : Number(fee),
+    deliveryFee: whole("deliveryFee"),
+    deliveryBaseKm: whole("deliveryBaseKm"),
+    deliveryPerKm: whole("deliveryPerKm"),
+    deliveryMaxKm: whole("deliveryMaxKm"),
+    storeLat: decimal("storeLat"),
+    storeLng: decimal("storeLng"),
     openDays: formData.getAll("openDays").map(String),
     pickupEnabled: on("pickupEnabled"),
     deliveryEnabled: on("deliveryEnabled"),

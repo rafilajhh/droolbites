@@ -158,9 +158,16 @@ export function AddressForm({ address, city, postalCode }: { address: string; ci
         error={err("address")}
       />
       <div className="flex w-full flex-col gap-6 sm:flex-row sm:gap-4">
-        <Field label={t.address.city} htmlFor="city" className="sm:flex-1">
-          <TextInput id="city" value={city} readOnly autoComplete="address-level2" className="bg-oat text-muted-foreground" />
-        </Field>
+        <AccountInput
+          className="sm:flex-1"
+          name="city"
+          label={t.address.city}
+          autoComplete="address-level2"
+          required
+          maxLength={100}
+          defaultValue={state.values?.city ?? city}
+          error={err("city")}
+        />
         <AccountInput
           className="sm:flex-1"
           name="postalCode"

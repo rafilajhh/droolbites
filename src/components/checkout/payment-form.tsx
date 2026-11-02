@@ -24,7 +24,7 @@ export function PaymentForm({
   defaultMethod,
   summary,
 }: {
-  review: { email: string; fulfilment: "delivery" | "pickup"; address: string; fee: number };
+  review: { email: string; fulfilment: "delivery" | "pickup"; address: string; distance: string | null; fee: number };
   methods: PaymentMethod[];
   logos: PaymentLogos;
   defaultMethod: PaymentMethod | null;
@@ -81,7 +81,12 @@ export function PaymentForm({
   const rows = [
     { label: p.contact, value: email },
     { label: delivery ? p.deliverTo : p.pickupAt, value: review.address },
-    { label: p.method, value: delivery ? `${p.localDelivery} · ${formatRupiah(review.fee)}` : `${p.pickup} · ${p.free}` },
+    {
+      label: p.method,
+      value: delivery
+        ? [p.localDelivery, review.distance, formatRupiah(review.fee)].filter(Boolean).join(" · ")
+        : `${p.pickup} · ${p.free}`,
+    },
   ];
 
   return (

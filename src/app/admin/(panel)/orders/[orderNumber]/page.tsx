@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CircleAlert, Printer, Store, Truck, User } from "lucide-react";
+import { ArrowLeft, CircleAlert, MapPin, Printer, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
@@ -10,7 +10,7 @@ import { AdminMain, Card, smallButtonClasses } from "@/components/admin/ui";
 import { variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { formatDate, formatDateTime, formatItemCount, formatRupiah } from "@/lib/format";
+import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
 import { fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
@@ -191,6 +191,22 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               <p className="text-sm leading-[21px] text-muted-foreground">
                 {isDelivery ? address : o.pickupAt(settings.address)}
               </p>
+              {isDelivery && order.deliveryDistanceM !== null ? (
+                <p className="text-sm leading-[21px] font-semibold tabular-nums">
+                  {o.distance(formatDistance(order.deliveryDistanceM, locale))} · {formatRupiah(order.deliveryFee)}
+                </p>
+              ) : null}
+              {isDelivery && order.shippingLat !== null && order.shippingLng !== null ? (
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative mt-1 inline-flex items-center gap-1.5 self-start text-sm leading-[18px] font-semibold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
+                >
+                  <MapPin className="size-4" aria-hidden />
+                  {o.openPin}
+                </a>
+              ) : null}
             </Card>
             <Card className="flex min-h-[122px] min-w-0 flex-1 flex-col gap-2 p-6">
               <h2 className="sr-only">{o.customer}</h2>

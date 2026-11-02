@@ -75,6 +75,7 @@ export async function GET(request: NextRequest) {
         fulfilmentStatus: true,
         subtotal: true,
         deliveryFee: true,
+        deliveryDistanceM: true,
         total: true,
         items: { select: { qty: true } },
         payments: { select: { method: true, status: true }, orderBy: { id: "desc" } },
@@ -98,6 +99,7 @@ export async function GET(request: NextRequest) {
     c.fulfilmentStatus,
     c.itemCount,
     c.subtotal,
+    c.distanceKm,
     c.deliveryFee,
     c.total,
   ];
@@ -116,6 +118,8 @@ export async function GET(request: NextRequest) {
       fulfilmentBadgeInfo(o)[locale],
       o.items.reduce((sum, item) => sum + item.qty, 0),
       o.subtotal,
+      // One decimal, with the decimal mark Excel expects for the admin's language.
+      o.deliveryDistanceM === null ? "" : (o.deliveryDistanceM / 1000).toFixed(1).replace(".", locale === "id" ? "," : "."),
       o.deliveryFee,
       o.total,
     ];

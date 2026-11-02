@@ -79,5 +79,5 @@ export const storeSettings = {
   address: "Jl. Palem Sememi Raya F16, Sememi, Benowo, Surabaya",
   opensAt: "10:00",
   closesAt: "21:00",
-  deliveryFee: 15000,
+  deliveryFee: 10000,
 };

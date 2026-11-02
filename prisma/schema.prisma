@@ -73,7 +73,7 @@ model User {
   // Null for accounts created with "Continue with Google" until a password is set via reset.
   passwordHash String?   @map("password_hash") @db.VarChar(255)
   googleId     String?   @unique @map("google_id") @db.VarChar(255)
-  role        UserRole  @default(customer)
+  role         UserRole  @default(customer)
   address      String?   @db.VarChar(255)
   city         String?   @db.VarChar(100)
   postalCode   String?   @map("postal_code") @db.VarChar(10)
@@ -127,25 +127,30 @@ model ProductVariant {
 }
 
 model Order {
-  id               BigInt           @id @default(autoincrement())
-  orderNumber      String           @unique @map("order_number") @db.VarChar(12)
-  userId           BigInt?          @map("user_id")
-  customerName     String           @map("customer_name") @db.VarChar(100)
-  email            String           @db.VarChar(150)
-  phone            String           @db.VarChar(20)
-  fulfilmentMethod FulfilmentMethod @map("fulfilment_method")
-  shippingAddress  String?          @map("shipping_address") @db.VarChar(255)
-  shippingCity     String?          @map("shipping_city") @db.VarChar(100)
-  shippingPostal   String?          @map("shipping_postal") @db.VarChar(10)
-  subtotal         Int
-  deliveryFee      Int              @default(0) @map("delivery_fee")
-  total            Int
-  paymentStatus    PaymentStatus    @default(awaiting) @map("payment_status")
-  fulfilmentStatus FulfilmentStatus @default(pending) @map("fulfilment_status")
+  id                BigInt           @id @default(autoincrement())
+  orderNumber       String           @unique @map("order_number") @db.VarChar(12)
+  userId            BigInt?          @map("user_id")
+  customerName      String           @map("customer_name") @db.VarChar(100)
+  email             String           @db.VarChar(150)
+  phone             String           @db.VarChar(20)
+  fulfilmentMethod  FulfilmentMethod @map("fulfilment_method")
+  shippingAddress   String?          @map("shipping_address") @db.VarChar(255)
+  shippingCity      String?          @map("shipping_city") @db.VarChar(100)
+  shippingPostal    String?          @map("shipping_postal") @db.VarChar(10)
+  /// The customer's pin on the map, for the courier.
+  shippingLat       Float?           @map("shipping_lat")
+  shippingLng       Float?           @map("shipping_lng")
+  /// Road distance from the store in metres; the delivery fee was worked out from it.
+  deliveryDistanceM Int?             @map("delivery_distance_m")
+  subtotal          Int
+  deliveryFee       Int              @default(0) @map("delivery_fee")
+  total             Int
+  paymentStatus     PaymentStatus    @default(awaiting) @map("payment_status")
+  fulfilmentStatus  FulfilmentStatus @default(pending) @map("fulfilment_status")
   /// Site language when the order was placed ("en" | "id"); its emails are written in it.
-  locale           String           @default("en") @db.VarChar(2)
-  createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime?        @updatedAt @map("updated_at")
+  locale            String           @default("en") @db.VarChar(2)
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime?        @updatedAt @map("updated_at")
 
   user     User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   items    OrderItem[]
@@ -204,25 +209,33 @@ model Payment {
 
 /// One row (id = 1). Edited from Admin / Store settings.
 model StoreSettings {
-  id                    Int      @id @default(1)
-  storeName             String   @map("store_name") @db.VarChar(100)
-  city                  String   @db.VarChar(100)
-  email                 String   @db.VarChar(150)
-  phone                 String   @db.VarChar(20)
-  address               String   @db.VarChar(255)
-  pickupEnabled         Boolean  @default(true) @map("pickup_enabled")
-  deliveryEnabled       Boolean  @default(true) @map("delivery_enabled")
-  opensAt               String   @default("10:00") @map("opens_at") @db.VarChar(5)
-  closesAt              String   @default("21:00") @map("closes_at") @db.VarChar(5)
+  id              Int      @id @default(1)
+  storeName       String   @map("store_name") @db.VarChar(100)
+  city            String   @db.VarChar(100)
+  email           String   @db.VarChar(150)
+  phone           String   @db.VarChar(20)
+  address         String   @db.VarChar(255)
+  pickupEnabled   Boolean  @default(true) @map("pickup_enabled")
+  deliveryEnabled Boolean  @default(true) @map("delivery_enabled")
+  opensAt         String   @default("10:00") @map("opens_at") @db.VarChar(5)
+  closesAt        String   @default("21:00") @map("closes_at") @db.VarChar(5)
   /// Comma-separated: mon,tue,wed,thu,fri,sat,sun
-  openDays              String   @default("mon,tue,wed,thu,fri,sat,sun") @map("open_days") @db.VarChar(40)
-  deliveryFee           Int      @default(15000) @map("delivery_fee")
-  vaEnabled             Boolean  @default(true) @map("va_enabled")
-  qrisEnabled           Boolean  @default(true) @map("qris_enabled")
-  ewalletEnabled        Boolean  @default(true) @map("ewallet_enabled")
+  openDays        String   @default("mon,tue,wed,thu,fri,sat,sun") @map("open_days") @db.VarChar(40)
+  /// Delivery fee by road distance: deliveryFee covers the first deliveryBaseKm km, each started km
+  /// after that adds deliveryPerKm, and nothing is delivered beyond deliveryMaxKm.
+  deliveryFee     Int      @default(10000) @map("delivery_fee")
+  deliveryBaseKm  Int      @default(3) @map("delivery_base_km")
+  deliveryPerKm   Int      @default(2500) @map("delivery_per_km")
+  deliveryMaxKm   Int      @default(30) @map("delivery_max_km")
+  /// Where deliveries start from (the shop's pin).
+  storeLat        Float    @default(-7.2375) @map("store_lat")
+  storeLng        Float    @default(112.6365) @map("store_lng")
+  vaEnabled       Boolean  @default(true) @map("va_enabled")
+  qrisEnabled     Boolean  @default(true) @map("qris_enabled")
+  ewalletEnabled  Boolean  @default(true) @map("ewallet_enabled")
   /// Indomaret / Alfamart: off until the gateway enables them.
-  retailEnabled         Boolean  @default(false) @map("retail_enabled")
-  updatedAt             DateTime @default(now()) @updatedAt @map("updated_at")
+  retailEnabled   Boolean  @default(false) @map("retail_enabled")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
 
   @@map("store_settings")
 }

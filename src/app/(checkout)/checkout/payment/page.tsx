@@ -6,7 +6,8 @@ import { cartSummaryLines } from "@/components/checkout/summary-lines";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCart } from "@/lib/cart";
-import { formatAddress, joinStreet, readCheckoutDetails } from "@/lib/orders";
+import { formatDistance } from "@/lib/format";
+import { checkoutDeliveryFee, formatAddress, joinStreet, readCheckoutDetails } from "@/lib/orders";
 import { getPaymentOptions } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -27,7 +28,9 @@ export default async function CheckoutPaymentPage() {
   const delivery = details.fulfilment === "delivery";
   if (delivery ? !settings.deliveryEnabled : !settings.pickupEnabled) redirect("/checkout");
 
-  const fee = delivery ? settings.deliveryFee : 0;
+  const fee = checkoutDeliveryFee(settings, details);
+  // No distance on file, or the store's range shrank since: pin the address again.
+  if (fee === null) redirect("/checkout");
   const { methods, logos } = await getPaymentOptions(settings);
   const defaultMethod = methods.includes("bca_va") ? "bca_va" : (methods[0] ?? null);
 
@@ -46,6 +49,7 @@ export default async function CheckoutPaymentPage() {
                   postal: details.postal,
                 })
               : settings.address,
+            distance: delivery && details.distanceM !== null ? formatDistance(details.distanceM, locale) : null,
             fee,
           }}
           methods={methods}

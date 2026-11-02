@@ -216,7 +216,7 @@ export default async function LocationPage() {
               {t.ctaTitle}
             </h2>
             <p className="max-w-[560px] text-pretty text-lg leading-[27px] text-muted-foreground">
-              {t.ctaBody(formatRupiah(settings.deliveryFee))}
+              {t.ctaBody(formatRupiah(settings.deliveryFee), settings.deliveryMaxKm)}
             </p>
             <p className="max-w-[560px] text-pretty text-base leading-normal font-semibold text-foreground">
               {t.pickupCutoff(halfHourBefore(settings))}

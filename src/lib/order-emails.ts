@@ -3,7 +3,7 @@ import { variantLabel } from "@/content/products";
 import type { Locale } from "@/i18n/config";
 import { pickMessages } from "@/i18n/config";
 import { emailMessages } from "@/i18n/messages/emails";
-import { formatDateTime, formatRupiah } from "./format";
+import { formatDateTime, formatDistance, formatRupiah } from "./format";
 import { button, fallbackLink, highlight, infoBox, itemsTable, paragraph, renderEmail, type EmailItem } from "./email-template";
 import { appUrl, sendMail } from "./mail";
 import { paymentMethodInfo } from "./order-status";
@@ -66,7 +66,14 @@ export async function sendOrderPlacedEmail(order: FullOrder) {
     : null;
   const totals: Row[] = [
     [t.common.subtotal, formatRupiah(order.subtotal)],
-    [order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup, order.deliveryFee ? formatRupiah(order.deliveryFee) : t.common.free],
+    [
+      order.fulfilmentMethod === "delivery"
+        ? order.deliveryDistanceM !== null
+          ? `${t.common.delivery} (${formatDistance(order.deliveryDistanceM, lang)})`
+          : t.common.delivery
+        : t.common.pickup,
+      order.deliveryFee ? formatRupiah(order.deliveryFee) : t.common.free,
+    ],
     [t.common.total, formatRupiah(order.total)],
   ];
   const feeRow: Row[] = pay.serviceFee > 0 ? [[t.common.serviceFee, formatRupiah(pay.serviceFee)]] : [];

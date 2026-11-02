@@ -3,14 +3,16 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Store, Truck } from "lucide-react";
-import { saveCheckoutDetails, type DetailsState } from "@/app/actions/checkout";
+import { addressAt, findPlaces, quoteDelivery, saveCheckoutDetails, type DeliveryQuote, type DetailsState } from "@/app/actions/checkout";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { Button } from "@/components/ui/button";
 import { Field, TextInput } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { formatRupiah } from "@/lib/format";
+import type { Place } from "@/lib/geocode";
 import { CheckoutSection } from "./checkout-section";
+import { DeliveryPicker, type LatLng, type PinSource, type QuoteState } from "./delivery-picker";
 import { OrderSummary, type SummaryLine } from "./order-summary";
 import { SummaryToggle } from "./summary-toggle";
 
@@ -26,17 +28,21 @@ export type DetailsValues = {
 };
 
 type TextKey = Exclude<keyof DetailsValues, "fulfilment">;
+type AddressKey = "street" | "city" | "postal";
 
 const initialState: DetailsState = { errors: {}, attempt: 0 };
 
 /**
  * Checkout · Details, after pen frame PPHfX with the owner-approved simpler
  * flow: 1 Contact (email, name, phone) and 2 Delivery or pickup (the two
- * tiles, then the Surabaya address or the store's pickup details). No
- * country/province selects, single delivery-method card or billing address.
+ * tiles, then the delivery pin on the map with its distance and fee, and the
+ * address, or the store's pickup details). No country/province selects,
+ * single delivery-method card or billing address.
  */
 export function DetailsForm({
   initial,
+  initialPin,
+  initialQuote,
   saved,
   signInHref,
   options,
@@ -44,17 +50,75 @@ export function DetailsForm({
   summary,
 }: {
   initial: DetailsValues;
+  initialPin: LatLng | null;
+  initialQuote: DeliveryQuote | null;
   saved: Pick<DetailsValues, "street" | "apartment" | "city" | "postal"> | null;
   signInHref: string | null;
   options: { delivery: boolean; pickup: boolean };
-  store: { city: string; shortAddress: string; fullAddress: string; opensAt: string; closesAt: string; deliveryFee: number };
+  store: {
+    city: string;
+    shortAddress: string;
+    fullAddress: string;
+    opensAt: string;
+    closesAt: string;
+    /** Fee for the first km; the real fee follows the pin's road distance. */
+    baseFee: number;
+    maxKm: number;
+    lat: number;
+    lng: number;
+  };
   summary: { lines: SummaryLine[]; itemCount: number; subtotal: number };
 }) {
   const t = useMessages(checkoutMessages);
   const d = t.details;
   const [state, formAction, pending] = useActionState(saveCheckoutDetails, initialState);
   const [values, setValues] = useState(initial);
+  const [pin, setPin] = useState<LatLng | null>(initialPin);
+  const [quote, setQuote] = useState<QuoteState>(initialQuote ?? { status: "idle" });
   const formRef = useRef<HTMLFormElement>(null);
+  // Only the latest pin's answers count when the customer moves it quickly.
+  const pinSeq = useRef(0);
+  // What the map last filled in: a field still holding it (or empty) follows the next pin.
+  const autoFilled = useRef<Partial<Record<AddressKey, string>>>({});
+
+  const fillAddress = (place: Pick<Place, AddressKey>) =>
+    setValues((v) => {
+      const next = { ...v };
+      for (const key of ["street", "city", "postal"] as const) {
+        const value = place[key];
+        if (!value) continue;
+        if (v[key].trim() === "" || v[key] === autoFilled.current[key]) {
+          next[key] = value;
+          autoFilled.current[key] = value;
+        }
+      }
+      return next;
+    });
+
+  const movePin = async (at: LatLng, source: PinSource) => {
+    const seq = ++pinSeq.current;
+    setPin(at);
+    setQuote({ status: "loading" });
+    const [q, place] = await Promise.all([
+      quoteDelivery(at.lat, at.lng).catch((): DeliveryQuote => ({ status: "busy" })),
+      // A search result already carries its address.
+      source === "search" ? Promise.resolve(null) : addressAt(at.lat, at.lng).catch(() => null),
+    ]);
+    if (seq !== pinSeq.current) return;
+    setQuote(q.status === "invalid" ? { status: "busy" } : q);
+    if (place) fillAddress(place);
+  };
+
+  const applySavedAddress = async () => {
+    if (!saved) return;
+    setValues((v) => ({ ...v, ...saved }));
+    autoFilled.current = {};
+    if (pin) return;
+    // Put the pin near the saved address; the customer fine-tunes it on the map.
+    const found = await findPlaces(`${saved.street}, ${saved.city}`).catch(() => null);
+    const first = found && "places" in found ? found.places[0] : undefined;
+    if (first) void movePin({ lat: first.lat, lng: first.lng }, "search");
+  };
 
   // Move focus to the first field with an error after each failed submit.
   useEffect(() => {
@@ -87,7 +151,8 @@ export function DetailsForm({
   };
 
   const delivery = values.fulfilment === "delivery";
-  const fee = delivery ? store.deliveryFee : 0;
+  // Delivery has no price until the pin is placed and measured.
+  const fee = delivery ? (quote.status === "ok" ? quote.fee : null) : 0;
   const closed = !options.delivery && !options.pickup;
 
   return (
@@ -97,7 +162,7 @@ export function DetailsForm({
       <SummaryToggle
         id="checkout-summary"
         labels={t.summary}
-        total={formatRupiah(summary.subtotal + fee)}
+        total={formatRupiah(summary.subtotal + (fee ?? 0))}
         className="lg:order-last lg:w-[440px] lg:shrink-0"
       >
         <OrderSummary
@@ -107,7 +172,7 @@ export function DetailsForm({
           subtotal={summary.subtotal}
           fulfilment={values.fulfilment}
           fee={fee}
-          total={summary.subtotal + fee}
+          total={summary.subtotal + (fee ?? 0)}
         />
       </SummaryToggle>
       <form
@@ -167,7 +232,7 @@ export function DetailsForm({
             delivery && saved ? (
               <button
                 type="button"
-                onClick={() => setValues((v) => ({ ...v, ...saved }))}
+                onClick={() => void applySavedAddress()}
                 className="relative text-sm leading-normal font-semibold whitespace-nowrap text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
               >
                 {d.useSaved}
@@ -194,8 +259,12 @@ export function DetailsForm({
                       onChange={() => setValues((v) => ({ ...v, fulfilment: "delivery" }))}
                       icon={Truck}
                       title={<span className="block leading-[21px]">{d.delivery}</span>}
-                      sub={<span className="block leading-5">{d.deliverySub(store.city)}</span>}
-                      meta={<span className="block leading-[21px]">{formatRupiah(store.deliveryFee)}</span>}
+                      sub={<span className="block leading-5">{d.deliverySub(store.maxKm)}</span>}
+                      meta={
+                        <span className="block leading-[21px]">
+                          {quote.status === "ok" ? formatRupiah(quote.fee) : d.feeFrom(formatRupiah(store.baseFee))}
+                        </span>
+                      }
                       className="flex-1 items-start"
                     />
                   ) : null}
@@ -222,6 +291,18 @@ export function DetailsForm({
 
               {delivery ? (
                 <>
+                  <input type="hidden" name="lat" value={pin ? pin.lat.toFixed(6) : ""} />
+                  <input type="hidden" name="lng" value={pin ? pin.lng.toFixed(6) : ""} />
+                  <DeliveryPicker
+                    store={{ lat: store.lat, lng: store.lng }}
+                    maxKm={store.maxKm}
+                    pin={pin}
+                    quote={quote}
+                    error={err("lat")}
+                    onPin={(at, source) => void movePin(at, source)}
+                    onPlace={fillAddress}
+                    onSwitchToPickup={options.pickup ? () => setValues((v) => ({ ...v, fulfilment: "pickup" })) : undefined}
+                  />
                   <Field label={d.street} htmlFor="checkout-street" error={err("street")}>
                     {input("street", {
                       autoComplete: "address-line1",
@@ -239,8 +320,7 @@ export function DetailsForm({
                   </Field>
                   <div className="grid w-full gap-5 sm:grid-cols-2 sm:gap-4">
                     <Field label={d.city} htmlFor="checkout-city" error={err("city")}>
-                      {/* We only deliver within Surabaya, so the city is fixed (the server enforces it too). */}
-                      {input("city", { autoComplete: "address-level2", readOnly: true, className: "bg-oat text-muted-foreground" })}
+                      {input("city", { autoComplete: "address-level2", placeholder: d.cityPlaceholder, required: true, maxLength: 100 })}
                     </Field>
                     <Field label={d.postal} htmlFor="checkout-postal" error={err("postal")}>
                       {input("postal", {

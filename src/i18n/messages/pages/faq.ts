@@ -5,7 +5,9 @@ export type FaqFacts = {
   address: string;
   hours: string;
   opensAt: string;
+  /** Base delivery fee, e.g. "Rp10.000". */
   deliveryFee: string;
+  deliveryMaxKm: number;
   email: string;
   payments: string;
   /** Every enabled payment method with its brands, e.g. "e-wallets (DANA, OVO or ShopeePay), QRIS or …". */
@@ -83,7 +85,7 @@ export const faqMessages = defineMessages({
           {
             q: "Can I choose delivery or store pickup?",
             a: (f: FaqFacts) =>
-              `Yes. Choose delivery (a flat ${f.deliveryFee} fee) or free store pickup at checkout. You can check out as a guest or sign in to follow your orders in your account. Pay by ${f.payments}.`,
+              `Yes. Choose delivery (from ${f.deliveryFee} by distance, up to ${f.deliveryMaxKm} km from the store) or free store pickup at checkout. You can check out as a guest or sign in to follow your orders in your account. Pay by ${f.payments}.`,
           },
           {
             q: "How can I pay?",
@@ -182,7 +184,7 @@ export const faqMessages = defineMessages({
           {
             q: "Bisa pilih dikirim atau ambil di toko?",
             a: (f: FaqFacts) =>
-              `Bisa. Pilih pengiriman (ongkir tetap ${f.deliveryFee}) atau ambil di toko gratis saat checkout. Kamu bisa checkout sebagai tamu atau masuk ke akun untuk memantau pesanan. Bayar lewat ${f.payments}.`,
+              `Bisa. Pilih pengiriman (ongkir mulai ${f.deliveryFee} sesuai jarak, maksimal ${f.deliveryMaxKm} km dari toko) atau ambil di toko gratis saat checkout. Kamu bisa checkout sebagai tamu atau masuk ke akun untuk memantau pesanan. Bayar lewat ${f.payments}.`,
           },
           {
             q: "Bisa bayar pakai apa?",

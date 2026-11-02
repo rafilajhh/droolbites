@@ -31,6 +31,9 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
     // Word joiners keep "10:00–21:00" on one line.
     hours: formatOpeningHours(settings, locale).replace("–", "⁠–⁠"),
     deliveryFee: formatRupiah(settings.deliveryFee),
+    baseKm: settings.deliveryBaseKm,
+    perKm: formatRupiah(settings.deliveryPerKm),
+    maxKm: settings.deliveryMaxKm,
     opensAt: settings.opensAt,
     pickupCutoff: halfHourBefore(settings),
   };

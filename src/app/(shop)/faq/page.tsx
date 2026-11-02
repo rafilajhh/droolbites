@@ -77,6 +77,7 @@ export default async function FaqPage() {
     hours: formatOpeningHours(settings, locale),
     opensAt: settings.opensAt,
     deliveryFee: formatRupiah(settings.deliveryFee),
+    deliveryMaxKm: settings.deliveryMaxKm,
     email: settings.email,
     payments,
     paymentsDetail: list(detail, t.payments.or),

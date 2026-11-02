@@ -9,7 +9,7 @@ import { variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
-import { formatDateTime, formatRupiah } from "@/lib/format";
+import { formatDateTime, formatDistance, formatRupiah } from "@/lib/format";
 import { paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { formatAddress, payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
@@ -200,7 +200,10 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
               <dd className="text-right tabular-nums">{formatRupiah(order.subtotal)}</dd>
               {isDelivery || order.deliveryFee > 0 ? (
                 <>
-                  <dt className={muted}>{t.deliveryFee}</dt>
+                  <dt className={muted}>
+                    {t.deliveryFee}
+                    {order.deliveryDistanceM !== null ? ` (${formatDistance(order.deliveryDistanceM, locale)})` : ""}
+                  </dt>
                   <dd className="text-right tabular-nums">{formatRupiah(order.deliveryFee)}</dd>
                 </>
               ) : null}

@@ -46,7 +46,8 @@ export function OrderSummary({
   itemCount: number;
   subtotal: number;
   fulfilment: "delivery" | "pickup";
-  fee: number;
+  /** null while the delivery pin isn't placed yet: the row asks for it instead of a price. */
+  fee: number | null;
   /** Payment service fee the customer pays on top (only when the gateway charges it to the customer). */
   serviceFee?: number;
   total: number;
@@ -90,9 +91,9 @@ export function OrderSummary({
         />
         <SummaryRow
           label={fulfilment === "delivery" ? t.delivery : t.pickup}
-          value={fee > 0 ? formatRupiah(fee) : t.free}
+          value={fee === null ? t.pinFirst : fee > 0 ? formatRupiah(fee) : t.free}
           labelClassName="leading-[23px]!"
-          valueClassName="leading-[23px]!"
+          valueClassName={cn("leading-[23px]!", fee === null && "font-normal text-muted-foreground")}
         />
         {serviceFee > 0 ? (
           <SummaryRow

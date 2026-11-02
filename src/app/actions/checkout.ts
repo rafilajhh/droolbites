@@ -7,14 +7,17 @@ import { redirect } from "next/navigation";
 import { after } from "next/server";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { getCurrentUser } from "@/lib/auth";
+import { deliveryFeeFor, isLatLng, measureDelivery, withinRange } from "@/lib/delivery";
+import { placeAt, searchPlaces, type Place } from "@/lib/geocode";
+import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
 import { MAX_QTY, readCartEntries, writeCartEntries, type CartEntry } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { paymentMethodInfo } from "@/lib/order-status";
 import {
   chargeOrder,
+  checkoutDeliveryFee,
   checkoutDetailsSchema,
   clearCheckoutDetails,
-  DELIVERY_CITY,
   DETAILS_COOKIE,
   type ChargeResult,
   type CheckoutDetails,
@@ -45,7 +48,8 @@ type ErrorKey =
   | "street"
   | "city"
   | "postal"
-  | "postalArea"
+  | "location"
+  | "tooFar"
   | "method"
   | "methodUnavailable"
   | "payment"
@@ -68,6 +72,64 @@ export type PayCheckState = { result?: "awaiting"; attempt: number };
 function str(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value : "";
+}
+
+/** A coordinate from the form, or null when empty or not a number. */
+function coord(formData: FormData, name: string) {
+  const value = str(formData, name).trim();
+  const n = value === "" ? Number.NaN : Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Delivery pin: distance, fee and address lookups for the details map */
+/* ------------------------------------------------------------------ */
+
+export type DeliveryQuote =
+  | { status: "ok"; distanceM: number; fee: number; estimated: boolean }
+  | { status: "tooFar"; distanceM: number; maxKm: number }
+  | { status: "invalid" | "busy" };
+
+/** Requests per client per 15 minutes for the map's lookups (each pin move, search or reverse lookup). */
+const LOOKUPS_PER_WINDOW = 60;
+
+async function lookupAllowed(kind: string) {
+  const ip = await clientIp();
+  return allowRequest(`${kind}:${ip}`, perClientMax(ip, LOOKUPS_PER_WINDOW));
+}
+
+/** Distance and fee for a pin, so the form can show them before the details are saved. */
+export async function quoteDelivery(lat: number, lng: number): Promise<DeliveryQuote> {
+  if (!isLatLng(lat, lng)) return { status: "invalid" };
+  if (!(await lookupAllowed("quote"))) return { status: "busy" };
+  const settings = await getStoreSettings();
+  const { distanceM, estimated } = await measureDelivery(settings, { lat, lng });
+  if (!withinRange(settings, distanceM)) return { status: "tooFar", distanceM, maxKm: settings.deliveryMaxKm };
+  return { status: "ok", distanceM, fee: deliveryFeeFor(settings, distanceM), estimated };
+}
+
+/** Address search for the map (submitted, never as-you-type). */
+export async function findPlaces(query: string): Promise<{ places: Place[] } | { error: "busy" }> {
+  if (typeof query !== "string" || query.trim().length < 3) return { places: [] };
+  if (!(await lookupAllowed("places"))) return { error: "busy" };
+  const [settings, locale] = await Promise.all([getStoreSettings(), getLocale()]);
+  try {
+    return { places: await searchPlaces(query, { lat: settings.storeLat, lng: settings.storeLng }, locale) };
+  } catch (error) {
+    console.warn("[checkout] address search failed", (error as Error).message);
+    return { error: "busy" };
+  }
+}
+
+/** The street, city and postal code at a pin, to fill the address fields. */
+export async function addressAt(lat: number, lng: number): Promise<Place | null> {
+  if (!isLatLng(lat, lng) || !(await lookupAllowed("reverse"))) return null;
+  try {
+    return await placeAt({ lat, lng }, await getLocale());
+  } catch (error) {
+    console.warn("[checkout] reverse lookup failed", (error as Error).message);
+    return null;
+  }
 }
 
 function fulfilmentEnabled(settings: StoreSettings, method: "delivery" | "pickup") {
@@ -96,9 +158,12 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
     phone: str(formData, "phone"),
     street: str(formData, "street"),
     apartment: str(formData, "apartment"),
-    // Delivery is Surabaya-only: the city field is read-only and never taken from the client.
-    city: DELIVERY_CITY,
+    city: str(formData, "city"),
     postal: str(formData, "postal"),
+    lat: coord(formData, "lat"),
+    lng: coord(formData, "lng"),
+    // Measured below, never taken from the client.
+    distanceM: null,
   });
 
   const errors: DetailsState["errors"] = {};
@@ -111,9 +176,9 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
           ? "method"
           : field === "apartment"
             ? "street"
-            : field === "postal" && issue.message === "postalArea"
-              ? "postalArea"
-              : field;
+            : field === "lat" || field === "lng" || field === "distanceM"
+              ? "location"
+              : (field as ErrorKey);
     }
   } else if (!fulfilmentEnabled(settings, parsed.data.fulfilment)) {
     errors.fulfilment = "methodUnavailable";
@@ -121,7 +186,14 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
   if (!parsed.success || Object.keys(errors).length > 0) return { errors, attempt: prev.attempt + 1 };
 
   const details = parsed.data;
-  if (details.fulfilment === "pickup") Object.assign(details, { street: "", apartment: "", city: "", postal: "" });
+  if (details.fulfilment === "pickup") {
+    Object.assign(details, { street: "", apartment: "", city: "", postal: "", lat: null, lng: null, distanceM: null });
+  } else {
+    // The fee is worked out from this distance at every later step, at the store's current rates.
+    const { distanceM } = await measureDelivery(settings, { lat: details.lat!, lng: details.lng! });
+    if (!withinRange(settings, distanceM)) return { errors: { lat: "tooFar" }, attempt: prev.attempt + 1 };
+    details.distanceM = distanceM;
+  }
   await writeCheckoutDetails(details);
   redirect("/checkout/payment");
 }
@@ -145,6 +217,8 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   if (entries.length === 0) redirect("/menu");
   if (!details) redirect("/checkout");
   if (!fulfilmentEnabled(settings, details.fulfilment)) return { error: "methodUnavailable", attempt };
+  // No distance on file, or now beyond the store's range: back to the details step to re-pin.
+  if (checkoutDeliveryFee(settings, details) === null) redirect("/checkout");
 
   const method = formData.get("method");
   if (!isPaymentMethod(method)) return { error: "payment", attempt };
@@ -219,7 +293,7 @@ async function createOrder(
           unitPrice: prices.get(e.v)!,
         }));
         const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0);
-        const deliveryFee = delivery ? settings.deliveryFee : 0;
+        const deliveryFee = checkoutDeliveryFee(settings, details) ?? 0;
 
         const number = await nextOrderNumber(tx);
         await tx.order.create({
@@ -233,6 +307,9 @@ async function createOrder(
             shippingAddress: delivery ? joinStreet(details.street, details.apartment) : null,
             shippingCity: delivery ? details.city : null,
             shippingPostal: delivery ? details.postal : null,
+            shippingLat: delivery ? details.lat : null,
+            shippingLng: delivery ? details.lng : null,
+            deliveryDistanceM: delivery ? details.distanceM : null,
             subtotal,
             deliveryFee,
             total: subtotal + deliveryFee,
