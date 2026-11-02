@@ -1,12 +1,10 @@
 import Image from "next/image";
-import { StatusBadge } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink } from "@/components/ui/button";
 import { photoFrame } from "@/components/ui/snapshot";
 import { getLocale, getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatRupiah } from "@/lib/format";
-import { awaitingConfirmationInfo, fulfilmentStatusInfo, paymentStatusInfo } from "@/lib/order-status";
 import { getAccountOrders, itemNames, type AccountOrder } from "./account-orders";
 
 type StepState = "done" | "current" | "todo";
@@ -39,7 +37,6 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
   const steps = labels.map((label, i) => ({ label, state: (i < at ? "done" : i === at ? "current" : "todo") as StepState }));
 
   const now = statusLine(order, a, locale);
-  const badge = unpaid ? paymentStatusInfo.awaiting : f === "pending" ? awaitingConfirmationInfo : fulfilmentStatusInfo[f];
   const names = itemNames(order);
   const href = `/orders/${order.orderNumber}`;
 
@@ -61,16 +58,14 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="font-mono text-[13px] leading-[17px] font-semibold text-muted-foreground">
-            {order.orderNumber} · {formatDate(order.createdAt, locale)} · {delivery ? o.delivery : o.pickup}
+            {order.orderNumber} · {formatDate(order.createdAt, locale)}
+            <span className="max-sm:hidden"> · {delivery ? o.delivery : o.pickup}</span>
           </p>
           <p className="font-display text-[22px] leading-[26px] font-bold text-balance text-foreground sm:text-[24px] sm:leading-[29px]">
             {now.title}
           </p>
           <p className="text-[15px] leading-[23px] text-muted-foreground">{now.sub}</p>
         </div>
-        <StatusBadge tone={badge.tone} className="shrink-0 max-sm:hidden">
-          {badge[locale]}
-        </StatusBadge>
       </div>
 
       <ol aria-label={a.progress} className="grid w-full grid-cols-5 gap-1.5 sm:gap-2">

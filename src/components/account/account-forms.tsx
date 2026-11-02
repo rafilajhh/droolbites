@@ -223,10 +223,6 @@ export function AddressForm({
   return (
     <form ref={formRef} action={action} noValidate className="flex w-full flex-col gap-6">
       <div className="flex w-full flex-col gap-3">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-[15px] leading-[23px] font-bold text-foreground">{t.address.pinTitle}</p>
-          <p className="text-sm leading-[21px] text-muted-foreground">{t.address.pinSub}</p>
-        </div>
         <DeliveryPicker
           store={{ lat: store.lat, lng: store.lng }}
           maxKm={store.maxKm}
