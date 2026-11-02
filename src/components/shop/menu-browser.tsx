@@ -56,11 +56,11 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
   const matching = new Set((query ? rankProducts(allProducts, query) : allProducts).map((p) => p.id));
 
   const closeFilter = useCallback(() => setFilterOpen(false), [setFilterOpen]);
-  // Only the toolbar's clear button commits here; typing happens in the site-wide search sheet.
+  // The toolbar field commits here as you type (debounced), filtering the grid in place.
   const commitSearch = useCallback(
     (q: string) => {
       setFiltered(true);
-      setMenuParams({ q: q || null });
+      setMenuParams({ q: q || null }, "replace");
     },
     [setFiltered],
   );
