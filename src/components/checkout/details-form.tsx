@@ -273,7 +273,7 @@ export function DetailsForm({
                 aria-describedby={state.errors.fulfilment ? "checkout-fulfilment-error" : undefined}
               >
                 <legend className="sr-only">{d.receive}</legend>
-                <div className="flex w-full flex-col gap-4 sm:flex-row">
+                <div className="flex w-full flex-col gap-4 md:flex-row lg:flex-col xl:flex-row">
                   {options.delivery ? (
                     <OptionTile
                       name="fulfilment"
@@ -289,7 +289,7 @@ export function DetailsForm({
                           {quote.status === "ok" ? formatRupiah(quote.fee) : d.feeFrom(formatRupiah(store.baseFee))}
                         </span>
                       }
-                      className="flex-1 items-start"
+                      className="min-w-0 flex-1 items-start"
                     />
                   ) : null}
                   {options.pickup ? (
@@ -303,7 +303,7 @@ export function DetailsForm({
                       title={<span className="block leading-[21px]">{d.pickup}</span>}
                       sub={<span className="block leading-5">{store.shortAddress}</span>}
                       meta={<span className="block leading-[21px] text-primary">{d.free}</span>}
-                      className="flex-1 items-start"
+                      className="min-w-0 flex-1 items-start"
                     />
                   ) : null}
                 </div>
