@@ -16,6 +16,7 @@ export function OptionTile({
   title,
   sub,
   meta,
+  metaPlacement = "aside",
   disabled,
   className,
 }: {
@@ -28,6 +29,8 @@ export function OptionTile({
   title: React.ReactNode;
   sub?: React.ReactNode;
   meta?: React.ReactNode;
+  /** Put the price beside the title so a description can use the full text column. */
+  metaPlacement?: "aside" | "header";
   disabled?: boolean;
   className?: string;
 }) {
@@ -56,10 +59,17 @@ export function OptionTile({
       </span>
       {Icon ? <Icon className="size-[22px] shrink-0 text-foreground" aria-hidden /> : null}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-base font-bold leading-[1.3] text-foreground">{title}</span>
+        {metaPlacement === "header" ? (
+          <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <span className="text-base font-bold leading-[1.3] text-foreground">{title}</span>
+            {meta ? <span className="ml-auto shrink-0 text-sm font-semibold leading-normal text-foreground">{meta}</span> : null}
+          </span>
+        ) : (
+          <span className="text-base font-bold leading-[1.3] text-foreground">{title}</span>
+        )}
         {sub ? <span className="text-[13px] leading-normal text-muted-foreground">{sub}</span> : null}
       </span>
-      {meta ? <span className="shrink-0 text-sm font-semibold leading-normal text-foreground">{meta}</span> : null}
+      {meta && metaPlacement === "aside" ? <span className="shrink-0 text-sm font-semibold leading-normal text-foreground">{meta}</span> : null}
     </label>
   );
 }

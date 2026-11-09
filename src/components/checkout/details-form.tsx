@@ -235,7 +235,7 @@ export function DetailsForm({
                 maxLength: 100,
               })}
             </Field>
-            <Field label={d.phone} htmlFor="checkout-phone" helper={d.phoneHelper} error={err("phone")}>
+            <Field label={d.phone} htmlFor="checkout-phone" error={err("phone")}>
               {input("phone", {
                 type: "tel",
                 inputMode: "tel",
@@ -281,6 +281,7 @@ export function DetailsForm({
                       checked={delivery}
                       onChange={() => setValues((v) => ({ ...v, fulfilment: "delivery" }))}
                       icon={Truck}
+                      metaPlacement="header"
                       title={<span className="block leading-[21px]">{d.delivery}</span>}
                       sub={<span className="block leading-5">{d.deliverySub(store.maxKm)}</span>}
                       meta={
@@ -298,6 +299,7 @@ export function DetailsForm({
                       checked={!delivery}
                       onChange={() => setValues((v) => ({ ...v, fulfilment: "pickup" }))}
                       icon={Store}
+                      metaPlacement="header"
                       title={<span className="block leading-[21px]">{d.pickup}</span>}
                       sub={<span className="block leading-5">{store.shortAddress}</span>}
                       meta={<span className="block leading-[21px] text-primary">{d.free}</span>}
