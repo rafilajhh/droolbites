@@ -11,7 +11,14 @@ import { MenuItemCard } from "@/components/shop/menu-item-card";
 import { ProductBuy } from "@/components/shop/product-buy";
 import { ProductGallery } from "@/components/shop/product-gallery";
 import { toShopCategories, toShopProduct } from "@/components/shop/shop-product";
-import { INGREDIENTS_ON_REQUEST, localized, productContent, productLong } from "@/content/products";
+import {
+  INGREDIENTS_ON_REQUEST,
+  isTrayCategory,
+  localized,
+  PRODUCT_PLACEHOLDER_IMAGE,
+  productContent,
+  productLong,
+} from "@/content/products";
 import { getLocale, getMessages } from "@/i18n/server";
 import { menuMessages } from "@/i18n/messages/menu";
 import { productMessages } from "@/i18n/messages/product";
@@ -56,7 +63,7 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
   const multi = item.variants.length > 1;
   const single = item.variants[0]?.name;
   const unit = multi
-    ? product.category.slug === "brownies"
+    ? isTrayCategory(product.category.slug)
       ? m.unit.tray
       : ""
     : single === "1 piece"
@@ -93,7 +100,8 @@ export default async function ProductPage({ params }: PageProps<"/menu/[slug]">)
   );
   const contactHref = `mailto:${settings.email}?subject=${encodeURIComponent(t.ingredientsSubject(product.name))}`;
 
-  const photos = galleryPhotos(item, t.photos);
+  // A product without a photo shows the placeholder once, not crops of the logo.
+  const photos = galleryPhotos(item, t.photos).slice(0, item.imageUrl === PRODUCT_PLACEHOLDER_IMAGE ? 1 : undefined);
   const rating = productRatings[product.slug];
 
   return (

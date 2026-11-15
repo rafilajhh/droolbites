@@ -134,6 +134,14 @@ export async function rememberOrder(orderNumber: string) {
   (await cookies()).set(RECENT_ORDERS_COOKIE, token, { ...cookieBase, maxAge: RECENT_MAX_AGE });
 }
 
+/**
+ * Forget the orders this browser placed, on sign-out, so a shared device stops
+ * showing their addresses and phone numbers. Server actions only.
+ */
+export async function forgetRecentOrders() {
+  (await cookies()).delete(RECENT_ORDERS_COOKIE);
+}
+
 /** Signed `?t=` token used in emails; grants read access to one order. */
 export async function orderAccessToken(orderNumber: string) {
   return signToken({ typ: "order", o: orderNumber }, "180d");

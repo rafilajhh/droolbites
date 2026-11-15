@@ -8,7 +8,6 @@ import { setCartQty, removeFromCart } from "@/app/actions/cart";
 import { useLocale, useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { variantLabel } from "@/content/products";
-import { lineMeta } from "@/components/checkout/order-summary";
 import { buttonClasses } from "@/components/ui/button";
 import { OrderLine, SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -173,11 +172,8 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                 >
                   <OrderLine
                     name={line.productName}
-                    meta={
-                      singleUnit.test(line.variantName)
-                        ? null
-                        : lineMeta(line.qty, variantLabel(line.variantName, line.categorySlug, locale))
-                    }
+                    // The stepper below shows the quantity, so the meta line is the size alone.
+                    meta={singleUnit.test(line.variantName) ? null : variantLabel(line.variantName, line.categorySlug, locale)}
                     price={formatRupiah(line.lineTotal)}
                     imageUrl={line.imageUrl}
                   />

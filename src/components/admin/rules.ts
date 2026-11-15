@@ -43,10 +43,7 @@ export function categoryStyle(slug: string) {
   return categoryStyles[slug] ?? { dot: "bg-accent-teal", tint: "bg-mint" };
 }
 
-/** Brownies are sold by tray size; everything else by flavor. */
-export function isTrayCategory(slug: string | undefined) {
-  return slug === "brownies";
-}
+export { isTrayCategory } from "@/content/products";
 
 export const ORDER_PAGE_SIZE = 20;
 export const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;

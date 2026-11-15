@@ -2,6 +2,7 @@ import type { MenuCategory, MenuProduct } from "@/lib/catalog";
 import {
   brownieServings,
   categoryName,
+  isTrayCategory,
   productContent,
   productImageUrl,
   productShort,
@@ -53,8 +54,12 @@ export function toShopProduct(product: ProductInput, locale: Locale): ShopProduc
     serves: brownieServings[v.name]?.[locale],
   }));
   const multi = variants.length > 1;
-  const first = variants[0]?.name ?? "";
+  const tray = isTrayCategory(product.category.slug);
   const last = variants[variants.length - 1]?.name ?? "";
+  // "from 10 × 10 to 20 × 30 cm": the unit is said once, and only when both ends are in cm.
+  const cm = /\s*cm$/;
+  const firstName = variants[0]?.name ?? "";
+  const first = cm.test(firstName) && cm.test(last) ? firstName.replace(cm, "") : firstName;
 
   const badge = content?.badge
     ? { label: content.badge.label[locale], className: badgeFill[content.badge.tone] }
@@ -69,9 +74,10 @@ export function toShopProduct(product: ProductInput, locale: Locale): ShopProduc
     categorySlug: product.category.slug,
     categoryName: categoryName(product.category.slug, product.category.name, locale),
     imageUrl: productImageUrl(product.slug, product.imageUrl),
-    // Multi-size products describe their size range, e.g. "Four tray sizes, from 10 × 10 to 20 × 30 cm."
+    // Multi-size products describe their size range: brownies "Four tray sizes, from 10 × 10 to 20 × 30 cm.",
+    // anything else "Two sizes, from Small to Large."
     description: multi
-      ? t.sizeRange(variants.length, first.replace(/\s*cm$/, ""), last)
+      ? (tray ? t.trayRange : t.sizeRange)(variants.length, first, last)
       : productShort(product.slug, product.description, locale),
     searchText: productShort(product.slug, product.description, locale),
     badge,

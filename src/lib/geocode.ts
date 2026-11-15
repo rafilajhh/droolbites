@@ -36,6 +36,7 @@ type NominatimAddress = Partial<
     | "village"
     | "quarter"
     | "city_district"
+    | "district"
     | "city"
     | "town"
     | "municipality"
@@ -58,22 +59,74 @@ async function get(path: string, params: Record<string, string>, lang: string): 
   return res.json();
 }
 
-const clean = (s: string | undefined) => (s ?? "").replace(/^(Kota|Kabupaten)\s+/i, "").trim();
+/** "Kota Malang" → "Malang", "KABUPATEN MALANG" → "Malang". */
+function cleanCity(s: string) {
+  const name = s.replace(/^(Kota|Kabupaten|Kab\.)\s+/i, "").trim();
+  return name === name.toUpperCase() ? name.toLowerCase().replace(/(^|[\s-])\p{L}/gu, (c) => c.toUpperCase()) : name;
+}
 
-function toPlace(p: NominatimPlace): Place | null {
+const comparable = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]/gu, "");
+
+/**
+ * The city or regency of a result: city, town, municipality, regency, then county. A city/town/
+ * municipality tag that is also the result's kelurahan is skipped: OpenStreetMap sometimes files a
+ * kelurahan as the city (Alun-Alun Bundar Malang comes back with "city": "Kiduldalem"). Kecamatan
+ * names are not compared, because many regencies share their name with a kecamatan (Kec. Sidoarjo
+ * in Kab. Sidoarjo), and a regency or county is always trusted. Then a "Kota …" or "Kabupaten …"
+ * part of the full address is used, else null (unknown).
+ */
+function cityOf(p: NominatimPlace): string | null {
+  const a = p.address ?? {};
+  const kelurahan = new Set(
+    [a.suburb, a.village, a.quarter, a.neighbourhood, a.hamlet]
+      .filter((s): s is string => Boolean(s))
+      .map(comparable),
+  );
+  for (const [tagged, trusted] of [
+    [a.city, false],
+    [a.town, false],
+    [a.municipality, false],
+    [a.regency, true],
+    [a.county, true],
+  ] as const) {
+    if (!tagged) continue;
+    const city = cleanCity(tagged);
+    if (city && (trusted || !kelurahan.has(comparable(tagged)))) return city;
+  }
+  const named = (p.display_name ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .find((part) => /^(Kota|Kabupaten|Kab\.)\s+\S/i.test(part));
+  return named ? cleanCity(named) : null;
+}
+
+function toPlace(p: NominatimPlace, city: string): Place | null {
   const lat = Number(p.lat);
   const lng = Number(p.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   const a = p.address ?? {};
   const road = [a.road, a.house_number].filter(Boolean).join(" ");
   const area = a.suburb ?? a.village ?? a.quarter ?? a.neighbourhood ?? a.hamlet ?? a.city_district ?? "";
-  const city = clean(a.city ?? a.town ?? a.municipality ?? a.regency ?? a.county);
   // A named place (a mall, a campus) leads, so the courier and the result list both see it.
   const landmark = p.name && p.name !== a.road && p.name !== area && p.name !== city ? p.name : "";
   const street = [landmark, road, area].filter(Boolean).join(", ");
   const postal = /^\d{5}$/.test(a.postcode ?? "") ? a.postcode! : "";
   const label = [street, city].filter(Boolean).join(", ") || p.display_name || "";
   return { lat, lng, label, street: street.slice(0, 180), city: city.slice(0, 100), postal };
+}
+
+/** A result with its city; when the result doesn't say, the city at its point (a coarse reverse lookup). */
+async function resolvePlace(p: NominatimPlace, lang: string): Promise<Place | null> {
+  const city = cityOf(p);
+  if (city !== null) return toPlace(p, city);
+  // Zoom 10 is city level, so a ~1 km grid is plenty and lets nearby results share one lookup.
+  const lat = Number(p.lat).toFixed(2);
+  const lon = Number(p.lon).toFixed(2);
+  const around = await cached(`c:${lang}:${lat},${lon}`, () => get("/reverse", { lat, lon, zoom: "10" }, lang)).catch(
+    () => null,
+  );
+  const found = around && typeof around === "object" && !("error" in around) ? cityOf(around as NominatimPlace) : null;
+  return toPlace(p, found ?? "");
 }
 
 /**
@@ -107,18 +160,20 @@ async function searchExact(q: string, near: LatLng, lang: string): Promise<Place
   // A box ~45 km around the store to rank local matches first (not a hard limit).
   const d = 0.4;
   const viewbox = [near.lng - d, near.lat + d, near.lng + d, near.lat - d].map((n) => n.toFixed(4)).join(",");
-  return cached(`s:${lang}:${q.toLowerCase()}`, async () => {
-    const body = await get("/search", { q, countrycodes: "id", limit: "5", viewbox }, lang);
-    return (Array.isArray(body) ? (body as NominatimPlace[]) : []).map(toPlace).filter((p): p is Place => p !== null);
-  });
+  const body = await cached(`s:${lang}:${q.toLowerCase()}`, () =>
+    get("/search", { q, countrycodes: "id", limit: "5", viewbox }, lang),
+  );
+  // Resolved after the queued search, not inside it: a city lookup queued from inside would wait on its caller.
+  const places = await Promise.all((Array.isArray(body) ? (body as NominatimPlace[]) : []).map((p) => resolvePlace(p, lang)));
+  return places.filter((p): p is Place => p !== null);
 }
 
 /** The address at a pin, to fill the form. */
 export async function placeAt(at: LatLng, lang: string): Promise<Place | null> {
   const lat = at.lat.toFixed(5);
   const lng = at.lng.toFixed(5);
-  return cached(`r:${lang}:${lat},${lng}`, async () => {
-    const body = (await get("/reverse", { lat, lon: lng, zoom: "18" }, lang)) as NominatimPlace & { error?: string };
-    return body && !body.error ? toPlace(body) : null;
-  });
+  const body = (await cached(`r:${lang}:${lat},${lng}`, () =>
+    get("/reverse", { lat, lon: lng, zoom: "18" }, lang),
+  )) as (NominatimPlace & { error?: string }) | null;
+  return body && !body.error ? resolvePlace(body, lang) : null;
 }

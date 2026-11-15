@@ -117,26 +117,28 @@ export function ProductGallery({
           </Sticker>
         ) : null}
       </div>
-      {/* Two to four thumbnails, one column each, so the row always spans the photo. */}
-      <div className={cn("grid w-full gap-3 sm:gap-4", thumbs.cols)}>
-        {photos.map((photo, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => setIndex(i)}
-            aria-label={t.showPhoto(photo.alt)}
-            aria-pressed={i === index}
-            className={cn(
-              photoFrame,
-              "w-full rounded-sm bg-oat transition-opacity sm:rounded-m hover:opacity-90",
-              thumbs.aspect,
-              i === index && "after:inset-ring-[3px]",
-            )}
-          >
-            <GalleryImage photo={photo} alt="" sizes="(min-width: 1280px) 220px, 33vw" />
-          </button>
-        ))}
-      </div>
+      {/* Two to four thumbnails, one column each, so the row always spans the photo; none for a single photo. */}
+      {photos.length > 1 ? (
+        <div className={cn("grid w-full gap-3 sm:gap-4", thumbs.cols)}>
+          {photos.map((photo, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={t.showPhoto(photo.alt)}
+              aria-pressed={i === index}
+              className={cn(
+                photoFrame,
+                "w-full rounded-sm bg-oat transition-opacity sm:rounded-m hover:opacity-90",
+                thumbs.aspect,
+                i === index && "after:inset-ring-[3px]",
+              )}
+            >
+              <GalleryImage photo={photo} alt="" sizes="(min-width: 1280px) 220px, 33vw" />
+            </button>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

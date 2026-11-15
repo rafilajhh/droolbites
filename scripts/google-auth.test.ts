@@ -6,12 +6,14 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { mariadbUrl } from "../src/lib/db-url";
 import { linkGoogleAccount, parseGoogleClaims } from "../src/lib/google-account";
+import { claimGuestOrders } from "../src/app/auth/google/callback/claim-orders";
 
 const prisma = new PrismaClient({ adapter: new PrismaMariaDb(mariadbUrl()) });
 const RUN = Date.now().toString(36);
 const CLIENT_ID = "test-client.apps.googleusercontent.com";
 const ADMIN_EMAIL = "admin@droolbites.biz.id";
 const created: bigint[] = [];
+const createdOrders: bigint[] = [];
 
 let failed = 0;
 async function check(name: string, fn: () => Promise<string | void>) {
@@ -104,7 +106,42 @@ async function main() {
       assert((await prisma.user.count({ where: { googleId: `g-${RUN}-admin` } })) === 0, "a user was created for the admin email");
       return "refused";
     });
+
+    await check("claimGuestOrders links guest orders by verified email (any case), never moves owned orders, is idempotent", async () => {
+      const owner = await prisma.user.create({ data: { fullName: "Claim Owner", email: `claim-owner-${RUN}@example.test`, role: "customer" } });
+      const other = await prisma.user.create({ data: { fullName: "Claim Other", email: `claim-other-${RUN}@example.test`, role: "customer" } });
+      created.push(owner.id, other.id);
+      const email = `claim-${RUN}@example.test`;
+      const order = (n: string, userId: bigint | null, mail = email) =>
+        prisma.order.create({
+          data: {
+            orderNumber: `C${RUN.slice(-8)}${n}`,
+            userId,
+            customerName: "Claim Test",
+            email: mail,
+            phone: "081234567890",
+            fulfilmentMethod: "pickup",
+            subtotal: 5000,
+            total: 5000,
+          },
+        });
+      const guest = await order("a", null);
+      const guestUpper = await order("b", null, email.toUpperCase());
+      const owned = await order("c", other.id);
+      createdOrders.push(guest.id, guestUpper.id, owned.id);
+
+      const first = await claimGuestOrders(prisma, owner.id, `  Claim-${RUN}@EXAMPLE.test `);
+      const second = await claimGuestOrders(prisma, owner.id, email);
+      const rows = await prisma.order.findMany({ where: { id: { in: createdOrders } }, select: { id: true, userId: true } });
+      const ownerOf = (id: bigint) => rows.find((r) => r.id === id)?.userId;
+      assert(first === 2, `first claim linked ${first}, expected 2`);
+      assert(second === 0, `second claim linked ${second}, expected 0`);
+      assert(ownerOf(guest.id) === owner.id && ownerOf(guestUpper.id) === owner.id, "guest orders not linked");
+      assert(ownerOf(owned.id) === other.id, "an owned order was moved");
+      return "2 linked, 0 on rerun, owned order untouched";
+    });
   } finally {
+    if (createdOrders.length) await prisma.order.deleteMany({ where: { id: { in: createdOrders } } });
     const { count } = await prisma.user.deleteMany({ where: { id: { in: created } } });
     const leftovers = await prisma.user.count({ where: { OR: [{ googleId: { startsWith: `g-${RUN}-` } }, { email: { contains: RUN } }] } });
     console.log(`\nCleanup: deleted ${count} test user(s), ${leftovers} left over`);

@@ -2,14 +2,17 @@ import { decodeIdToken } from "arctic";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import { safeNext } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { parseGoogleClaims, type GoogleLinkResult } from "@/lib/google-account";
 import { GOOGLE_COOKIES, GOOGLE_COOKIE_OPTIONS, googleClient, signInWithGoogle } from "@/lib/google-auth";
 import { createSession } from "@/lib/session";
+import { claimGuestOrders } from "./claim-orders";
 
 /**
  * Google sends the browser back here. Checks state against the cookie,
  * exchanges the code (PKCE), validates the ID token claims, then signs in,
- * links or creates the customer. Failures land on /sign-in with a generic
+ * links or creates the customer and attaches the guest orders placed with
+ * that (Google-verified) email. Failures land on /sign-in with a generic
  * error code only; nothing from Google is echoed back.
  */
 export async function GET(request: NextRequest) {
@@ -33,16 +36,22 @@ export async function GET(request: NextRequest) {
   if (!code || !state || !storedState || !verifier || state !== storedState) return fail("google");
 
   let result: GoogleLinkResult;
+  let email: string;
   try {
     const tokens = await client.google.validateAuthorizationCode(code, verifier);
     const claims = parseGoogleClaims(decodeIdToken(tokens.idToken()), client.clientId);
     if (!claims) return fail("google");
+    email = claims.email;
     result = await signInWithGoogle(claims);
   } catch {
     return fail("google");
   }
   if (!result.ok) return fail(result.reason === "admin" ? "google_admin" : "google_exists");
 
+  // parseGoogleClaims only passes email_verified addresses. A failure here never blocks the sign-in.
+  await claimGuestOrders(db, result.userId, email).catch((error: unknown) => {
+    console.error("[google] could not attach guest orders", error);
+  });
   await createSession({ userId: result.userId.toString(), role: "customer" });
   return go(next);
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { isLatLng } from "@/lib/delivery";
+import { isIdMobile } from "@/lib/orders";
 import { getSession } from "@/lib/session";
 
 /** Keys into accountMessages.errors; the client renders them in the active language. */
@@ -30,7 +31,7 @@ export type AddressField = "address" | "city" | "postalCode" | "pin";
 async function sessionUser() {
   const session = await getSession();
   if (!session) return null;
-  return db.user.findUnique({ where: { id: BigInt(session.userId) }, select: { id: true, email: true } });
+  return db.user.findUnique({ where: { id: BigInt(session.userId) }, select: { id: true, email: true, phone: true } });
 }
 
 function text(formData: FormData, key: string) {
@@ -39,8 +40,8 @@ function text(formData: FormData, key: string) {
 }
 
 const nameOk = (name: string) => name.length >= 2 && name.length <= 100;
-// Digits with optional leading +, spaces and dashes; 8–15 digits in total (E.164 max).
-const phoneOk = (phone: string) => /^\+?[\d\s-]+$/.test(phone) && phone.length <= 20 && /^(\D*\d){8,15}\D*$/.test(phone);
+// The same rule as checkout (the profile phone prefills it): an Indonesian mobile number.
+const phoneOk = (phone: string) => phone.length <= 20 && isIdMobile(phone);
 
 export async function updateProfile(_prev: AccountState<ProfileField>, formData: FormData): Promise<AccountState<ProfileField>> {
   const attempt = Date.now();
@@ -54,7 +55,9 @@ export async function updateProfile(_prev: AccountState<ProfileField>, formData:
   const values = { fullName, phone, email };
   const errors: AccountState<ProfileField>["errors"] = {};
   if (!nameOk(fullName)) errors.fullName = "fullName";
-  if (phone && !phoneOk(phone)) errors.phone = "phone";
+  // Only a changed number is checked: one saved under the older, looser rule (a landline) must not
+  // block saving the name or email.
+  if (phone && phone !== (user.phone ?? "") && !phoneOk(phone)) errors.phone = "phone";
   if (!z.email().max(150).safeParse(email).success) errors.email = "email";
   if (Object.keys(errors).length) return { errors, values, attempt };
 

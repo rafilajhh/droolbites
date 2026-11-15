@@ -10,6 +10,7 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
 import { MAX_UPLOAD_BYTES, sniffImageType, UPLOAD_TYPES } from "@/components/admin/rules";
+import { productImageUrl } from "@/content/products";
 
 export type ProductErrorKey =
   | "name"
@@ -272,7 +273,8 @@ export async function hideProduct(productId: string): Promise<DeleteProductState
 export type ProductSuggestion = {
   id: string;
   name: string;
-  imageUrl: string | null;
+  /** The photo, or the bundled/placeholder image a product without one shows everywhere else. */
+  imageUrl: string;
   categorySlug: string;
   categoryName: string;
   fromPrice: number | null;
@@ -290,6 +292,7 @@ export async function suggestProducts(query: string): Promise<ProductSuggestion[
     take: 6,
     select: {
       id: true,
+      slug: true,
       name: true,
       imageUrl: true,
       category: { select: { slug: true, name: true } },
@@ -299,7 +302,7 @@ export async function suggestProducts(query: string): Promise<ProductSuggestion[
   return rows.map((p) => ({
     id: p.id.toString(),
     name: p.name,
-    imageUrl: p.imageUrl,
+    imageUrl: productImageUrl(p.slug, p.imageUrl),
     categorySlug: p.category.slug,
     categoryName: p.category.name,
     fromPrice: p.variants[0]?.price ?? null,

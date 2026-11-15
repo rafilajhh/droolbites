@@ -9,6 +9,7 @@ import { sendAccountWelcomeEmail } from "@/lib/emails";
 import { appUrl, deliverLater, emailFooter, sendMail } from "@/lib/mail";
 import { button, fallbackLink, paragraph, renderEmail } from "@/lib/email-template";
 import { allowRequest, clientIp, isSignInLocked, perClientMax, recordSignInFailure, resetSignInFailures } from "@/lib/rate-limit";
+import { clearCheckoutDetails, forgetRecentOrders } from "@/lib/orders";
 import { createSession, deleteSession } from "@/lib/session";
 import { getLocale, getMessages } from "@/i18n/server";
 import { authMessages } from "@/i18n/messages/auth";
@@ -198,7 +199,14 @@ export async function resetPassword(_prev: AuthState, formData: FormData): Promi
   redirect("/reset-password/done");
 }
 
+/**
+ * Signing out also forgets this browser's recent orders and saved checkout
+ * details, so the next person on a shared device can't open them. A guest who
+ * never signs in keeps both (that is how they track their order). A guest order
+ * that was never linked to the account (only Google sign-in links them) can
+ * still be opened from the link in its confirmation email after signing out.
+ */
 export async function signOut() {
-  await deleteSession();
+  await Promise.all([deleteSession(), forgetRecentOrders(), clearCheckoutDetails()]);
   redirect("/");
 }

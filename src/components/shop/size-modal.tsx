@@ -8,6 +8,7 @@ import { useModal } from "@/components/layout/shop-ui";
 import { Button } from "@/components/ui/button";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { isTrayCategory } from "@/content/products";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
 import { formatRupiah } from "@/lib/format";
@@ -33,7 +34,7 @@ function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: (
   const errorText = useMessages(menuMessages).card.error;
 
   const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
-  const isTray = product.categorySlug === "brownies";
+  const isTray = isTrayCategory(product.categorySlug);
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center md:p-6">

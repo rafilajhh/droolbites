@@ -9,6 +9,11 @@ type Text = { en: string; id: string };
 
 export type BadgeTone = "mustard" | "salmon" | "lime" | "lavender";
 
+/** Brownies are sold by tray size; everything else by flavor or piece. */
+export function isTrayCategory(slug: string | undefined) {
+  return slug === "brownies";
+}
+
 export type ProductContent = {
   badge?: { label: Text; tone: BadgeTone };
   short?: Text; // card description (EN equals products.description)
@@ -161,9 +166,27 @@ export const brownieServings: Record<string, Text> = {
   "20 × 30 cm": { en: "For a crowd", id: "Untuk rombongan" },
 };
 
-/** Product photo, falling back to the bundled /images/products/<slug>.png when the database has none. */
+/** Seeded products whose photo ships in public/images/products/<slug>.png. */
+const BUNDLED_PHOTOS = new Set([
+  "chocolate-chunk",
+  "double-chocolate",
+  "red-velvet",
+  "white-chocolate-almond",
+  "fudgy-brownies",
+  "classic-coffee-tiramisu",
+  "matcha-tiramisu",
+]);
+
+/** The logo badge on the oat ground, for products added in the admin without a photo. */
+export const PRODUCT_PLACEHOLDER_IMAGE = "/images/site/product-placeholder.png";
+
+/**
+ * Product photo: the database image, else the bundled photo for a seeded
+ * product, else the placeholder (never a guessed path that would 404).
+ */
 export function productImageUrl(slug: string, imageUrl: string | null) {
-  return imageUrl ?? `/images/products/${slug}.png`;
+  if (imageUrl) return imageUrl;
+  return BUNDLED_PHOTOS.has(slug) ? `/images/products/${slug}.png` : PRODUCT_PLACEHOLDER_IMAGE;
 }
 
 export const badgeToneClass: Record<BadgeTone, string> = {
@@ -192,7 +215,7 @@ export function variantLabel(variantName: string, categorySlug: string, locale: 
   const id = locale === "id";
   if (variantName === "1 piece") return id ? "1 buah" : "1 piece";
   if (variantName === "1 portion") return id ? "1 porsi" : "1 portion";
-  if (categorySlug === "brownies") return `${variantName} · ${id ? "1 loyang" : "1 tray"}`;
+  if (isTrayCategory(categorySlug)) return `${variantName} · ${id ? "1 loyang" : "1 tray"}`;
   return variantName;
 }
 
