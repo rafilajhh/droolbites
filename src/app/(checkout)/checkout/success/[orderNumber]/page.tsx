@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { CircleCheckBig, CircleX, ClipboardCheck, Cookie, House, ShoppingBag, Store, Truck } from "lucide-react";
+import { CircleCheckBig, CircleX } from "lucide-react";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import { StoreContact } from "@/components/checkout/order-info";
-import { CheckoutColumns, CheckoutHeading, CheckoutSection, ReviewRows } from "@/components/checkout/checkout-section";
+import { CheckoutColumns, CheckoutHeading, ReviewRows } from "@/components/checkout/checkout-section";
 import { OrderSummary } from "@/components/checkout/order-summary";
 import { orderSummaryLines } from "@/components/checkout/summary-lines";
-import { SummaryToggle } from "@/components/checkout/summary-toggle";
 import { ButtonLink } from "@/components/ui/button";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
-import { formatRupiah } from "@/lib/format";
-import { formatAddress, getOrderForViewer, itemCount, payable, withOrderToken } from "@/lib/orders";
+import { getOrderForViewer, itemCount, orderAddress, payable, withOrderToken } from "@/lib/orders";
 import { paymentMethodInfo } from "@/lib/order-status";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -20,7 +18,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages(checkoutMessages)).meta.success, robots: { index: false } };
 }
 
-/** pen: Checkout · Payment success (cKUFC). */
+/**
+ * Checkout · Done. One confirmation (icon, what is true now, one line on what happens), the order's facts
+ * once (number, how it was paid, where it goes), then Track order / Back to menu. The summary is the receipt: beside the column from lg, after it below lg, never folded.
+ */
 export default async function SuccessPage({ params, searchParams }: PageProps<"/checkout/success/[orderNumber]">) {
   const { orderNumber } = await params;
   const query = await searchParams;
@@ -36,23 +37,10 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
   const payment = order.payments.find((pay) => pay.status === "paid") ?? order.payments[0];
   const pay = payable(order, payment);
 
-  // What happens next: the shop confirms → baking → out for delivery / ready → delivered / picked up.
+  // Where the order is: 1 waiting for the shop, 2 baking, 3 on its way / ready, 4 finished, -1 cancelled.
+  const f = order.fulfilmentStatus;
   const stage =
-    order.fulfilmentStatus === "completed"
-      ? 4
-      : order.fulfilmentStatus === "out_for_delivery" || order.fulfilmentStatus === "ready_for_pickup"
-        ? 3
-        : order.fulfilmentStatus === "baking"
-          ? 2
-          : order.fulfilmentStatus === "cancelled"
-            ? -1
-            : 1;
-  const next = [
-    { icon: ClipboardCheck, ...s.steps.confirm },
-    { icon: Cookie, ...s.steps.baking },
-    delivery ? { icon: Truck, ...s.steps.out } : { icon: ShoppingBag, ...s.steps.ready },
-    delivery ? { icon: House, ...s.steps.delivered } : { icon: Store, ...s.steps.collected },
-  ];
+    f === "completed" ? 4 : f === "out_for_delivery" || f === "ready_for_pickup" ? 3 : f === "baking" ? 2 : f === "cancelled" ? -1 : 1;
   // The hero says what is true now, not only what was true at payment time.
   const cancelled = stage === -1;
   const hero = cancelled
@@ -70,24 +58,20 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
 
   return (
     <>
-      {/* Checkout is over: the header is just the logo (no stepper, no way back into the flow). */}
-      <CheckoutHeader />
+      <CheckoutHeader step={4} />
       <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <CheckoutColumns
-          summaryFirst
           summary={
-            <SummaryToggle id="success-summary" labels={{ show: t.summary.show, hide: t.summary.hide }} total={formatRupiah(pay.amount)}>
-              <OrderSummary
-                t={t.summary}
-                lines={orderSummaryLines(order, locale)}
-                itemCount={itemCount(order)}
-                subtotal={order.subtotal}
-                fulfilment={order.fulfilmentMethod}
-                fee={order.deliveryFee}
-                serviceFee={pay.serviceFee}
-                total={pay.amount}
-              />
-            </SummaryToggle>
+            <OrderSummary
+              t={t.summary}
+              lines={orderSummaryLines(order, locale)}
+              itemCount={itemCount(order)}
+              subtotal={order.subtotal}
+              fulfilment={order.fulfilmentMethod}
+              fee={order.deliveryFee}
+              serviceFee={pay.serviceFee}
+              total={pay.amount}
+            />
           }
         >
           <div className="flex w-full flex-col gap-8">
@@ -101,15 +85,15 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
               sub={hero.sub}
             />
 
-            {/* The heading says the status and the summary has the total, so only what is said nowhere else stays here. */}
+            {/* Each fact once: the summary has the items and the total, the hero the status. */}
             <ReviewRows
               rows={[
-                { label: s.orderNumber, value: orderNumber },
+                { label: s.orderNumber, value: <span className="font-mono text-base leading-[23px] tracking-[0.5px]">{orderNumber}</span> },
                 { label: s.paymentMethod, value: payment ? paymentMethodInfo[payment.method].name : "—" },
                 {
-                  label: delivery ? t.fulfilment.localDelivery : t.fulfilment.pickup,
+                  label: delivery ? t.payment.deliverTo : t.payment.pickupAt,
                   value: delivery ? (
-                    formatAddress({ address: order.shippingAddress, city: order.shippingCity, postal: order.shippingPostal })
+                    orderAddress(order)
                   ) : (
                     <>
                       {settings.address}
@@ -122,38 +106,10 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
               ]}
             />
 
-            {cancelled ? null : (
-              <CheckoutSection id="whats-next" title={s.next}>
-                <ol className="flex flex-col gap-4">
-                  {next.map((step, i) => (
-                    <li key={step.title} className="flex w-full items-center gap-3.5" aria-current={i + 1 === stage ? "step" : undefined}>
-                      <span
-                        className={cn(
-                          "flex size-9 shrink-0 items-center justify-center rounded-pill",
-                          i + 1 === stage ? "bg-highlight" : i + 1 < stage ? "bg-mint" : "bg-oat",
-                        )}
-                      >
-                        <step.icon className="size-[18px] text-foreground" aria-hidden />
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="text-[15px] leading-[23px] font-bold text-foreground">
-                          {step.title}
-                          <span className="sr-only"> ({i + 1 === stage ? s.stepState.current : i + 1 < stage ? s.stepState.done : s.stepState.upcoming})</span>
-                        </span>
-                        <span className="text-[13px] leading-5 text-muted-foreground">{step.sub}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              </CheckoutSection>
-            )}
-
             {/* The end of the column, under a hairline like the other steps. */}
             <div className="flex w-full flex-col gap-4 pt-8 shadow-[inset_0_1px_0_var(--border-subtle)]">
               <div className="grid w-full gap-4 sm:grid-cols-2">
-                <ButtonLink href={withOrderToken(`/orders/${orderNumber}`, token)}>
-                  {cancelled ? s.viewOrder : s.track}
-                </ButtonLink>
+                <ButtonLink href={withOrderToken(`/orders/${orderNumber}`, token)}>{cancelled ? s.viewOrder : s.track}</ButtonLink>
                 <ButtonLink href="/menu" variant="secondary">
                   {s.continue}
                 </ButtonLink>

@@ -185,7 +185,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
     p.title,
     sub,
     <>
-      {/* The moss outline is drawn on an overlay so the mint header's fill can't cover its top edge. */}
+      {/* The moss outline is drawn on an overlay so the mint header's and the paper how-to band's fills can't cover it. */}
       <section
         aria-label={info.name}
         className="relative flex w-full flex-col overflow-hidden rounded-m bg-white after:pointer-events-none after:absolute after:inset-0 after:rounded-m after:inset-ring-[1.5px] after:inset-ring-border after:content-['']"
@@ -292,12 +292,13 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
             selectId="pay-amount"
           />
         </div>
+
+        {/* This method's own steps close the card, so the number and the way to pay it stay together. */}
+        <HowToPay title={p.howToPay} sections={sections} />
       </section>
 
       <PaymentWatcher statusUrl={statusUrl} successHref={successHref} />
       <PayActions orderNumber={orderNumber} token={token} orderHref={orderHref} />
-
-      <HowToPay title={p.howToPay} sections={sections} />
       {canSimulatePayment(live.provider) ? <SimulatePayment orderNumber={orderNumber} token={token} sandbox={provider.id !== "mock"} /> : null}
     </>,
   );

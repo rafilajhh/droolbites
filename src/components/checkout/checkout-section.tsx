@@ -26,7 +26,7 @@ export function CheckoutColumns({
       tabIndex={0}
       aria-labelledby="order-summary-title"
       className={cn(
-        "w-full lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:w-[440px] lg:shrink-0 lg:overflow-y-auto lg:rounded-m lg:[scrollbar-width:thin]",
+        "w-full lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:w-[440px] lg:shrink-0 lg:overflow-y-auto lg:rounded-m",
         summaryFirst && "lg:order-last",
       )}
     >
