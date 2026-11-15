@@ -1,22 +1,18 @@
-// Screenshot a route and (optionally) diff it against a pen reference PNG.
+// Screenshot a route.
 //
-//   node scripts/shot.mjs <route> [--ref <penFrameId>] [--width 1440] [--height 900]
+//   node scripts/shot.mjs <route> [--width 1440] [--height 900]
 //        [--full] [--click "<css selector>"] [--cookie name=value] [--out name]
 //
-// Writes .shots/<name>.png, and with --ref also .shots/<name>.diff.png plus a
-// mismatch percentage. References live in ../droolbites-design/ref/<id>.png
-// (exported from droolbites.pen at 1x). Each run uses its own headless
-// browser, so several people/agents can run it at the same time.
+// Writes .shots/<name>.png. Each run uses its own headless browser, so several
+// people/agents can run it at the same time.
 import { chromium } from "playwright";
 import fs from "node:fs";
 import path from "node:path";
-import { PNG } from "pngjs";
-import pixelmatch from "pixelmatch";
 
 const args = process.argv.slice(2);
 const route = args[0];
 if (!route) {
-  console.error("usage: node scripts/shot.mjs <route> [--ref id] [--full] [--click sel] [--width w] [--height h]");
+  console.error("usage: node scripts/shot.mjs <route> [--full] [--click sel] [--width w] [--height h]");
   process.exit(1);
 }
 const opt = (name, fallback) => {
@@ -28,9 +24,8 @@ const all = (name) => args.flatMap((a, i) => (a === `--${name}` ? [args[i + 1]] 
 
 const width = Number(opt("width", 1440));
 const height = Number(opt("height", 900));
-const ref = opt("ref");
 const base = process.env.SHOT_BASE ?? "http://localhost:3000";
-const name = opt("out", (ref ?? route.replace(/[^a-z0-9]+/gi, "_")) + (width !== 1440 ? `@${width}` : ""));
+const name = opt("out", route.replace(/[^a-z0-9]+/gi, "_") + (width !== 1440 ? `@${width}` : ""));
 const outDir = path.resolve(".shots");
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -48,7 +43,7 @@ page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
 
 const res = await page.goto(base + route, { waitUntil: "networkidle" });
 await page.evaluate(() => document.fonts.ready);
-// Hide the Next.js dev indicator so it neither pollutes diffs nor sits on top of
+// Hide the Next.js dev indicator so it neither shows in shots nor sits on top of
 // buttons (at 390px it covers the bottom-left corner and swallows clicks).
 await page.addStyleTag({ content: "nextjs-portal{display:none!important}" });
 for (const sel of all("click")) {
@@ -100,41 +95,8 @@ async function loadLazyImages() {
 
 const shotPath = path.join(outDir, `${name}.png`);
 if (flag("full")) await loadLazyImages();
-await page.screenshot({ path: shotPath, fullPage: flag("full") || (ref ? undefined : false) });
+await page.screenshot({ path: shotPath, fullPage: flag("full") });
 console.log(`status ${res?.status()}  →  ${shotPath}`);
 if (errors.length) console.log("browser errors:\n  " + errors.slice(0, 8).join("\n  "));
-
-if (ref) {
-  const refPath = path.resolve("..", "droolbites-design", "ref", `${ref}.png`);
-  const refPng = PNG.sync.read(fs.readFileSync(refPath));
-  // 1440×900 frames are viewport states (overlays, admin screens): shoot the
-  // viewport. Taller frames are whole pages: shoot the full page.
-  const viewportFrame = refPng.height <= 900;
-  await page.setViewportSize({ width: refPng.width, height: viewportFrame ? refPng.height : 900 });
-  // Clicking a card scrolls it into view; viewport frames in the pen are shot at the top.
-  if (viewportFrame) await page.evaluate(() => window.scrollTo(0, 0));
-  else await loadLazyImages();
-  await page.waitForTimeout(200);
-  await page.screenshot({ path: shotPath, fullPage: !viewportFrame });
-  const actual = PNG.sync.read(fs.readFileSync(shotPath));
-  const w = refPng.width;
-  const h = Math.max(refPng.height, actual.height);
-  const pad = (png) => {
-    const out = new PNG({ width: w, height: h });
-    out.data.fill(255);
-    PNG.bitblt(png, out, 0, 0, Math.min(png.width, w), Math.min(png.height, h), 0, 0);
-    return out;
-  };
-  const a = pad(refPng);
-  const b = pad(actual);
-  const diff = new PNG({ width: w, height: h });
-  const mismatched = pixelmatch(a.data, b.data, diff.data, w, h, { threshold: 0.1 });
-  const diffPath = path.join(outDir, `${name}.diff.png`);
-  fs.writeFileSync(diffPath, PNG.sync.write(diff));
-  console.log(
-    `ref ${refPng.width}×${refPng.height}  page ${actual.width}×${actual.height}  ` +
-      `mismatch ${((mismatched / (w * h)) * 100).toFixed(2)}%  →  ${diffPath}`,
-  );
-}
 
 await browser.close();

@@ -7,13 +7,10 @@ The pen file is the binding visual spec. At 1440px wide every page must match it
 | What | Where |
 |---|---|
 | Live pen file (read with the pencil MCP `execute` tool) | `droolbites.pen`, kept outside the repo in the course folder (`Pemweb/Figma/`) |
-| 1x PNG of each frame | `../droolbites-design/ref/<frameId>.png` |
-| HTML + Tailwind export of each frame (exact px values, `data-pencil-name`/`data-pencil-id` attributes) | `../droolbites-design/html/<frameId>.html` |
-| Plain list of every visible text per frame | `../droolbites-design/texts/<frameId>.txt` |
 
-The HTML export is the fastest source of exact sizes, colors, gaps and copy. Its icons are inlined SVG paths; use the matching `lucide-react` icon instead (the export keeps `data-icon-name`). Its hex colors map to tokens below; never hard-code a hex that has a token.
+Use the pen's icon names as the matching `lucide-react` icon, and map its hex colors to the tokens below; never hard-code a hex that has a token.
 
-Read a node precisely with the pen MCP when the export is ambiguous:
+Read a node precisely with the pen MCP:
 
 ```js
 Print(JSON.stringify(Get('<nodeId>', { depth: 8 })))
@@ -83,11 +80,11 @@ If a shared component needs a new prop, add it in a backwards-compatible way and
 ```bash
 npm run typecheck                    # route types + tsc
 npx eslint src
-node scripts/shot.mjs /menu --ref uQ4f5          # full page vs pen frame, writes .shots/*.png + diff
-node scripts/shot.mjs / --ref wNl2v --click 'button[aria-label="Open menu"]'
+node scripts/shot.mjs /menu --full               # full page, writes .shots/*.png
+node scripts/shot.mjs / --click 'button[aria-label="Open menu"]'
 node scripts/shot.mjs /menu --width 390 --full   # mobile check
 ```
 
 The dev server is already running at http://localhost:3000 (do not start another one). Database: MySQL in Docker, seeded (`npm run db:seed` resets demo data). Accounts: admin `admin@droolbites.biz.id` / `droolbites123`, customer `alya@email.com` / `alya12345`. For signed-in pages, pass a session cookie: `node scripts/shot.mjs /account --cookie db_session=$(node scripts/session-token.mjs customer)` (or `admin`).
 
-Look at the diff PNG, not only the percentage: photos and anti-aliasing always differ slightly, but layout shifts show as solid red bands. Aim for the layout lining up within 1–2px at 1440.
+Compare the screenshot with the pen frame (pencil MCP screenshot) side by side; aim for the layout lining up within 1–2px at 1440.

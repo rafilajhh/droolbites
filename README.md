@@ -127,9 +127,8 @@ FAKE_BELIBAYAR_SECRET=local-secret node scripts/fake-belibayar.mjs     # http://
 | `npx tsx scripts/google-auth.test.ts` | Unit tests for Google sign-in claims and account linking |
 | `npx tsx scripts/check-cn.ts` | Sanity check for the `cn()` class merger |
 | `node scripts/fake-belibayar.mjs` | Local stand-in for the Belibayar API (see [Payments](#payments)) |
-| `node scripts/shot.mjs <route> --ref <penFrameId>` | Screenshot a page and diff it against the pen frame |
-| `node scripts/diff-all.mjs` | Diff every pen frame listed in `scripts/frames.json`, report in `.shots/report.md` |
-| `node scripts/session-token.mjs` / `mint.mjs` | Signed cookies and tokens for screenshots of signed-in states |
+| `node scripts/shot.mjs <route> [--width 390] [--full]` | Screenshot a page into `.shots/` |
+| `node scripts/session-token.mjs` | Signed session cookie for screenshots of signed-in pages |
 | `bash scripts/backup-db.sh` | Production database backup (VPS) |
 
 ## Project layout
