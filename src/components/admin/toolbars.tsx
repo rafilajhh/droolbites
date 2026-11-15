@@ -47,7 +47,7 @@ export function OrdersToolbar({
 }: {
   q: string;
   status: string;
-  /** ?needs=action is on: paid orders that are still in progress. */
+  /** ?needs=action is on: paid orders waiting to be accepted or declined. */
   needsAction?: boolean;
   count: number;
 }) {
@@ -164,9 +164,7 @@ export function ProductsToolbar({
         content: (
           <>
             <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-oat">
-              {p.imageUrl ? (
-                <Image src={p.imageUrl} alt="" fill sizes="40px" quality={100} className="object-cover" />
-              ) : null}
+              <Image src={p.imageUrl} alt="" fill sizes="40px" quality={100} className="object-cover" />
             </span>
             <ResultText
               name={p.name}

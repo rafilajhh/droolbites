@@ -9,7 +9,7 @@ import { useMessages } from "@/i18n/client";
 import { adminCategoriesMessages } from "@/i18n/messages/admin-categories";
 import { cn } from "@/lib/cn";
 import { ConfirmDialog } from "./confirm-dialog";
-import { Card, CellLabel, mobileCardRowClasses, smallButtonClasses, thClasses } from "./ui";
+import { Card, CellLabel, listCardClasses, listThClasses, mobileCardRowClasses, smallButtonClasses } from "./ui";
 
 export type CategoryRow = { id: string; name: string; slug: string; visible: number; hidden: number };
 
@@ -26,32 +26,32 @@ export function CategoriesTable({ rows }: { rows: CategoryRow[] }) {
   const [deleting, setDeleting] = useState<CategoryRow | null>(null);
 
   return (
-    <Card className="w-full p-2 max-md:bg-transparent max-md:p-0 max-md:inset-ring-0">
+    <Card className={listCardClasses}>
       <p role="status" className="sr-only">
         {announcement}
       </p>
       <div className="relative w-full overflow-x-auto">
-        <table aria-label={t.title} className="w-full border-separate border-spacing-0 max-md:block md:min-w-[640px]">
-          <thead className="max-md:hidden">
+        <table aria-label={t.title} className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[640px]">
+          <thead className="max-xl:hidden">
             <tr>
-              <th scope="col" className={cn(thClasses, "rounded-l-lg bg-background py-3 pl-4")}>
+              <th scope="col" className={cn(listThClasses, "pl-4")}>
                 {t.col.category}
               </th>
-              <th scope="col" className={cn(thClasses, "w-[220px] bg-background py-3")}>
+              <th scope="col" className={cn(listThClasses, "w-[220px]")}>
                 {t.col.products}
               </th>
-              <th scope="col" className={cn(thClasses, "w-[220px] rounded-r-lg bg-background py-3 pr-4")}>
+              <th scope="col" className={cn(listThClasses, "w-[220px] pr-4")}>
                 <span className="sr-only">{t.col.action}</span>
               </th>
             </tr>
           </thead>
-          {/* Below md each row is a stacked card like the products list; cells carry sr-only labels. */}
-          <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
+          {/* Below xl each row stacks its cells between hairlines; cells carry sr-only labels. */}
+          <tbody className="max-xl:flex max-xl:flex-col xl:[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] xl:[&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
             {rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={3}
-                  className="block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground md:table-cell"
+                  className="block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground xl:table-cell"
                 >
                   {t.empty}
                 </td>
@@ -138,7 +138,7 @@ function CategoryTableRow({
     <tr className={mobileCardRowClasses}>
       <th
         scope="row"
-        className="py-3 pr-4 pl-4 text-left align-top font-normal max-md:order-1 max-md:basis-full max-md:p-0 md:align-middle"
+        className="py-3 pr-4 pl-4 text-left align-top font-normal max-xl:order-1 max-xl:basis-full max-xl:p-0 xl:align-middle"
       >
         {editing ? (
           <form onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-2">
@@ -190,8 +190,8 @@ function CategoryTableRow({
           </span>
         )}
       </th>
-      <td className="py-3 text-[15px] leading-[23px] font-medium max-md:order-2 max-md:min-w-0 max-md:grow max-md:p-0 max-md:text-sm max-md:leading-[21px]">
-        <CellLabel>{t.col.products}</CellLabel>
+      <td className="py-3 text-[15px] leading-[23px] font-medium max-xl:order-2 max-xl:min-w-0 max-xl:grow max-xl:p-0 max-xl:text-sm max-xl:leading-[21px]">
+        <CellLabel until="xl">{t.col.products}</CellLabel>
         {total === 0 ? (
           <span className="text-muted-foreground">{t.noProducts}</span>
         ) : (
@@ -201,7 +201,7 @@ function CategoryTableRow({
           </>
         )}
       </td>
-      <td className="py-3 pr-4 text-right max-md:order-3 max-md:p-0">
+      <td className="py-3 pr-4 text-right max-xl:order-3 max-xl:p-0">
         <span className="inline-flex gap-2">
           {editing ? null : (
             <button

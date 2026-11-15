@@ -15,7 +15,7 @@ import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { WEEK_DAYS } from "./rules";
-import { Card, PageHead, Toggle } from "./ui";
+import { Card, PageHead, SettingsSection, Toggle } from "./ui";
 
 export type SettingsValues = {
   storeName: string;
@@ -89,29 +89,11 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
 
   return (
     <form ref={formRef} onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-6">
-      <PageHead
-        title={t.title}
-        sub={t.sub}
-        action={
-          // Below lg the save button lives in the sticky bar at the bottom; the status stays here for screen readers.
-          <div className="flex flex-wrap items-center gap-4 max-lg:contents">
-            <p
-              role="status"
-              className={cn(message ? "text-sm leading-[21px] font-semibold max-lg:sr-only" : "sr-only", messageTone)}
-            >
-              {message}
-            </p>
-            <Button type="submit" disabled={pending} className="max-lg:hidden">
-              {pending ? t.saving : t.save}
-            </Button>
-          </div>
-        }
-      />
+      <PageHead title={t.title} sub={t.sub} />
 
-      {/* One full-width stack: store info, the two order options side by side, hours, payments. */}
-      <div className="flex w-full flex-col gap-6">
-        <Card className="flex min-w-0 flex-col gap-4 p-6">
-          <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.info}</h2>
+      {/* One card, one section per topic: the heading and its note on the left, the fields on the right (lg). */}
+      <Card className="flex w-full min-w-0 flex-col">
+        <SettingsSection id="settings-info" title={t.info}>
           <div className="flex w-full flex-col gap-4 sm:flex-row">
             <Field label={t.storeName} htmlFor="settings-storeName" error={err("storeName")} className="flex-1">
               <TextInput
@@ -189,36 +171,37 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
               {t.notifyEmailHelp}
             </p>
           </Field>
-        </Card>
+        </SettingsSection>
 
-        <div className="grid w-full gap-4 sm:grid-cols-2">
-          <ToggleCard
-            id="settings-pickup"
-            name="pickupEnabled"
-            icon={<Store className="size-5 text-primary" aria-hidden />}
-            title={t.pickup}
-            sub={t.pickupSub}
-            checked={pickup}
-            onChange={setPickup}
-          />
-          <ToggleCard
-            id="settings-delivery"
-            name="deliveryEnabled"
-            icon={<Truck className="size-5 text-primary" aria-hidden />}
-            title={t.delivery}
-            sub={t.deliverySub}
-            checked={delivery}
-            onChange={setDelivery}
-          />
+        <SettingsSection id="settings-fulfilment" title={t.fulfilment}>
+          <div className="flex w-full flex-col">
+            <ToggleRow
+              id="settings-pickup"
+              name="pickupEnabled"
+              icon={<Store className="size-5 text-primary" aria-hidden />}
+              title={t.pickup}
+              sub={t.pickupSub}
+              checked={pickup}
+              onChange={setPickup}
+            />
+            <ToggleRow
+              id="settings-delivery"
+              name="deliveryEnabled"
+              icon={<Truck className="size-5 text-primary" aria-hidden />}
+              title={t.delivery}
+              sub={t.deliverySub}
+              checked={delivery}
+              onChange={setDelivery}
+            />
+          </div>
           {errors.fulfilment ? (
-            <p id="settings-fulfilment-error" role="alert" className="text-[13px] leading-5 text-error sm:col-span-2">
+            <p id="settings-fulfilment-error" role="alert" className="text-[13px] leading-5 text-error">
               {err("fulfilment")}
             </p>
           ) : null}
-        </div>
+        </SettingsSection>
 
-        <Card className="flex min-w-0 flex-col gap-4 p-6">
-          <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.hours}</h2>
+        <SettingsSection id="settings-hours" title={t.hours} help={t.hoursHelp}>
           <div className="flex w-full flex-col gap-4 sm:flex-row">
             <Field label={t.opensAt} htmlFor="settings-opensAt" error={err("opensAt")} className="flex-1">
               <TextInput
@@ -247,15 +230,11 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
               />
             </Field>
           </div>
-          <p className={helperClasses}>{t.hoursHelp}</p>
           <fieldset className="flex w-full flex-col gap-2" aria-describedby={errors.openDays ? "settings-openDays-error" : undefined}>
             <legend className="mb-2 text-sm leading-[18px] font-semibold">{t.openDays}</legend>
             <div className="flex flex-wrap gap-2">
               {WEEK_DAYS.map((day) => (
-                <label
-                  key={day}
-                  className="relative cursor-pointer after:absolute after:-inset-1 after:content-['']"
-                >
+                <label key={day} className="relative cursor-pointer after:absolute after:-inset-1 after:content-['']">
                   <input
                     type="checkbox"
                     name="openDays"
@@ -276,44 +255,41 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
               </p>
             ) : null}
           </fieldset>
-        </Card>
+        </SettingsSection>
 
-        <DeliveryCard rates={rates} setRates={setRates} coords={coords} setCoords={setCoords} err={err} invalid={invalid} />
+        <DeliverySection rates={rates} setRates={setRates} coords={coords} setCoords={setCoords} err={err} invalid={invalid} />
 
-        <Card className="flex w-full flex-col gap-4 p-6">
-          <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.payments}</h2>
-          <PaymentToggle id="settings-va" name="vaEnabled" title={t.va} sub={t.vaSub} defaultChecked={values.vaEnabled} />
-          <PaymentToggle
-            id="settings-retail"
-            name="retailEnabled"
-            title={t.retail}
-            sub={t.retailSub}
-            defaultChecked={values.retailEnabled}
-          />
-          <PaymentToggle
-            id="settings-qris"
-            name="qrisEnabled"
-            title={t.qris}
-            sub={t.qrisSub}
-            defaultChecked={values.qrisEnabled}
-          />
-          <PaymentToggle
-            id="settings-ewallet"
-            name="ewalletEnabled"
-            title={t.ewallet}
-            sub={t.ewalletSub}
-            defaultChecked={values.ewalletEnabled}
-          />
+        <SettingsSection id="settings-payments" title={t.payments}>
+          <div className="flex w-full flex-col">
+            <PaymentToggle id="settings-va" name="vaEnabled" title={t.va} sub={t.vaSub} defaultChecked={values.vaEnabled} />
+            <PaymentToggle
+              id="settings-retail"
+              name="retailEnabled"
+              title={t.retail}
+              sub={t.retailSub}
+              defaultChecked={values.retailEnabled}
+            />
+            <PaymentToggle id="settings-qris" name="qrisEnabled" title={t.qris} sub={t.qrisSub} defaultChecked={values.qrisEnabled} />
+            <PaymentToggle
+              id="settings-ewallet"
+              name="ewalletEnabled"
+              title={t.ewallet}
+              sub={t.ewalletSub}
+              defaultChecked={values.ewalletEnabled}
+            />
+          </div>
           {errors.payments ? (
             <p role="alert" className="text-[13px] leading-5 text-error">
               {err("payments")}
             </p>
           ) : null}
-        </Card>
-      </div>
+        </SettingsSection>
+      </Card>
 
-      <div className="sticky bottom-0 z-20 -mx-4 -mb-6 flex items-center gap-3 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] sm:-mx-6 sm:px-6 lg:hidden">
-        <p aria-hidden className={cn("min-w-0 flex-1 text-sm leading-[21px] font-semibold", messageTone)}>
+      {/* The save bar stays pinned to the bottom of the screen while any part of the store settings is in
+          view, and comes to rest under the card, above the separate admin password form. */}
+      <div className="sticky bottom-0 z-20 -mx-4 -mt-2 flex items-center gap-3 bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] sm:-mx-6 sm:px-6 lg:-mx-12 lg:px-12">
+        <p role="status" className={cn("min-w-0 flex-1 text-sm leading-[21px] font-semibold", messageTone)}>
           {message}
         </p>
         <Button type="submit" disabled={pending} className="shrink-0">
@@ -324,7 +300,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
   );
 }
 
-function ToggleCard({
+function ToggleRow({
   id,
   name,
   icon,
@@ -342,9 +318,9 @@ function ToggleCard({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <Card as="div" className="flex w-full gap-3.5 p-6">
+    <div className="flex w-full items-center gap-3.5 py-3.5 shadow-[inset_0_-1px_0_var(--border-subtle)] first:pt-0 last:pb-0 last:shadow-none">
       <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-mint">{icon}</span>
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <label htmlFor={id} className="text-base leading-6 font-bold">
           {title}
         </label>
@@ -359,7 +335,7 @@ function ToggleCard({
         onChange={(e) => onChange(e.target.checked)}
         aria-describedby={`${id}-sub`}
       />
-    </Card>
+    </div>
   );
 }
 
@@ -377,7 +353,7 @@ function PaymentToggle({
   defaultChecked: boolean;
 }) {
   return (
-    <div className="flex w-full gap-3.5">
+    <div className="flex w-full items-center gap-3.5 py-3.5 shadow-[inset_0_-1px_0_var(--border-subtle)] first:pt-0 last:pb-0 last:shadow-none">
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <label htmlFor={id} className="text-base leading-6 font-bold">
           {title}
@@ -401,7 +377,7 @@ function feeAt(r: Rates, km: number) {
 }
 
 /** Delivery rates and the store pin, with what the rates add up to at a few distances. */
-function DeliveryCard({
+function DeliverySection({
   rates,
   setRates,
   coords,
@@ -467,11 +443,7 @@ function DeliveryCard({
   const mapHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${coords.storeLat},${coords.storeLng}`)}`;
 
   return (
-    <Card className="flex min-w-0 flex-col gap-4 p-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.deliveryTitle}</h2>
-        <p className={helperClasses}>{t.deliveryHelp}</p>
-      </div>
+    <SettingsSection id="settings-delivery-fee" title={t.deliveryTitle} help={t.deliveryHelp}>
       <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {money("deliveryFee", t.deliveryFee)}
         {km("deliveryBaseKm", t.baseKm)}
@@ -479,7 +451,7 @@ function DeliveryCard({
         {km("deliveryMaxKm", t.maxKm)}
       </div>
       {samples.length > 0 ? (
-        <div className="flex w-full flex-col gap-2 rounded-sm bg-card px-4 py-3">
+        <div className="flex w-full flex-col gap-2">
           <p className="text-sm leading-[18px] font-semibold">{t.feeExample}</p>
           <ul className="flex flex-wrap gap-x-6 gap-y-1.5">
             {samples.map((s) => (
@@ -511,6 +483,6 @@ function DeliveryCard({
           </a>
         </div>
       </fieldset>
-    </Card>
+    </SettingsSection>
   );
 }

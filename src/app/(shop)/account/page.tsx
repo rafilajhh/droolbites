@@ -33,7 +33,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
 
   return (
     <>
-      <div className="flex w-full flex-col gap-4 px-4 pt-8 pb-8 md:px-8 lg:px-16 lg:pt-12 lg:pb-10">
+      <div className="flex w-full flex-col gap-4 px-4 pt-8 pb-6 md:px-8 lg:px-16 lg:pt-12 lg:pb-8">
         <div className="flex min-w-0 items-center gap-4 sm:gap-5">
           <div
             className="flex size-16 shrink-0 items-center justify-center rounded-pill bg-highlight font-display text-[22px] leading-none font-bold text-foreground sm:size-20 sm:text-[28px]"
@@ -51,11 +51,10 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         {/* Indented to the greeting's text column (avatar 80px + 20px gap) from sm up. */}
         <SweetStats userId={user.id} className="sm:pl-25" />
       </div>
-      <div className="flex w-full flex-col items-start gap-8 px-4 pb-20 md:px-8 lg:flex-row lg:gap-12 lg:px-16 lg:pb-28">
-        <aside className="flex w-full shrink-0 flex-col gap-6 lg:sticky lg:top-[88px] lg:w-[260px]">
-          <AccountNav current={tab} />
-        </aside>
-        <div className="flex w-full min-w-0 flex-1 flex-col gap-8">
+      {/* The tabs run as one bar under the greeting and the panel takes the full width below it. */}
+      <div className="flex w-full flex-col gap-8 px-4 pb-20 md:px-8 lg:gap-10 lg:px-16 lg:pb-28">
+        <AccountNav current={tab} />
+        <div className="flex w-full min-w-0 flex-col gap-12">
           {tab === "orders" ? (
             <>
               {filter === "all" ? <ActiveOrder userId={user.id} /> : null}

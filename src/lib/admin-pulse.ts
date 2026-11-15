@@ -1,8 +1,6 @@
 import "server-only";
 import { db } from "./db";
-
-/** Paid orders the store hasn't accepted or declined yet. */
-const newOrderWhere = { paymentStatus: "paid", fulfilmentStatus: "pending" } as const;
+import { needsActionWhere } from "./order-status";
 
 /**
  * What the admin needs to notice right away: how many paid orders wait for a decision, and the
@@ -12,9 +10,9 @@ const newOrderWhere = { paymentStatus: "paid", fulfilmentStatus: "pending" } as 
  */
 export async function adminPulse() {
   const [newOrders, latest] = await Promise.all([
-    db.order.count({ where: newOrderWhere }),
+    db.order.count({ where: needsActionWhere }),
     db.payment.findFirst({
-      where: { status: "paid", paidAt: { not: null }, order: newOrderWhere },
+      where: { status: "paid", paidAt: { not: null }, order: needsActionWhere },
       orderBy: { paidAt: "desc" },
       select: { paidAt: true, order: { select: { orderNumber: true } } },
     }),

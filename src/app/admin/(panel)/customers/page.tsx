@@ -5,7 +5,7 @@ import { ArrowLink } from "@/components/ui/button";
 import { CustomersSearch } from "@/components/admin/customers-search";
 import { Pagination } from "@/components/admin/pagination";
 import { SegmentedLinks } from "@/components/admin/reports-segmented";
-import { AdminMain, Card, CellLabel, mobileCardRowClasses, PageHead, thClasses } from "@/components/admin/ui";
+import { AdminMain, Card, CellLabel, listCardClasses, listThClasses, mobileCardRowClasses, PageHead } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
@@ -97,9 +97,9 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
       </p>
     </div>
   );
-  const cell = "py-3 text-[15px] leading-[23px] font-medium max-md:p-0";
-  const muted = "max-md:text-sm max-md:leading-[21px] max-md:text-muted-foreground";
-  const emptyCell = "block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground md:table-cell";
+  const cell = "py-3 text-[15px] leading-[23px] font-medium max-xl:p-0";
+  const muted = "max-xl:text-sm max-xl:leading-[21px] max-xl:text-muted-foreground";
+  const emptyCell = "block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground xl:table-cell";
 
   if (tab === "newsletter") {
     const where: Prisma.NewsletterSubscriberWhereInput = q ? { email: { contains: q } } : {};
@@ -123,10 +123,10 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
           <table aria-label={t.tabs.newsletter} className="w-full border-separate border-spacing-0">
             <thead>
               <tr>
-                <th scope="col" className={cn(thClasses, "rounded-l-lg bg-background py-3 pr-3 pl-4")}>
+                <th scope="col" className={cn(listThClasses, "pr-3 pl-4")}>
                   {t.col.email}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[140px] rounded-r-lg bg-background py-3 pr-4 sm:w-[180px]")}>
+                <th scope="col" className={cn(listThClasses, "w-[140px] pr-4 sm:w-[180px]")}>
                   {t.col.subscribed}
                 </th>
               </tr>
@@ -134,14 +134,14 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
             <tbody className="[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] [&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
               {subscribers.length === 0 ? (
                 <tr>
-                  <td colSpan={2} className={emptyCell}>
+                  <td colSpan={2} className={cn(emptyCell, "table-cell")}>
                     {q ? t.newsletterEmpty : t.newsletterEmptyAll}
                   </td>
                 </tr>
               ) : (
                 subscribers.map((s) => (
                   <tr key={String(s.id)}>
-                    <th scope="row" className="py-3 pr-3 pl-4 text-left text-[15px] leading-[23px] font-semibold break-all">
+                    <th scope="row" className="py-3 pr-3 pl-4 text-left text-[15px] leading-[23px] font-semibold [overflow-wrap:anywhere]">
                       {s.email}
                     </th>
                     <td className="py-3 pr-4 text-[15px] leading-[23px] font-medium whitespace-nowrap tabular-nums">
@@ -200,36 +200,36 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
       {tabs}
       {toolbar(t.count(count))}
 
-      <Card className="w-full p-2 max-md:bg-transparent max-md:p-0 max-md:inset-ring-0">
+      <Card className={listCardClasses}>
         <div className="relative w-full overflow-x-auto">
-          <table aria-label={t.tabs.customers} className="w-full border-separate border-spacing-0 max-md:block md:min-w-[900px]">
-            <thead className="max-md:hidden">
+          <table aria-label={t.tabs.customers} className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[860px]">
+            <thead className="max-xl:hidden">
               <tr>
-                <th scope="col" className={cn(thClasses, "rounded-l-lg bg-background py-3 pr-3 pl-4")}>
+                <th scope="col" className={cn(listThClasses, "pr-3 pl-4")}>
                   {c.customer}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[150px] bg-background py-3 pr-3")}>
+                <th scope="col" className={cn(listThClasses, "w-[120px] pr-3")}>
                   {c.signIn}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[120px] bg-background py-3 pr-3")}>
+                <th scope="col" className={cn(listThClasses, "w-[112px] pr-3")}>
                   {c.joined}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[80px] bg-background py-3 pr-3 text-right")}>
+                <th scope="col" className={cn(listThClasses, "w-[72px] pr-3 text-right")}>
                   {c.orders}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[130px] bg-background py-3 pr-3 text-right")}>
+                <th scope="col" className={cn(listThClasses, "w-[120px] pr-3 text-right")}>
                   {c.spent}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[130px] bg-background py-3 pr-3")}>
+                <th scope="col" className={cn(listThClasses, "w-[140px] pr-3 pl-8")}>
                   {c.lastOrder}
                 </th>
-                <th scope="col" className={cn(thClasses, "w-[100px] rounded-r-lg bg-background py-3 pr-4")}>
+                <th scope="col" className={cn(listThClasses, "w-[96px] pr-4")}>
                   <span className="sr-only">{c.action}</span>
                 </th>
               </tr>
             </thead>
-            {/* Below md each row is a stacked card; cells carry labels since the header row is hidden. */}
-            <tbody className="max-md:flex max-md:flex-col max-md:gap-2 md:[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] md:[&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
+            {/* Below xl each row stacks its cells (name and email, then a meta line); cells carry labels since the header row is hidden. */}
+            <tbody className="max-xl:flex max-xl:flex-col xl:[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] xl:[&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
               {customers.length === 0 ? (
                 <tr>
                   <td colSpan={7} className={emptyCell}>
@@ -252,31 +252,31 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
                     <tr key={key} className={mobileCardRowClasses}>
                       <th
                         scope="row"
-                        className="py-3 pr-3 pl-4 text-left align-middle font-normal max-md:order-1 max-md:min-w-0 max-md:grow max-md:basis-[55%] max-md:p-0"
+                        className="py-3 pr-3 pl-4 text-left align-middle font-normal max-xl:order-1 max-xl:min-w-0 max-xl:basis-full max-xl:p-0"
                       >
                         <span className="block text-[15px] leading-[23px] font-bold">{u.fullName}</span>
-                        <span className="block text-sm leading-[21px] break-all text-muted-foreground">{u.email}</span>
+                        <span className="block text-sm leading-[21px] [overflow-wrap:anywhere] text-muted-foreground max-xl:truncate">{u.email}</span>
                       </th>
-                      <td className={cn(cell, muted, "pr-3 max-md:order-3")}>
-                        <CellLabel>{c.signIn}</CellLabel>
+                      <td className={cn(cell, muted, "pr-3 max-xl:order-3")}>
+                        <CellLabel until="xl">{c.signIn}</CellLabel>
                         {signIn}
                       </td>
-                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-md:order-5 max-md:basis-full")}>
-                        <span className="max-md:hidden">{formatDate(u.createdAt, locale)}</span>
-                        <span className="md:hidden">
+                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-xl:order-6 max-xl:basis-full")}>
+                        <span className="max-xl:hidden">{formatDate(u.createdAt, locale)}</span>
+                        <span className="xl:hidden">
                           {c.joined}: {formatDate(u.createdAt, locale)}
                         </span>
                       </td>
-                      <td className={cn(cell, muted, "pr-3 tabular-nums md:text-right max-md:order-4 max-md:before:mr-2 max-md:before:content-['·']")}>
-                        <span className="max-md:hidden">{orders?.count ?? 0}</span>
-                        <span className="md:hidden">{t.orderCount(orders?.count ?? 0)}</span>
+                      <td className={cn(cell, muted, "pr-3 tabular-nums xl:text-right max-xl:order-4 max-xl:before:mr-2 max-xl:before:content-['·']")}>
+                        <span className="max-xl:hidden">{orders?.count ?? 0}</span>
+                        <span className="xl:hidden">{t.orderCount(orders?.count ?? 0)}</span>
                       </td>
-                      <td className={cn(cell, "pr-3 text-right whitespace-nowrap tabular-nums max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:text-base max-md:font-bold")}>
-                        <CellLabel>{c.spent}</CellLabel>
+                      <td className={cn(cell, "pr-3 text-right whitespace-nowrap tabular-nums max-xl:order-5 max-xl:text-sm max-xl:leading-[21px] max-xl:font-bold max-xl:before:mr-2 max-xl:before:font-normal max-xl:before:text-muted-foreground max-xl:before:content-['·']")}>
+                        <CellLabel until="xl">{c.spent}</CellLabel>
                         {formatRupiah(spentBy.get(key) ?? 0)}
                       </td>
-                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-md:order-6")}>
-                        <span className="md:hidden">{c.lastOrder}: </span>
+                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-xl:order-7 xl:pl-8")}>
+                        <span className="xl:hidden">{c.lastOrder}: </span>
                         {orders?.last ? (
                           formatDate(orders.last, locale)
                         ) : (
@@ -286,7 +286,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
                           </>
                         )}
                       </td>
-                      <td className="py-3 pr-4 text-right max-md:order-7 max-md:ml-auto max-md:p-0">
+                      <td className="py-3 pr-4 text-right max-xl:order-8 max-xl:ml-auto max-xl:p-0">
                         <ArrowLink
                           href={`/admin/orders?q=${encodeURIComponent(u.email)}`}
                           aria-label={t.viewOrdersLabel(u.fullName)}

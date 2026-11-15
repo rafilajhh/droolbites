@@ -9,7 +9,7 @@ import { accountMessages } from "@/i18n/messages/account";
 import { cn } from "@/lib/cn";
 import { formatDate, formatItemCount, formatRupiah } from "@/lib/format";
 import { awaitingConfirmationInfo, fulfilmentStatusInfo, paymentStatusInfo, statusLabel } from "@/lib/order-status";
-import { AccountCard } from "./account-card";
+import { accountTitleClasses } from "./account-card";
 import { getAccountOrders, itemNames, ORDER_FILTERS, type AccountOrder, type OrderFilter } from "./account-orders";
 
 /** Unpaid orders show the payment state; a paid one waits for the shop to accept it; then the kitchen state. */
@@ -20,9 +20,10 @@ function orderStatus(order: AccountOrder) {
 }
 
 /**
- * pen: Order history card (W2AkM), with filters (all / in progress / completed / cancelled), the
- * first item's photo, and the next thing to do on each order: pay an unpaid one, order a completed
- * one again. A table at desktop, stacked rows on phones.
+ * Order history, flat on the page: heading and filters (all / in progress / completed / cancelled) on
+ * one line, then a hairline table with the first item's photo and the next thing to do on each order
+ * (pay an unpaid one, order a completed one again). Columns size to their content and the items
+ * column takes the rest. A table at desktop, stacked rows on phones.
  */
 export async function OrderHistory({ userId, filter }: { userId: bigint; filter: OrderFilter }) {
   const [all, t, locale] = await Promise.all([getAccountOrders(userId), getMessages(accountMessages), getLocale()]);
@@ -30,80 +31,94 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
   const count = (f: OrderFilter) => (f === "all" ? all.length : all.filter((order) => order.bucket === f).length);
   const orders = filter === "all" ? all : all.filter((order) => order.bucket === filter);
 
-  // One line: "Fudgy Brownies 20 × 20". Several: "Fudgy Brownies 20 × 20 + 2 more" style via the item count.
+  // What was in it ("2 × Chocolate Chunk, Fudgy Brownies 15 × 15"), and under it the count and how it gets to the customer.
   const summary = (order: AccountOrder) => {
-    const names = itemNames(order);
-    if (names.length === 1) return names[0];
     const items = order.items.reduce((sum, item) => sum + item.qty, 0);
-    return `${formatItemCount(items, locale)} · ${order.fulfilmentMethod === "delivery" ? o.delivery : o.pickup}`;
+    return {
+      names: itemNames(order).join(", "),
+      meta: `${formatItemCount(items, locale)} · ${order.fulfilmentMethod === "delivery" ? o.delivery : o.pickup}`,
+    };
   };
 
   const th =
     "pb-3 text-left align-top font-mono text-xs leading-normal font-semibold tracking-[0.5px] text-muted-foreground shadow-[inset_0_-1px_0_var(--border-subtle)]";
   const td = "xl:py-4 xl:align-middle xl:shadow-[inset_0_-1px_0_var(--border-subtle)]";
+  const heading = (
+    <h2 id="order-history-title" className={accountTitleClasses}>
+      {o.title}
+    </h2>
+  );
   // Stacked rows (below xl) have no visible header row, so each cell carries its label for screen readers.
   const cellLabel = (label: string) => <span className="sr-only xl:hidden">{label}: </span>;
 
   if (all.length === 0) {
     return (
-      <AccountCard id="order-history" title={o.title}>
+      <section id="order-history" aria-labelledby="order-history-title" className="flex w-full scroll-mt-[88px] flex-col gap-4">
+        {heading}
         <div className="flex flex-col items-start gap-4">
           <p className="text-[15px] leading-[23px] text-foreground">{o.empty}</p>
           <ButtonLink href="/menu" variant="secondary">
             {o.emptyCta}
           </ButtonLink>
         </div>
-      </AccountCard>
+      </section>
     );
   }
 
   return (
-    <AccountCard id="order-history" title={o.title}>
-      <nav aria-label={o.filter} className="-mt-1">
-        <ul className="flex flex-wrap gap-2">
-          {ORDER_FILTERS.map((f) => {
-            const current = f === filter;
-            return (
-              <li key={f}>
-                <Link
-                  href={f === "all" ? "/account#order-history" : `/account?status=${f}#order-history`}
-                  scroll={false}
-                  aria-current={current ? "true" : undefined}
-                  className={cn(
-                    "relative inline-flex h-9 items-center gap-2 rounded-pill px-4 text-sm leading-[18px] font-semibold transition-colors after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] motion-reduce:transition-none",
-                    current ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:inset-ring-[1.25px] hover:inset-ring-border",
-                  )}
-                >
-                  {o.filters[f]}
-                  <span className={cn("font-mono text-xs tabular-nums", current ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                    {count(f)}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+    <section id="order-history" aria-labelledby="order-history-title" className="flex w-full scroll-mt-[88px] flex-col gap-5">
+      <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        {heading}
+        {/* Below sm the filters scroll sideways in one row instead of wrapping. */}
+        <nav
+          aria-label={o.filter}
+          className="max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 max-sm:py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
+            {ORDER_FILTERS.map((f) => {
+              const current = f === filter;
+              return (
+                <li key={f}>
+                  <Link
+                    href={f === "all" ? "/account#order-history" : `/account?status=${f}#order-history`}
+                    scroll={false}
+                    aria-current={current ? "true" : undefined}
+                    className={cn(
+                      "relative inline-flex h-9 items-center gap-2 rounded-pill px-4 whitespace-nowrap text-sm leading-[18px] font-semibold transition-colors after:absolute after:-inset-y-1 after:inset-x-0 after:content-[''] motion-reduce:transition-none",
+                      current ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:inset-ring-[1.25px] hover:inset-ring-border",
+                    )}
+                  >
+                    {o.filters[f]}
+                    <span className={cn("font-mono text-xs tabular-nums", current ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                      {count(f)}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+      </div>
 
       {orders.length === 0 ? (
         <p className="text-[15px] leading-[23px] text-muted-foreground">{o.emptyFilter}</p>
       ) : (
-        <table className="w-full table-fixed border-collapse">
+        <table className="w-full border-collapse">
           <thead className="hidden xl:table-header-group">
             <tr>
-              <th scope="col" className={cn(th, "w-[230px]")}>
+              <th scope="col" className={cn(th, "pr-6")}>
                 {o.order}
               </th>
-              <th scope="col" className={th}>
+              <th scope="col" className={cn(th, "w-full pr-6")}>
                 {o.items}
               </th>
-              <th scope="col" className={cn(th, "w-[190px]")}>
+              <th scope="col" className={cn(th, "pr-6")}>
                 {o.status}
               </th>
-              <th scope="col" className={cn(th, "w-[120px]")}>
+              <th scope="col" className={cn(th, "pr-6 text-right")}>
                 {o.total}
               </th>
-              <th scope="col" className={cn(th, "w-[190px]")}>
+              <th scope="col" className={th}>
                 <span className="sr-only">{o.details}</span>
               </th>
             </tr>
@@ -117,7 +132,7 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
                   key={order.orderNumber}
                   className="grid grid-cols-[auto_1fr_auto] items-center gap-x-4 gap-y-3 py-4 shadow-[inset_0_-1px_0_var(--border-subtle)] first:pt-0 xl:table-row xl:py-0 xl:shadow-none"
                 >
-                  <th scope="row" className={cn(td, "col-span-2 row-start-1 text-left font-normal xl:pr-4")}>
+                  <th scope="row" className={cn(td, "col-span-2 row-start-1 text-left font-normal whitespace-nowrap xl:pr-6")}>
                     <span className="flex items-center gap-3.5">
                       <span className={cn(photoFrame, "size-[52px] shrink-0 rounded-sm bg-card")}>
                         {order.imageUrl ? (
@@ -133,19 +148,20 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
                       </span>
                     </span>
                   </th>
-                  <td className={cn(td, "col-span-3 row-start-2 text-[15px] leading-[23px] text-foreground xl:pr-4")}>
+                  <td className={cn(td, "col-span-3 row-start-2 text-[15px] leading-[23px] text-foreground xl:pr-6")}>
                     {cellLabel(o.items)}
-                    {summary(order)}
+                    <span className="line-clamp-1">{summary(order).names}</span>
+                    <span className="block text-sm leading-[21px] text-muted-foreground">{summary(order).meta}</span>
                   </td>
-                  <td className={cn(td, "col-span-2 row-start-3")}>
+                  <td className={cn(td, "col-span-2 row-start-3 whitespace-nowrap xl:pr-6")}>
                     {cellLabel(o.status)}
                     <StatusBadge tone={status.tone}>{statusLabel(status, locale)}</StatusBadge>
                   </td>
-                  <td className={cn(td, "col-start-3 row-start-1 text-right text-base leading-normal font-bold text-foreground xl:text-left")}>
+                  <td className={cn(td, "col-start-3 row-start-1 text-right text-base leading-normal font-bold whitespace-nowrap text-foreground tabular-nums xl:pr-6")}>
                     {cellLabel(o.total)}
                     {formatRupiah(order.total)}
                   </td>
-                  <td className={cn(td, "col-start-3 row-start-3")}>
+                  <td className={cn(td, "col-start-3 row-start-3 whitespace-nowrap")}>
                     <span className="flex items-center justify-end gap-5">
                       {unpaid ? (
                         <ArrowLink href={`/checkout/pay/${order.orderNumber}`} aria-label={o.payFor(order.orderNumber)} className="text-primary">
@@ -172,6 +188,6 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
           </tbody>
         </table>
       )}
-    </AccountCard>
+    </section>
   );
 }

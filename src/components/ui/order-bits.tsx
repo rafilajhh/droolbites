@@ -4,7 +4,7 @@ import { photoFrame } from "./snapshot";
 
 /**
  * pen: Order Line (bAwzK). Thumb 64 by default; summaries use 52. An empty
- * `meta` drops the variant line (single-size products, see `lineMeta`).
+ * `meta` drops the variant line (the cart drawer does this for one-size products).
  */
 export function OrderLine({
   name,

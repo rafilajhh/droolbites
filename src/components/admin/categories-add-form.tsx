@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Field, TextInput } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { adminCategoriesMessages } from "@/i18n/messages/admin-categories";
-import { Card } from "./ui";
+import { Card, SectionTitle } from "./ui";
 
 /** The "Add a category" card above the list. */
 export function CategoriesAddForm() {
@@ -35,7 +35,7 @@ export function CategoriesAddForm() {
 
   return (
     <Card className="flex w-full flex-col gap-4 p-6">
-      <h2 className="font-display text-[22px] leading-[33px] font-bold">{t.add.title}</h2>
+      <SectionTitle>{t.add.title}</SectionTitle>
       <form ref={formRef} onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-4 sm:flex-row sm:items-start">
         <Field
           label={t.add.label}

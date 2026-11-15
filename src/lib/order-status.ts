@@ -90,10 +90,19 @@ export function statusLabel(entry: Entry, locale: Locale) {
 /** Fulfilment statuses that still need the kitchen/counter: a paid order in one of these needs action. */
 export const ACTIVE_FULFILMENT = ["pending", "baking", "ready_for_pickup", "out_for_delivery"] as const satisfies readonly FulfilmentStatus[];
 
-/** Paid orders still in progress. The overview banner and /admin/orders?needs=action share this filter. */
+/**
+ * Paid orders waiting for the store to accept or decline them: the one "needs action" count. The
+ * sidebar badge (admin pulse), the overview banner and /admin/orders?needs=action all use it.
+ */
 export const needsActionWhere = {
   paymentStatus: "paid",
-  fulfilmentStatus: { in: [...ACTIVE_FULFILMENT] },
+  fulfilmentStatus: "pending",
+} satisfies Prisma.OrderWhereInput;
+
+/** Accepted, paid orders still on their way (baking, ready, out for delivery). */
+export const inProgressWhere = {
+  paymentStatus: "paid",
+  fulfilmentStatus: { in: ["baking", "ready_for_pickup", "out_for_delivery"] },
 } satisfies Prisma.OrderWhereInput;
 
 /** What the customer sees while a paid order waits for the store to accept it. */

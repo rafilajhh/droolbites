@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { productImageUrl } from "@/content/products";
 import { db } from "@/lib/db";
 import { orderDeadline } from "@/lib/orders";
 
@@ -25,7 +26,7 @@ export const getAccountOrders = cache(async (userId: bigint) => {
       items: {
         select: {
           qty: true,
-          variant: { select: { name: true, product: { select: { name: true, imageUrl: true } } } },
+          variant: { select: { name: true, product: { select: { name: true, slug: true, imageUrl: true } } } },
         },
       },
       payments: { where: { status: "awaiting" }, orderBy: { id: "desc" }, take: 1, select: { expiresAt: true } },
@@ -41,13 +42,14 @@ export const getAccountOrders = cache(async (userId: bigint) => {
     const payBy = attemptEnds && attemptEnds.getTime() > now && attemptEnds < deadline ? attemptEnds : deadline;
     const lapsed = order.paymentStatus === "awaiting" && deadline.getTime() <= now;
     const paymentStatus = lapsed ? ("expired" as const) : order.paymentStatus;
+    const first = order.items[0]?.variant.product;
     const bucket: OrderBucket =
       order.fulfilmentStatus === "completed"
         ? "completed"
         : order.fulfilmentStatus === "cancelled" || paymentStatus === "expired"
           ? "cancelled"
           : "active";
-    return { ...order, paymentStatus, payBy, bucket, imageUrl: order.items[0]?.variant.product.imageUrl ?? null };
+    return { ...order, paymentStatus, payBy, bucket, imageUrl: first ? productImageUrl(first.slug, first.imageUrl) : null };
   });
 });
 

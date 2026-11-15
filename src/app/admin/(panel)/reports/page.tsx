@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Ban, CircleX, Hourglass, Package, Receipt, ShoppingBag, Wallet } from "lucide-react";
 import { SegmentedLinks } from "@/components/admin/reports-segmented";
 import { categoryStyle } from "@/components/admin/rules";
-import { AdminMain, Card, PageHead, thClasses } from "@/components/admin/ui";
+import { AdminMain, Card, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
 import { categoryName } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { formatDate, formatRupiah } from "@/lib/format";
@@ -30,8 +30,6 @@ function formatDay(date: Date, locale: Locale) {
     .format(date)
     .replace(/[.,]/g, "");
 }
-
-const h2Classes = "font-display text-[22px] leading-[33px] font-bold";
 
 /** Admin / Sales report: ?period=today|7d|30d|all (default 7d), whole Surabaya days. */
 export default async function AdminReportsPage({ searchParams }: PageProps<"/admin/reports">) {
@@ -72,66 +70,75 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         }))}
       />
 
-      <div className="grid w-full grid-cols-1 overflow-hidden max-md:rounded-m max-md:bg-white max-md:inset-ring-1 max-md:inset-ring-border-subtle md:grid-cols-2 md:gap-5 min-[1360px]:grid-cols-4">
-        <Stat
+      {/* Totals: the four figures in one strip, and what was left out of them as the strip's last row. */}
+      <PaneCard as="div" cols="grid-cols-1 md:grid-cols-2 xl:grid-cols-4">
+        <StatPane
           label={t.kpi.revenue}
           icon={Wallet}
           iconBg="bg-mint"
           value={formatRupiah(report.revenue)}
           sub={t.kpi.revenueSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
         />
-        <Stat
+        <StatPane
           label={t.kpi.paidOrders}
           icon={Receipt}
           iconBg="bg-tint-lavender"
           value={String(report.paidOrders)}
           sub={t.kpi.paidOrdersSub}
         />
-        <Stat
+        <StatPane
           label={t.kpi.average}
           icon={ShoppingBag}
           iconBg="bg-tint-mustard"
           value={formatRupiah(report.averageOrder)}
           sub={t.kpi.averageSub}
         />
-        <Stat
+        <StatPane
           label={t.kpi.itemsSold}
           icon={Package}
           iconBg="bg-tint-salmon"
           value={String(report.itemsSold)}
           sub={t.kpi.itemsSoldSub(report.productsSold)}
         />
-      </div>
-
-      <Card className="flex w-full flex-col gap-4 p-6">
-        <h2 className={h2Classes}>{t.notCounted.title}</h2>
-        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
-          {[
-            { label: t.notCounted.awaiting, sub: t.notCounted.awaitingSub, value: report.awaiting, icon: Hourglass },
-            { label: t.notCounted.expired, sub: t.notCounted.expiredSub, value: report.expired, icon: CircleX },
-            {
-              label: t.notCounted.cancelled,
-              sub: t.notCounted.cancelledSub(report.cancelledPaid),
-              value: report.cancelled,
-              icon: Ban,
-            },
-          ].map(({ label, sub, value, icon: Icon }) => (
-            <div key={label} className="flex items-start gap-3 rounded-sm bg-background p-4">
-              <Icon className="mt-0.5 size-[18px] shrink-0 text-muted-foreground" aria-hidden />
-              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <dt className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</dt>
-                <dd className="font-display text-[28px] leading-8 font-bold tabular-nums">{value}</dd>
-                <dd className="text-[13px] leading-5 text-muted-foreground">{sub}</dd>
+        <section
+          aria-labelledby="not-counted-title"
+          className={cn(paneClasses, "col-span-full gap-4 bg-background px-5 py-4 md:px-6 md:py-5 xl:grid xl:grid-cols-4 xl:gap-0 xl:px-0")}
+        >
+          <SectionTitle id="not-counted-title" className="xl:px-6">
+            {t.notCounted.title}
+          </SectionTitle>
+          {/* From xl each figure sits under a column of the strip above. Below md each is a compact row with
+              the figure on the right, like the stat rows above it. */}
+          <dl className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 xl:col-span-3 xl:gap-0">
+            {[
+              { label: t.notCounted.awaiting, sub: t.notCounted.awaitingSub, value: report.awaiting, icon: Hourglass },
+              { label: t.notCounted.expired, sub: t.notCounted.expiredSub, value: report.expired, icon: CircleX },
+              {
+                label: t.notCounted.cancelled,
+                sub: t.notCounted.cancelledSub(report.cancelledPaid),
+                value: report.cancelled,
+                icon: Ban,
+              },
+            ].map(({ label, sub, value, icon: Icon }) => (
+              <div key={label} className="flex items-start gap-3 xl:px-6">
+                <Icon className="mt-0.5 size-[18px] shrink-0 text-muted-foreground" aria-hidden />
+                <div className="flex min-w-0 flex-1 flex-col max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-x-4">
+                  <dt className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</dt>
+                  <dd className="font-display text-[22px] leading-[28px] font-bold tabular-nums max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 max-md:self-center">
+                    {value}
+                  </dd>
+                  <dd className="text-[13px] leading-5 text-muted-foreground max-md:col-start-1 max-md:row-start-2">{sub}</dd>
+                </div>
               </div>
-            </div>
-          ))}
-        </dl>
-      </Card>
+            ))}
+          </dl>
+        </section>
+      </PaneCard>
 
       {daily ? (
-        <Card className="flex w-full flex-col gap-4 p-6">
-          <div className="flex flex-col">
-            <h2 className={h2Classes}>{t.daily.title}</h2>
+        <Card aria-labelledby="daily-title" className="flex w-full flex-col gap-4 p-5 md:p-6">
+          <div className="flex flex-col gap-1">
+            <SectionTitle id="daily-title">{t.daily.title}</SectionTitle>
             <p className="text-sm leading-[21px] text-muted-foreground">{t.daily.sub}</p>
           </div>
           {dailyMax === 0 ? (
@@ -167,36 +174,37 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         </Card>
       ) : null}
 
-      <div className="flex w-full flex-col gap-5 xl:flex-row xl:items-start">
-        <Card className="flex min-w-0 flex-1 flex-col gap-4 p-6">
-          <div className="flex flex-col">
-            <h2 className={h2Classes}>{t.top.title}</h2>
+      {/* Best sellers and the category split in one card, the same two-pane rhythm as the overview. */}
+      <PaneCard as="div" cols="grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section aria-labelledby="top-products-title" className={cn(paneClasses, "gap-4 p-5 md:p-6")}>
+          <div className="flex flex-col gap-1">
+            <SectionTitle id="top-products-title">{t.top.title}</SectionTitle>
             <p className="text-sm leading-[21px] text-muted-foreground">{t.top.sub}</p>
           </div>
           {report.topProducts.length === 0 ? (
             <p className="text-[15px] leading-[23px] text-muted-foreground">{t.top.empty}</p>
           ) : (
-            <table aria-label={t.top.title} className="w-full border-separate border-spacing-0">
+            <table aria-labelledby="top-products-title" className="w-full border-collapse">
               <thead>
-                <tr>
-                  <th scope="col" className={cn(thClasses, "w-8 rounded-l-lg bg-background py-2.5 pl-3 sm:w-10")}>
+                <tr className="shadow-[inset_0_-1px_0_var(--border-subtle)]">
+                  <th scope="col" className={cn(thClasses, "w-8 py-2.5 sm:w-10")}>
                     <span className="sr-only">{t.top.rank}</span>#
                   </th>
-                  <th scope="col" className={cn(thClasses, "bg-background py-2.5 pr-3")}>
+                  <th scope="col" className={cn(thClasses, "py-2.5 pr-3")}>
                     {t.top.product}
                   </th>
-                  <th scope="col" className={cn(thClasses, "w-16 bg-background py-2.5 pr-3 text-right sm:w-20")}>
+                  <th scope="col" className={cn(thClasses, "w-16 py-2.5 pr-3 text-right sm:w-20")}>
                     {t.top.sold}
                   </th>
-                  <th scope="col" className={cn(thClasses, "w-[112px] rounded-r-lg bg-background py-2.5 pr-3 text-right sm:w-[130px]")}>
+                  <th scope="col" className={cn(thClasses, "w-[112px] py-2.5 text-right sm:w-[130px]")}>
                     {t.top.revenue}
                   </th>
                 </tr>
               </thead>
-              <tbody className="[&_tr:not(:last-child)_td]:shadow-[inset_0_-1px_0_var(--border-subtle)] [&_tr:not(:last-child)_th]:shadow-[inset_0_-1px_0_var(--border-subtle)]">
+              <tbody>
                 {report.topProducts.map((p, i) => (
-                  <tr key={p.id}>
-                    <td className="py-3 pl-3 font-mono text-[13px] leading-5 font-semibold text-muted-foreground tabular-nums">
+                  <tr key={p.id} className="shadow-[inset_0_-1px_0_var(--border-subtle)] last:shadow-none">
+                    <td className="py-3 font-mono text-[13px] leading-5 font-semibold text-muted-foreground tabular-nums">
                       {i + 1}
                     </td>
                     <th scope="row" className="py-3 pr-3 text-left font-normal">
@@ -207,7 +215,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                       </span>
                     </th>
                     <td className="py-3 pr-3 text-right text-[15px] leading-[23px] font-semibold tabular-nums">{p.qty}</td>
-                    <td className="py-3 pr-3 text-right text-[15px] leading-[23px] font-semibold whitespace-nowrap tabular-nums">
+                    <td className="py-3 text-right text-[15px] leading-[23px] font-semibold whitespace-nowrap tabular-nums">
                       {formatRupiah(p.revenue)}
                     </td>
                   </tr>
@@ -215,11 +223,11 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               </tbody>
             </table>
           )}
-        </Card>
+        </section>
 
-        <Card className="flex w-full flex-col gap-4 p-6 xl:w-[360px] xl:shrink-0">
-          <div className="flex flex-col">
-            <h2 className={h2Classes}>{t.categories.title}</h2>
+        <section aria-labelledby="categories-title" className={cn(paneClasses, "gap-4 p-5 md:p-6")}>
+          <div className="flex flex-col gap-1">
+            <SectionTitle id="categories-title">{t.categories.title}</SectionTitle>
             <p className="text-sm leading-[21px] text-muted-foreground">{t.categories.sub}</p>
           </div>
           {report.categories.length === 0 ? (
@@ -250,42 +258,10 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               })}
             </ul>
           )}
-        </Card>
-      </div>
+        </section>
+      </PaneCard>
 
       <p className="text-[13px] leading-5 text-muted-foreground">{t.footnote}</p>
     </AdminMain>
-  );
-}
-
-/** A totals card, styled like the overview KPI cards (a single white list below md). */
-function Stat({
-  label,
-  icon: Icon,
-  iconBg,
-  value,
-  sub,
-}: {
-  label: string;
-  icon: typeof Wallet;
-  iconBg: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="max-md:not-last:shadow-[inset_0_-1px_0_var(--border-subtle)]">
-      <Card className="flex h-full flex-col gap-2 p-4 max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-0.5 max-md:rounded-none max-md:bg-transparent max-md:inset-ring-0 md:gap-4 md:p-6">
-        <div className="flex w-full items-center justify-between gap-3 max-md:col-start-1 max-md:row-start-1">
-          <h2 className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</h2>
-          <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[10px] max-md:hidden", iconBg)}>
-            <Icon className="size-[18px] text-foreground" aria-hidden />
-          </span>
-        </div>
-        <p className="font-display text-[28px] leading-8 font-bold tabular-nums max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 md:text-[32px] md:leading-[44px] min-[1360px]:text-[28px]">
-          {value}
-        </p>
-        <p className="text-[13px] leading-5 text-muted-foreground max-md:col-start-1 max-md:row-start-2">{sub}</p>
-      </Card>
-    </div>
   );
 }

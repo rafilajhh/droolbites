@@ -112,6 +112,17 @@ async function setFulfilment(ctx, number, label) {
   await page.close();
 }
 
+async function acceptOrder(ctx, number) {
+  const page = await open(ctx, `/admin/orders/${number}`);
+  await settle(page);
+  await page.getByRole("button", { name: /accept/i }).click();
+  for (let i = 0; i < 30; i++) {
+    if ((await one("SELECT fulfilment_status s FROM orders WHERE order_number=?", [number])).s === "baking") break;
+    await sleep(1000);
+  }
+  await page.close();
+}
+
 const cleanupLog = [];
 try {
   const guest = await newCtx();
@@ -264,8 +275,9 @@ try {
 
   await check("US-005.4", "Overview figures match the DB", async () => {
     const dbFigures = async () => ({
-      awaiting: (await one("SELECT COUNT(*) c FROM orders WHERE payment_status='awaiting'")).c,
-      paid: await one("SELECT COALESCE(SUM(total),0) s, COUNT(*) c FROM orders WHERE payment_status='paid'"),
+      awaiting: (await one("SELECT COUNT(*) c FROM orders WHERE payment_status='awaiting' AND fulfilment_status<>'cancelled'")).c,
+      // Cancelled (declined) orders are left out of the overview figures.
+      paid: await one("SELECT COALESCE(SUM(total),0) s, COUNT(*) c FROM orders WHERE payment_status='paid' AND fulfilment_status<>'cancelled'"),
       products: (await one("SELECT COUNT(*) c FROM products WHERE is_available=1")).c,
       variants: (await one("SELECT COUNT(*) c FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.is_available=1")).c,
       recent: (await q("SELECT order_number FROM orders ORDER BY created_at DESC LIMIT 3")).map((r) => r.order_number),
@@ -275,7 +287,7 @@ try {
       const a = await dbFigures();
       const page = await open(admin, "/admin");
       await settle(page);
-      const kpis = (await page.locator('p[class*="text-[44px]"]').allTextContents()).map((s) => s.trim());
+      const kpis = (await page.locator("[data-stat-value]").allTextContents()).map((s) => s.trim());
       const body = await page.locator("main").innerText();
       await page.close();
       const b = await dbFigures();
@@ -497,13 +509,17 @@ try {
     await page.goto("/checkout");
     await settle(page);
     await page.locator('input[name="fulfilment"][value="delivery"]').check({ force: true });
+    // Delivery needs a pin: tap the map just south-east of the store (inside the delivery radius).
+    const map = page.locator(".leaflet-container").first();
+    const box = await map.boundingBox();
+    await map.click({ position: { x: box.width / 2 + 30, y: box.height / 2 + 40 } });
+    await page.waitForFunction(() => document.querySelector('input[name="lat"]')?.value, null, { timeout: 20_000 });
     // Simpler flow: Contact + Delivery or pickup only (no country/province selects, delivery-method card or billing address).
     assert((await page.locator('input[name="billing"], #checkout-country, #checkout-province, input[name="deliveryMethod"]').count()) === 0, "old billing/country/method fields still rendered");
     await page.locator("#checkout-email").fill("alya@email.com");
     await page.locator("#checkout-fullName").fill("Alya Rahmawati");
     await page.locator("#checkout-street").fill("Jl. Test E2E 1");
-    assert((await page.locator("#checkout-city").inputValue()) === "Surabaya", "city field is not fixed to Surabaya");
-    assert(await page.locator("#checkout-city").evaluate((el) => el.readOnly), "city field is not read-only");
+    assert((await page.locator("#checkout-city").inputValue()) === "Surabaya", "city field is not prefilled with Surabaya");
     await page.locator("#checkout-postal").fill("60111");
     // Phone is required (e-wallets need it) and must be an Indonesian mobile number.
     await page.locator("#checkout-phone").fill("");
@@ -550,7 +566,8 @@ try {
     assert(orderNumber, "no order from previous check");
     const rows = await rowsOf(`/admin/orders?q=${orderNumber}`);
     assert(rows.some((r) => r.th === orderNumber), `${orderNumber} not in admin list`);
-    await setFulfilment(admin, orderNumber, "Baking");
+    // A new paid order is accepted (or declined) first; accepting moves it to baking.
+    await acceptOrder(admin, orderNumber);
     await setFulfilment(admin, orderNumber, "Out for delivery");
     const s = (await one("SELECT fulfilment_status s FROM orders WHERE order_number=?", [orderNumber])).s;
     assert(s === "out_for_delivery", `DB status ${s}`);

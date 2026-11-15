@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CircleAlert, MapPin, Printer, Store, Truck, User } from "lucide-react";
+import { ArrowLeft, CircleAlert, Info, MapPin, Printer, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
 import { OrderDecision } from "@/components/admin/order-decision";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
-import { AdminMain, Card, smallButtonClasses } from "@/components/admin/ui";
-import { variantLabel } from "@/content/products";
+import { AdminMain, Card, SectionTitle, smallButtonClasses } from "@/components/admin/ui";
+import { productImageUrl, variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
+import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
 import { cancelReasonText, fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
@@ -24,7 +25,16 @@ export async function generateMetadata({ params }: PageProps<"/admin/orders/[ord
   return { title: t.meta.order(decodeURIComponent(orderNumber)) };
 }
 
-/** pen: Admin / Order detail (FHhpk) with the fulfilment dropdown state (IPL0N). */
+/** A card section: its padding, with a hairline above every section after the first. */
+const sectionClasses = "flex w-full min-w-0 flex-col gap-4 p-5 md:p-6 not-first:shadow-[inset_0_1px_0_var(--border-subtle)]";
+const linkClasses =
+  "underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current";
+
+/**
+ * Admin / Order detail. Two cards that end together from xl: the order itself (items, then
+ * fulfilment and customer side by side) and the store's side (status, then payment). Below xl the
+ * status card comes first, since it holds the next thing to do.
+ */
 export default async function AdminOrderPage({ params }: PageProps<"/admin/orders/[orderNumber]">) {
   await requireAdmin();
   const { orderNumber } = await params;
@@ -37,7 +47,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           variant: {
             select: {
               name: true,
-              product: { select: { name: true, imageUrl: true, category: { select: { slug: true } } } },
+              product: { select: { name: true, slug: true, imageUrl: true, category: { select: { slug: true } } } },
             },
           },
         },
@@ -69,18 +79,19 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const ps = paymentStatusInfo[refund ? "paid" : order.paymentStatus];
   const isDelivery = order.fulfilmentMethod === "delivery";
   const methodLabel = isDelivery ? t.common.delivery : t.common.pickup;
+  // Completed and Cancelled are final: the status shows as information, not as a disabled form.
+  const closed = order.fulfilmentStatus === "completed" || order.fulfilmentStatus === "cancelled";
 
   const lines = order.items.map((item) => {
     const label = variantLabel(item.variant.name, item.variant.product.category.slug, locale);
     return {
       id: item.id.toString(),
       name: item.variant.product.name,
-      imageUrl: item.variant.product.imageUrl,
+      imageUrl: productImageUrl(item.variant.product.slug, item.variant.product.imageUrl),
       meta: item.qty === 1 ? label : `${item.qty} × ${label}`,
       price: formatRupiah(item.unitPrice * item.qty),
     };
   });
-  const half = Math.ceil(lines.length / 2);
   const itemCount = order.items.reduce((sum, i) => sum + i.qty, 0);
 
   // Same labels as the header badge, so an unpaid order's current option reads "Unpaid", not "New order".
@@ -102,6 +113,19 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
     .filter(Boolean)
     .join(", ");
   const subParts = [o.placed(formatDate(order.createdAt, locale)), methodLabel, payment ? paymentMethodInfo[payment.method].name : null];
+  const cancelWhy =
+    order.fulfilmentStatus === "cancelled" && order.cancelReason
+      ? o.cancelReason(cancelReasonText(order.cancelReason, o.decision.reasons) ?? order.cancelReason)
+      : null;
+
+  const paymentRows: { label: string; value: React.ReactNode; mono?: boolean }[] = [
+    { label: o.method, value: payment ? paymentMethodShort(payment.method) : o.noPayment },
+    { label: o.amount, value: formatRupiah(pay.amount) },
+    ...(pay.serviceFee > 0 ? [{ label: o.serviceFee, value: formatRupiah(pay.serviceFee) }] : []),
+    ...(gateway && payment?.vaNumber ? [{ label: o.paymentNumber, value: payment.vaNumber, mono: true }] : []),
+    ...(gateway && payment?.reference ? [{ label: o.reference, value: payment.reference, mono: true }] : []),
+    ...(payment?.transactionId ? [{ label: o.transactionId, value: payment.transactionId, mono: true }] : []),
+  ];
 
   return (
     <AdminMain>
@@ -149,52 +173,53 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         </div>
       ) : null}
 
-      <div className="flex w-full flex-col gap-5 xl:flex-row xl:items-start">
-        {/* Stacked (<xl) the columns dissolve so the status card can lead; xl keeps the pen's two columns. */}
-        <div className="flex min-w-0 flex-1 flex-col gap-5 max-xl:contents">
-          <Card className="flex w-full flex-col gap-3 p-6">
-            <h2 className="font-display text-[22px] leading-[33px] font-bold">{o.items}</h2>
-            <div className="flex w-full flex-col gap-3 md:flex-row md:gap-6">
-              {[lines.slice(0, half), lines.slice(half)].map((col, i) => (
-                <ul key={i} className="flex min-w-0 flex-1 flex-col gap-3">
-                  {col.map((line) => (
-                    <li key={line.id} className="flex w-full items-center gap-4">
-                      <span className="relative size-11 shrink-0 overflow-hidden rounded-sm bg-oat">
-                        {line.imageUrl ? (
-                          <Image src={line.imageUrl} alt="" fill sizes="44px" quality={100} className="object-cover" />
-                        ) : null}
-                      </span>
-                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                        <span className="font-display text-[15px] leading-[19px] font-semibold">{line.name}</span>
-                        <span className="text-[13px] leading-5 text-muted-foreground">{line.meta}</span>
-                      </span>
-                      <span className="shrink-0 text-sm leading-[21px] font-bold">{line.price}</span>
-                    </li>
-                  ))}
-                </ul>
+      <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <Card as="div" className="flex min-w-0 flex-col">
+          <section aria-labelledby="order-items-title" className={sectionClasses}>
+            <SectionTitle id="order-items-title">{o.items}</SectionTitle>
+            <ul className="flex w-full flex-col">
+              {lines.map((line) => (
+                <li
+                  key={line.id}
+                  className="flex w-full items-center gap-4 py-3 shadow-[inset_0_-1px_0_var(--border-subtle)] first:pt-0"
+                >
+                  <span className="relative size-12 shrink-0 overflow-hidden rounded-sm bg-oat">
+                    <Image src={line.imageUrl} alt="" fill sizes="48px" quality={100} className="object-cover" />
+                  </span>
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="font-display text-base leading-5 font-semibold">{line.name}</span>
+                    <span className="text-[13px] leading-5 text-muted-foreground">{line.meta}</span>
+                  </span>
+                  <span className="shrink-0 text-[15px] leading-[23px] font-bold tabular-nums">{line.price}</span>
+                </li>
               ))}
-            </div>
-            <div className="flex w-full flex-wrap items-start justify-between gap-2 pt-3 shadow-[inset_0_1px_0_var(--border-subtle)]">
+            </ul>
+            <div className="flex w-full flex-wrap items-baseline justify-between gap-2">
               <p className="text-[15px] leading-[23px] text-muted-foreground">
-                {o.total(
-                  formatItemCount(itemCount, locale),
-                  order.deliveryFee > 0 ? formatRupiah(order.deliveryFee) : null,
-                )}
+                {o.total(formatItemCount(itemCount, locale), order.deliveryFee > 0 ? formatRupiah(order.deliveryFee) : null)}
               </p>
-              <p className="font-display text-[22px] leading-[33px] font-bold">{formatRupiah(order.total)}</p>
+              <p className="font-display text-[22px] leading-[28px] font-bold tabular-nums">{formatRupiah(order.total)}</p>
             </div>
-          </Card>
+          </section>
 
-          <div className="flex w-full flex-col gap-5 md:flex-row">
-            <Card className="flex min-h-[122px] flex-1 flex-col gap-2 p-6">
-              <h2 className="sr-only">{o.fulfilment}</h2>
+          {/* Fulfilment and customer side by side from md, split by a hairline that runs to the card's bottom. */}
+          <div className="grid flex-1 w-full shadow-[inset_0_1px_0_var(--border-subtle)] md:grid-cols-2">
+            <section
+              aria-labelledby="order-fulfilment-title"
+              className="flex min-w-0 flex-col gap-2 p-5 md:p-6"
+            >
+              <SectionTitle id="order-fulfilment-title" className="mb-1">
+                {o.fulfilment}
+              </SectionTitle>
               <p className="flex items-center gap-2 text-base leading-6 font-bold">
-                {isDelivery ? <Truck className="size-[18px] text-primary" aria-hidden /> : <Store className="size-[18px] text-primary" aria-hidden />}
+                {isDelivery ? (
+                  <Truck className="size-[18px] text-primary" aria-hidden />
+                ) : (
+                  <Store className="size-[18px] text-primary" aria-hidden />
+                )}
                 {methodLabel}
               </p>
-              <p className="text-sm leading-[21px] text-muted-foreground">
-                {isDelivery ? address : o.pickupAt(settings.address)}
-              </p>
+              <p className="text-sm leading-[21px] text-muted-foreground">{isDelivery ? address : o.pickupAt(settings.address)}</p>
               {isDelivery && order.deliveryDistanceM !== null ? (
                 <p className="text-sm leading-[21px] font-semibold tabular-nums">
                   {o.distance(formatDistance(order.deliveryDistanceM, locale))} · {formatRupiah(order.deliveryFee)}
@@ -211,30 +236,45 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                   {o.openPin}
                 </a>
               ) : null}
-            </Card>
-            <Card className="flex min-h-[122px] min-w-0 flex-1 flex-col gap-2 p-6">
-              <h2 className="sr-only">{o.customer}</h2>
+            </section>
+            <section
+              aria-labelledby="order-customer-title"
+              className="flex min-w-0 flex-col gap-2 p-5 shadow-[inset_0_1px_0_var(--border-subtle)] md:p-6 md:shadow-[inset_1px_0_0_var(--border-subtle)]"
+            >
+              <SectionTitle id="order-customer-title" className="mb-1">
+                {o.customer}
+              </SectionTitle>
               <p className="flex items-center gap-2 text-base leading-6 font-bold">
                 <User className="size-[18px] text-primary" aria-hidden />
                 {order.customerName}
               </p>
-              <p className="text-sm leading-[21px] break-words text-muted-foreground">
-                <a href={`mailto:${order.email}`} className="underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current">
+              <p className="flex flex-col text-sm leading-[21px] break-words text-muted-foreground">
+                <a href={`mailto:${order.email}`} className={cn(linkClasses, "self-start")}>
                   {order.email}
                 </a>
-                {" · "}
-                <a href={`tel:${order.phone.replace(/\s/g, "")}`} className="underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current">
+                <a href={`tel:${order.phone.replace(/\s/g, "")}`} className={cn(linkClasses, "self-start")}>
                   {order.phone}
                 </a>
               </p>
-            </Card>
+            </section>
           </div>
-        </div>
+        </Card>
 
-        <div className="flex w-full flex-col gap-5 max-xl:contents xl:w-[360px] xl:shrink-0">
-          <Card className="flex w-full flex-col gap-4 p-6 max-xl:order-first">
-            <h2 className="font-display text-xl leading-[30px] font-bold">{o.status}</h2>
-            {order.paymentStatus === "paid" && order.fulfilmentStatus === "pending" ? (
+        <Card as="div" className="flex w-full flex-col max-xl:order-first">
+          <section aria-labelledby="order-status-title" className={sectionClasses}>
+            <SectionTitle id="order-status-title">{o.status}</SectionTitle>
+            {closed ? (
+              // The status badge is in the page header. No "closed on" date: updatedAt also moves on later
+              // writes (a late payment, a guest order claimed at sign-in), so it isn't when the order closed.
+              <div className="flex flex-col gap-3">
+                {cancelWhy ? <p className="text-[15px] leading-[23px] font-semibold">{cancelWhy}</p> : null}
+                <p className="text-sm leading-[21px] text-muted-foreground">{o.finalNote}</p>
+                <p className={cn("flex w-full gap-2 rounded-sm p-3 text-[13px] leading-5 font-semibold", note.className)}>
+                  <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <span className="flex-1">{note.text}</span>
+                </p>
+              </div>
+            ) : order.paymentStatus === "paid" && order.fulfilmentStatus === "pending" ? (
               <OrderDecision orderNumber={order.orderNumber} note={note.text} paidAmount={formatRupiah(pay.amount)} />
             ) : (
               <StatusForm
@@ -245,53 +285,22 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                 paidAmount={order.paymentStatus === "paid" ? formatRupiah(pay.amount) : undefined}
               />
             )}
-            {order.fulfilmentStatus === "cancelled" && order.cancelReason ? (
-              <p className="text-sm leading-[21px] text-muted-foreground">
-                {o.cancelReason(cancelReasonText(order.cancelReason, o.decision.reasons) ?? order.cancelReason)}
-              </p>
-            ) : null}
-          </Card>
-          <Card className="flex w-full flex-col gap-4 p-6">
+          </section>
+          <section aria-labelledby="order-payment-title" className={sectionClasses}>
             <div className="flex w-full items-center justify-between gap-3">
-              <h2 className="font-display text-xl leading-[30px] font-bold">{o.payment}</h2>
+              <SectionTitle id="order-payment-title">{o.payment}</SectionTitle>
               <StatusBadge tone={ps.tone}>{ps[locale]}</StatusBadge>
             </div>
-            <dl className="flex w-full flex-col gap-4 text-[15px] leading-[23px]">
-              <div className="flex w-full items-center justify-between gap-3">
-                <dt className="text-muted-foreground">{o.method}</dt>
-                <dd className="font-bold">{payment ? paymentMethodShort(payment.method) : o.noPayment}</dd>
-              </div>
-              <div className="flex w-full items-center justify-between gap-3">
-                <dt className="text-muted-foreground">{o.amount}</dt>
-                <dd className="font-bold">{formatRupiah(pay.amount)}</dd>
-              </div>
-              {pay.serviceFee > 0 ? (
-                <div className="flex w-full items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">{o.serviceFee}</dt>
-                  <dd className="font-bold">{formatRupiah(pay.serviceFee)}</dd>
+            <dl className="flex w-full flex-col gap-3 text-[15px] leading-[23px]">
+              {paymentRows.map((row) => (
+                <div key={row.label} className="flex w-full flex-wrap items-center justify-between gap-x-3">
+                  <dt className="text-muted-foreground">{row.label}</dt>
+                  <dd className={cn("font-bold", row.mono && "font-mono text-sm font-semibold break-all")}>{row.value}</dd>
                 </div>
-              ) : null}
-              {gateway && payment?.vaNumber ? (
-                <div className="flex w-full items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">{o.paymentNumber}</dt>
-                  <dd className="font-mono text-sm font-semibold">{payment.vaNumber}</dd>
-                </div>
-              ) : null}
-              {gateway && payment?.reference ? (
-                <div className="flex w-full items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">{o.reference}</dt>
-                  <dd className="font-mono text-sm font-semibold">{payment.reference}</dd>
-                </div>
-              ) : null}
-              {payment?.transactionId ? (
-                <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
-                  <dt className="text-muted-foreground">{o.transactionId}</dt>
-                  <dd className="font-mono text-sm font-semibold break-all">{payment.transactionId}</dd>
-                </div>
-              ) : null}
+              ))}
             </dl>
-          </Card>
-        </div>
+          </section>
+        </Card>
       </div>
     </AdminMain>
   );

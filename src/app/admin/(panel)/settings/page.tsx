@@ -43,8 +43,8 @@ export default async function AdminSettingsPage() {
           ewalletEnabled: s.ewalletEnabled,
         }}
       />
-      {/* Below lg the settings form ends in a sticky save bar that eats the gap (-mb-6), so add it back. */}
-      <PasswordForm email={admin.email} className="max-lg:mt-6" />
+      {/* A separate form with its own button, below the store settings' save bar (the main column's gap apart). */}
+      <PasswordForm email={admin.email} />
     </AdminMain>
   );
 }

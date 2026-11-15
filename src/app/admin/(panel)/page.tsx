@@ -3,13 +3,13 @@ import Link from "next/link";
 import { BellRing, CircleCheck, Cookie, Hourglass, Wallet } from "lucide-react";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badges";
-import { AdminMain, Card, CellLabel, mobileCardRowClasses, PageHead, thClasses } from "@/components/admin/ui";
+import { AdminMain, CellLabel, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
 import { categoryStyle, isTrayCategory } from "@/components/admin/rules";
 import { categoryName } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatRupiah, formatTime } from "@/lib/format";
-import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, needsActionWhere, paymentStatusInfo } from "@/lib/order-status";
+import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere, paymentStatusInfo } from "@/lib/order-status";
 import { cn } from "@/lib/cn";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -41,7 +41,13 @@ export default async function AdminOverviewPage() {
   const [t, locale] = await Promise.all([getMessages(adminMessages), getLocale()]);
   const o = t.overview;
 
-  const [awaiting, paid, productsOnMenu, variantsOnMenu, needsAction, recent, categories] = await Promise.all([
+  const bannerSelect = {
+    orderNumber: true,
+    fulfilmentStatus: true,
+    createdAt: true,
+    payments: { where: { status: "paid" }, orderBy: { paidAt: "desc" }, take: 1, select: { paidAt: true } },
+  } as const;
+  const [awaiting, paid, productsOnMenu, variantsOnMenu, newOrders, inProgress, recent, categories] = await Promise.all([
     db.order.count({ where: { paymentStatus: "awaiting", fulfilmentStatus: { not: "cancelled" } } }),
     // Paid but later cancelled by the store (a refund) is not money kept.
     db.order.aggregate({
@@ -51,19 +57,13 @@ export default async function AdminOverviewPage() {
     }),
     db.product.count({ where: { isAvailable: true } }),
     db.productVariant.count({ where: { product: { isAvailable: true } } }),
-    db.order.findMany({
-      where: needsActionWhere,
-      orderBy: { createdAt: "asc" },
-      select: {
-        orderNumber: true,
-        fulfilmentStatus: true,
-        createdAt: true,
-        payments: { where: { status: "paid" }, orderBy: { paidAt: "desc" }, take: 1, select: { paidAt: true } },
-      },
-    }),
+    // The banner leads with new orders (the same count as the sidebar badge); with none, it reminds
+    // about accepted orders still on their way.
+    db.order.findMany({ where: needsActionWhere, orderBy: { createdAt: "asc" }, select: bannerSelect }),
+    db.order.findMany({ where: inProgressWhere, orderBy: { createdAt: "asc" }, select: bannerSelect }),
     db.order.findMany({
       orderBy: { createdAt: "desc" },
-      take: 3,
+      take: 5,
       select: { orderNumber: true, fulfilmentMethod: true, fulfilmentStatus: true, paymentStatus: true, total: true },
     }),
     db.category.findMany({
@@ -77,6 +77,7 @@ export default async function AdminOverviewPage() {
   ]);
 
   const now = jakartaNow(locale);
+  const needsAction = newOrders.length > 0 ? newOrders : inProgress;
   const first = needsAction[0];
   const paidAt = first ? (first.payments[0]?.paidAt ?? first.createdAt) : null;
   const paidDate = paidAt && dayKey(paidAt) !== dayKey(new Date()) ? formatDate(paidAt, locale) : null;
@@ -105,11 +106,23 @@ export default async function AdminOverviewPage() {
               {single ? o.alertOne[first.fulfilmentStatus as (typeof ACTIVE_FULFILMENT)[number]] : o.alertMany(needsAction.length)}
             </p>
             <p className="text-sm leading-[21px] text-muted-foreground">
-              {(single ? (first.fulfilmentStatus === "pending" ? o.paidAtNew : o.paidAt) : o.paidAtMany)(first.orderNumber, formatTime(paidAt), paidDate)}
+              {(first.fulfilmentStatus === "pending"
+                ? single
+                  ? o.paidAtNew
+                  : o.paidAtManyNew
+                : single
+                  ? o.paidAt
+                  : o.paidAtMany)(first.orderNumber, formatTime(paidAt), paidDate)}
             </p>
           </div>
           <Link
-            href={single ? `/admin/orders/${first.orderNumber}` : "/admin/orders?needs=action"}
+            href={
+              single
+                ? `/admin/orders/${first.orderNumber}`
+                : newOrders.length > 0
+                  ? "/admin/orders?needs=action"
+                  : "/admin/orders?status=paid"
+            }
             className="inline-flex items-center justify-center rounded-sm bg-primary px-5 py-3 font-display text-[13px] leading-4 font-semibold tracking-[0.5px] text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             {single ? (first.fulfilmentStatus === "pending" ? o.confirmOrder : o.viewOrder) : o.viewOrders}
@@ -127,8 +140,9 @@ export default async function AdminOverviewPage() {
         </div>
       )}
 
-      <div className="grid w-full grid-cols-1 overflow-hidden max-md:rounded-m max-md:bg-white max-md:inset-ring-1 max-md:inset-ring-border-subtle md:grid-cols-3 md:gap-5">
-        <Kpi
+      {/* One strip for the three figures; from xl its last column lines up with "Your menu" below. */}
+      <PaneCard as="div" cols="grid-cols-1 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]">
+        <StatPane
           label={o.awaiting}
           icon={Hourglass}
           iconBg="bg-tint-mustard"
@@ -136,7 +150,7 @@ export default async function AdminOverviewPage() {
           sub={o.awaitingSub}
           href="/admin/orders?status=awaiting"
         />
-        <Kpi
+        <StatPane
           label={o.received}
           icon={Wallet}
           iconBg="bg-mint"
@@ -144,177 +158,129 @@ export default async function AdminOverviewPage() {
           sub={`${o.receivedSub(paid._count)} · ${o.allTime}`}
           href="/admin/reports"
         />
-        <Kpi
+        <StatPane
           label={o.onMenu}
           icon={Cookie}
           iconBg="bg-tint-lavender"
           value={String(productsOnMenu)}
           sub={o.onMenuSub(variantsOnMenu)}
         />
-      </div>
+      </PaneCard>
 
-      <div className="flex w-full flex-col gap-5 xl:flex-row">
-        <Card className="flex min-w-0 flex-1 flex-col gap-4 p-6">
+      {/* Recent orders and the menu in one card, split by a hairline, so both end at the same height. */}
+      <PaneCard as="div" cols="grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section aria-labelledby="recent-orders-title" className={cn(paneClasses, "gap-3 p-5 md:p-6")}>
           <div className="flex w-full flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-[22px] leading-[33px] font-bold">{o.recent}</h2>
+            <SectionTitle id="recent-orders-title">{o.recent}</SectionTitle>
             <ArrowLink href="/admin/orders">{o.allOrders}</ArrowLink>
           </div>
           {recent.length === 0 ? (
             <p className="text-sm leading-[21px] text-muted-foreground">{o.noOrders}</p>
           ) : (
-            <div className="relative w-full overflow-x-auto">
-              <table
-                aria-label={o.recent}
-                className="w-full border-separate border-spacing-x-0 border-spacing-y-4 max-md:block md:-my-4 md:min-w-[640px]"
-              >
-                <thead className="max-md:hidden">
-                  <tr>
-                    <th scope="col" className={cn(thClasses, "w-[102px] rounded-l-lg bg-background py-2.5 pl-3")}>
-                      {t.orders.col.order}
-                    </th>
-                    <th scope="col" className={cn(thClasses, "w-[140px] bg-background py-2.5 pr-3")}>
-                      {t.orders.col.method}
-                    </th>
-                    <th scope="col" className={cn(thClasses, "w-[90px] bg-background py-2.5 pr-3")}>
-                      {t.orders.col.payment}
-                    </th>
-                    <th scope="col" className={cn(thClasses, "w-[130px] bg-background py-2.5 pr-3")}>
-                      {t.orders.col.status}
-                    </th>
-                    <th scope="col" className={cn(thClasses, "bg-background py-2.5 pr-3")}>
-                      {t.orders.col.total}
-                    </th>
-                    <th scope="col" className={cn(thClasses, "w-[82px] rounded-r-lg bg-background py-2.5 pr-3")}>
-                      <span className="sr-only">{t.orders.col.action}</span>
-                    </th>
-                  </tr>
-                </thead>
-                {/* Below md each row is a stacked card; cells carry sr-only labels since the header row is hidden. */}
-                <tbody className="max-md:flex max-md:flex-col max-md:gap-3">
-                  {recent.map((order) => {
-                    const status = fulfilmentBadgeInfo(order);
-                    const payment = paymentStatusInfo[order.paymentStatus];
-                    const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
-                    return (
-                      <tr key={order.orderNumber} className={mobileCardRowClasses}>
-                        <th scope="row" className="py-3.5 pr-3 pl-3 text-left text-base leading-6 font-bold whitespace-nowrap max-md:order-1 max-md:grow max-md:basis-[55%] max-md:p-0">
-                          {order.orderNumber}
-                        </th>
-                        <td className="py-3.5 pr-3 text-[15px] leading-[23px] whitespace-nowrap max-md:order-5 max-md:grow max-md:basis-[55%] max-md:p-0 max-md:text-sm max-md:leading-[21px] max-md:text-muted-foreground">
-                          <CellLabel>{t.orders.col.method}</CellLabel>
-                          {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
-                        </td>
-                        <td className="py-3.5 pr-3 max-md:order-3 max-md:p-0">
-                          <CellLabel>{t.orders.col.payment}</CellLabel>
-                          <StatusBadge tone={payment.tone} className="whitespace-nowrap">{payment[locale]}</StatusBadge>
-                        </td>
-                        <td className="py-3.5 pr-3 max-md:order-4 max-md:p-0">
-                          <CellLabel>{t.orders.col.status}</CellLabel>
-                          {unpaid ? (
-                            <span className="text-muted-foreground" aria-label={status[locale]}>—</span>
-                          ) : (
-                            <StatusBadge tone={status.tone} className="whitespace-nowrap">{status[locale]}</StatusBadge>
-                          )}
-                        </td>
-                        <td className="py-3.5 pr-3 text-base leading-6 font-bold whitespace-nowrap max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:p-0 max-md:text-right">
-                          <CellLabel>{t.orders.col.total}</CellLabel>
-                          {formatRupiah(order.total)}
-                        </td>
-                        <td className="py-3.5 pr-3 text-right max-md:order-6 max-md:ml-auto max-md:p-0">
-                          <ArrowLink
-                            href={`/admin/orders/${order.orderNumber}`}
-                            aria-label={t.orders.viewLabel(order.orderNumber)}
-                            className="after:-inset-y-4"
-                          >
-                            {t.common.view}
-                          </ArrowLink>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <table aria-labelledby="recent-orders-title" className="w-full border-collapse max-md:block">
+              <thead className="max-md:hidden">
+                <tr className="shadow-[inset_0_-1px_0_var(--border-subtle)]">
+                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
+                    {t.orders.col.order}
+                  </th>
+                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
+                    {t.orders.col.method}
+                  </th>
+                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
+                    {t.orders.col.payment}
+                  </th>
+                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
+                    {t.orders.col.status}
+                  </th>
+                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4 text-right")}>
+                    {t.orders.col.total}
+                  </th>
+                  <th scope="col" className={cn(thClasses, "w-px py-2.5")}>
+                    <span className="sr-only">{t.orders.col.action}</span>
+                  </th>
+                </tr>
+              </thead>
+              {/* Below md each row wraps onto two lines; cells carry sr-only labels since the header row is hidden. */}
+              <tbody className="max-md:flex max-md:flex-col">
+                {recent.map((order) => {
+                  const status = fulfilmentBadgeInfo(order);
+                  const payment = paymentStatusInfo[order.paymentStatus];
+                  const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
+                  return (
+                    <tr
+                      key={order.orderNumber}
+                      className="shadow-[inset_0_-1px_0_var(--border-subtle)] last:shadow-none max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-2 max-md:gap-y-2 max-md:py-3.5"
+                    >
+                      <th
+                        scope="row"
+                        className="py-3.5 pr-4 text-left text-base leading-6 font-bold whitespace-nowrap max-md:order-1 max-md:grow max-md:basis-[55%] max-md:p-0"
+                      >
+                        {order.orderNumber}
+                      </th>
+                      <td className="py-3.5 pr-4 text-[15px] leading-[23px] whitespace-nowrap max-md:order-5 max-md:grow max-md:basis-[55%] max-md:p-0 max-md:text-sm max-md:leading-[21px] max-md:text-muted-foreground">
+                        <CellLabel>{t.orders.col.method}</CellLabel>
+                        {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
+                      </td>
+                      <td className="py-3.5 pr-4 max-md:order-3 max-md:p-0">
+                        <CellLabel>{t.orders.col.payment}</CellLabel>
+                        <StatusBadge tone={payment.tone} className="whitespace-nowrap">
+                          {payment[locale]}
+                        </StatusBadge>
+                      </td>
+                      <td className="py-3.5 pr-4 max-md:order-4 max-md:p-0">
+                        <CellLabel>{t.orders.col.status}</CellLabel>
+                        {unpaid ? (
+                          <span className="text-muted-foreground" aria-label={status[locale]}>
+                            —
+                          </span>
+                        ) : (
+                          <StatusBadge tone={status.tone} className="whitespace-nowrap">
+                            {status[locale]}
+                          </StatusBadge>
+                        )}
+                      </td>
+                      <td className="py-3.5 pr-4 text-right text-base leading-6 font-bold whitespace-nowrap tabular-nums max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:p-0">
+                        <CellLabel>{t.orders.col.total}</CellLabel>
+                        {formatRupiah(order.total)}
+                      </td>
+                      <td className="py-3.5 text-right max-md:order-6 max-md:ml-auto max-md:p-0">
+                        <ArrowLink
+                          href={`/admin/orders/${order.orderNumber}`}
+                          aria-label={t.orders.viewLabel(order.orderNumber)}
+                          className="after:-inset-y-3"
+                        >
+                          {t.common.view}
+                        </ArrowLink>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
-        </Card>
+        </section>
 
-        <section className="flex w-full flex-col gap-4 rounded-m bg-primary [--focus-ring:var(--white)] p-6 xl:w-[360px] xl:shrink-0">
-          <h2 className="font-display text-[22px] leading-[33px] font-bold text-white">{o.yourMenu}</h2>
-          <ul className="flex flex-col gap-4">
+        <section aria-labelledby="your-menu-title" className={cn(paneClasses, "gap-3 p-5 md:p-6")}>
+          <SectionTitle id="your-menu-title">{o.yourMenu}</SectionTitle>
+          <ul className="flex flex-col">
             {categories.map((c) => {
               const variants = c.products.reduce((sum, p) => sum + p._count.variants, 0);
               return (
-                <li
-                  key={c.slug}
-                  className="flex items-center gap-2.5 py-2.5 shadow-[inset_0_-1px_0_rgb(255_255_255_/_0.15)]"
-                >
+                <li key={c.slug} className="flex items-center gap-2.5 py-3.5 shadow-[inset_0_-1px_0_var(--border-subtle)]">
                   <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", categoryStyle(c.slug).dot)} />
-                  <span className="flex-1 text-[15px] leading-[23px] font-semibold text-white">
-                    {categoryName(c.slug, c.name, locale)}
-                  </span>
-                  <span className="text-sm leading-[21px] text-mint">
+                  <span className="flex-1 text-[15px] leading-[23px] font-semibold">{categoryName(c.slug, c.name, locale)}</span>
+                  <span className="text-sm leading-[21px] text-muted-foreground">
                     {isTrayCategory(c.slug) ? o.traySizes(variants) : o.flavors(c.products.length)}
                   </span>
                 </li>
               );
             })}
           </ul>
-          <Link
-            href="/admin/products"
-            className={buttonClasses(
-              "primary",
-              "w-full bg-transparent inset-ring-[1.5px] inset-ring-white hover:bg-white/10",
-            )}
-          >
+          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full")}>
             {o.manage}
           </Link>
         </section>
-      </div>
+      </PaneCard>
     </AdminMain>
-  );
-}
-
-function Kpi({
-  label,
-  icon: Icon,
-  iconBg,
-  value,
-  sub,
-  href,
-  className,
-}: {
-  label: string;
-  icon: typeof Cookie;
-  iconBg: string;
-  value: string;
-  sub: string;
-  /** Makes the whole card a link to the matching order list. */
-  href?: string;
-  className?: string;
-}) {
-  const card = (
-    <Card
-      className={cn(
-        "flex flex-col gap-2 p-4 max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:items-center max-md:gap-x-3 max-md:gap-y-0.5 max-md:rounded-none max-md:bg-transparent max-md:inset-ring-0 md:gap-4 md:p-6",
-        href &&
-          "h-full transition-[background-color,box-shadow] duration-150 ease-out group-hover:bg-background group-hover:inset-ring-border/50",
-      )}
-    >
-      <div className="flex w-full items-center justify-between gap-3 max-md:col-start-1 max-md:row-start-1">
-        <h2 className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</h2>
-        <span className={cn("flex size-9 shrink-0 items-center justify-center rounded-[10px] max-md:hidden", iconBg)}>
-          <Icon className="size-[18px] text-foreground" aria-hidden />
-        </span>
-      </div>
-      <p className="font-display text-[28px] leading-8 font-bold max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 md:text-[32px] md:leading-[44px] xl:text-[44px]">{value}</p>
-      <p className="text-[13px] leading-5 text-muted-foreground max-md:col-start-1 max-md:row-start-2">{sub}</p>
-    </Card>
-  );
-  return href ? (
-    <Link href={href} className={cn("group block rounded-m max-md:rounded-none max-md:not-last:shadow-[inset_0_-1px_0_var(--border-subtle)]", className)}>
-      {card}
-    </Link>
-  ) : (
-    <div className={cn("max-md:not-last:shadow-[inset_0_-1px_0_var(--border-subtle)]", className)}>{card}</div>
   );
 }

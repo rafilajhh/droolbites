@@ -12,13 +12,11 @@ export function tabHref(tab: AccountTab) {
   return tab === "orders" ? "/account" : `/account?tab=${tab}`;
 }
 
-/** Below lg the three tabs sit in one row with the icon above the label; from lg a vertical list. */
-const itemClass =
-  "flex w-full flex-col items-center gap-1 rounded-sm px-2 py-2.5 text-center text-[13px] leading-[18px] text-foreground transition-colors hover:bg-card motion-reduce:transition-none sm:text-[15px] sm:leading-[23px] lg:flex-row lg:gap-3 lg:px-4 lg:py-3.5 lg:text-left";
-
 /**
- * pen: Side Nav (ThhBD), as tabs: each one shows its own panel (orders, account information, saved
- * address) instead of scrolling one long page. Sign out is a quieter text action under the tabs.
+ * The account's tabs as one bar under the greeting, across the page's full width: each tab shows its
+ * own panel (orders, account information, saved address); the current one carries a 2px moss
+ * underline on the bar's hairline. Sign out is a quieter action at the bar's right end. Below sm the
+ * three tabs share the row equally with short labels, and sign out keeps only its icon.
  */
 export async function AccountNav({ current }: { current: AccountTab }) {
   const t = (await getMessages(accountMessages)).nav;
@@ -29,20 +27,25 @@ export async function AccountNav({ current }: { current: AccountTab }) {
   ];
 
   return (
-    <div className="flex w-full gap-1 lg:flex-col lg:gap-3">
+    <div className="flex w-full items-stretch gap-2 shadow-[inset_0_-1px_0_var(--border-subtle)]">
       <nav aria-label={t.label} className="min-w-0 flex-1">
-        <ul className="grid grid-cols-3 gap-1 lg:flex lg:flex-col">
+        <ul className="grid grid-cols-3 sm:flex sm:gap-8">
           {links.map(({ tab, label, short, Icon }) => {
             const active = current === tab;
             return (
-              <li key={tab}>
+              <li key={tab} className="flex">
                 <Link
                   href={tabHref(tab)}
                   scroll={false}
                   aria-current={active ? "page" : undefined}
-                  className={cn(itemClass, active ? "bg-card font-bold" : "font-medium")}
+                  className={cn(
+                    "flex min-h-12 w-full items-center justify-center gap-2 text-[15px] leading-[23px] transition-colors motion-reduce:transition-none sm:justify-start",
+                    active
+                      ? "font-bold text-foreground shadow-[inset_0_-2px_0_var(--primary)]"
+                      : "font-medium text-muted-foreground hover:text-foreground hover:shadow-[inset_0_-2px_0_var(--border-divider)]",
+                  )}
                 >
-                  <Icon className={cn("size-5 shrink-0", active ? "text-primary" : "text-foreground")} aria-hidden />
+                  <Icon className={cn("size-[18px] shrink-0", active && "text-primary")} aria-hidden />
                   <span className="sm:hidden" aria-hidden>
                     {short}
                   </span>
@@ -53,13 +56,13 @@ export async function AccountNav({ current }: { current: AccountTab }) {
           })}
         </ul>
       </nav>
-      <form action={signOut} className="flex max-lg:shrink-0 lg:pt-3 lg:shadow-[inset_0_1px_0_var(--border-subtle)]">
+      <form action={signOut} className="flex shrink-0">
         <button
           type="submit"
-          className="flex min-h-11 cursor-pointer flex-col items-center justify-center gap-1 rounded-sm px-3 text-[13px] leading-[18px] font-semibold text-muted-foreground transition-colors hover:text-foreground motion-reduce:transition-none lg:flex-row lg:gap-2 lg:px-4 lg:text-sm lg:leading-normal"
+          className="flex min-h-12 min-w-11 cursor-pointer items-center justify-center gap-2 text-sm leading-[21px] font-semibold text-muted-foreground transition-colors hover:text-foreground motion-reduce:transition-none"
         >
           <LogOut className="size-4 shrink-0" aria-hidden />
-          {t.signOut}
+          <span className="max-sm:sr-only">{t.signOut}</span>
         </button>
       </form>
     </div>
