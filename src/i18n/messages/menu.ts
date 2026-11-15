@@ -34,14 +34,6 @@ const ID_WORDS = [
 /** 7 → "Seven" / "Tujuh"; larger numbers stay digits. */
 const word = (words: string[], n: number) => words[n] ?? String(n);
 
-/** "Brownies", "Tiramisu" → "Brownies & tiramisu". */
-const joinNames = (names: string[], and: string) => {
-  const [first, ...rest] = names;
-  const tail = rest.map((n) => n.toLowerCase());
-  if (tail.length === 0) return first;
-  return `${[first, ...tail.slice(0, -1)].join(", ")} ${and} ${tail[tail.length - 1]}`;
-};
-
 /**
  * Our Menu page (uQ4f5) with its overlays: category filter (nIoP5), search
  * suggestions (MPMQk) and the size picker (kfcyP). Also the strings of the
@@ -69,9 +61,6 @@ export const menuMessages = defineMessages({
       heading: "FILTER BY CATEGORY",
       open: "Filter by category",
     },
-    group: {
-      join: (names: string[]) => joinNames(names, "&"),
-    },
     results: (n: number) => `${n} ${n === 1 ? "dessert" : "desserts"} shown`,
     unit: { piece: "per piece", portion: "per portion", tray: "per tray" },
     empty: {
@@ -84,7 +73,9 @@ export const menuMessages = defineMessages({
       chooseSize: (name: string) => `Choose a size for ${name}`,
       from: (price: string) => `From ${price}`,
       sizes: (n: number) => `${n} sizes`,
-      sizeRange: (n: number, from: string, to: string) => `${word(EN_WORDS, n)} tray sizes, from ${from} to ${to}.`,
+      /** Brownie trays: "Four tray sizes, from 10 × 10 to 20 × 30 cm." */
+      trayRange: (n: number, from: string, to: string) => `${word(EN_WORDS, n)} tray sizes, from ${from} to ${to}.`,
+      sizeRange: (n: number, from: string, to: string) => `${word(EN_WORDS, n)} sizes, from ${from} to ${to}.`,
       error: "Couldn't add to cart. Please try again.",
       errorShort: "Couldn't add — try again",
     },
@@ -120,9 +111,6 @@ export const menuMessages = defineMessages({
       heading: "FILTER KATEGORI",
       open: "Filter kategori",
     },
-    group: {
-      join: (names: string[]) => joinNames(names, "&"),
-    },
     results: (n: number) => `${n} dessert ditampilkan`,
     unit: { piece: "per buah", portion: "per porsi", tray: "per loyang" },
     empty: {
@@ -135,10 +123,11 @@ export const menuMessages = defineMessages({
       chooseSize: (name: string) => `Pilih ukuran ${name}`,
       from: (price: string) => `Mulai ${price}`,
       sizes: (n: number) => `${n} ukuran`,
-      sizeRange: (n: number, from: string, to: string) =>
+      trayRange: (n: number, from: string, to: string) =>
         `${word(ID_WORDS, n)} ukuran loyang, dari ${from} sampai ${to}.`,
-      error: "Gagal menambahkan ke keranjang. Coba lagi ya.",
-      errorShort: "Gagal ditambahkan — coba lagi ya",
+      sizeRange: (n: number, from: string, to: string) => `${word(ID_WORDS, n)} ukuran, dari ${from} sampai ${to}.`,
+      error: "Gagal menambahkan ke keranjang. Coba lagi, ya.",
+      errorShort: "Gagal ditambahkan — coba lagi, ya",
     },
     sizeModal: {
       titleTray: "Pilih ukuran loyang",

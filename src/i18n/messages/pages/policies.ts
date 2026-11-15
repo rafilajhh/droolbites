@@ -174,7 +174,7 @@ export const policyMessages = defineMessages({
           id: "store-pickup",
           title: "Ambil di toko",
           body: () =>
-            "Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di counter. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil. Alamat, jam buka dan batas akhir pengambilan ada di halaman Lokasi.",
+            "Ambil di toko gratis. Pilih saat checkout lalu ambil pesananmu di kasir. Halaman pesananmu akan menunjukkan kapan pesanan siap diambil. Alamat, jam buka dan batas akhir pengambilan ada di halaman Lokasi.",
           link: { href: "/location", label: "Lihat lokasi dan jam buka" },
         },
         {

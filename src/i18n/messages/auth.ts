@@ -20,7 +20,6 @@ export const authMessages = defineMessages({
       confirmNewPasswordPlaceholder: "Enter your new password again",
       passwordHelper: "At least 8 characters.",
       showPassword: "Show password",
-      hidePassword: "Hide password",
     },
     errors: {
       fullName: "Enter your full name.",
@@ -133,7 +132,6 @@ export const authMessages = defineMessages({
       confirmNewPasswordPlaceholder: "Masukkan kata sandi barumu lagi",
       passwordHelper: "Minimal 8 karakter.",
       showPassword: "Tampilkan kata sandi",
-      hidePassword: "Sembunyikan kata sandi",
     },
     errors: {
       fullName: "Masukkan nama lengkapmu.",
@@ -143,7 +141,7 @@ export const authMessages = defineMessages({
       mismatch: "Kata sandi tidak sama.",
       emailTaken: "Email ini sudah terdaftar. Silakan masuk.",
       invalidLogin: "Email atau kata sandi salah.",
-      generic: "Ada yang salah. Coba lagi, ya.",
+      generic: "Ada kendala. Coba lagi, ya.",
       tooManyAttempts: "Terlalu banyak percobaan. Coba lagi beberapa menit lagi, ya.",
     },
     google: {
@@ -152,7 +150,7 @@ export const authMessages = defineMessages({
       errors: {
         google: "Gagal masuk dengan Google. Coba lagi, atau pakai email dan kata sandi.",
         google_admin: "Email ini milik admin toko. Admin masuk dengan kata sandi lewat halaman masuk admin.",
-        google_exists: "Email ini sudah punya akun. Masuk pakai email dan kata sandi ya.",
+        google_exists: "Email ini sudah punya akun. Masuk pakai email dan kata sandi, ya.",
         google_cancelled: "Masuk dengan Google dibatalkan. Coba lagi, atau pakai email dan kata sandi.",
       },
     },
@@ -211,7 +209,7 @@ export const authMessages = defineMessages({
       eyebrow: "BUAT KATA SANDI BARU",
       title: "Kata sandi baru",
       sub: "Masukkan dan konfirmasi kata sandi barumu.",
-      submit: "SIMPAN KATA SANDI",
+      submit: "PERBARUI KATA SANDI",
       pending: "MENYIMPAN…",
       back: "Kembali ke halaman masuk",
       invalidTitle: "Tautan kedaluwarsa",

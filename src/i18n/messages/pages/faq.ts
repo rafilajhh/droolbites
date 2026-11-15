@@ -183,9 +183,9 @@ export const faqMessages = defineMessages({
             a: (f: FaqFacts) => `Kamu bisa menemukan kami di ${f.address}.`,
           },
           {
-            q: "Bisa pilih dikirim atau ambil di toko?",
+            q: "Bisa pilih diantar atau ambil di toko?",
             a: (f: FaqFacts) =>
-              `Bisa. Pilih pengiriman (ongkir mulai ${f.deliveryFee} sesuai jarak, maksimal ${f.deliveryMaxKm} km dari toko) atau ambil di toko gratis saat checkout. Kamu bisa checkout sebagai tamu atau masuk ke akun untuk memantau pesanan. Bayar lewat ${f.payments}.`,
+              `Bisa. Pilih diantar (ongkir mulai ${f.deliveryFee} sesuai jarak, maksimal ${f.deliveryMaxKm} km dari toko) atau ambil di toko gratis saat checkout. Kamu bisa checkout sebagai tamu atau masuk ke akun untuk memantau pesanan. Bayar lewat ${f.payments}.`,
           },
           {
             q: "Bisa bayar pakai apa?",

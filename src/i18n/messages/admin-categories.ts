@@ -96,8 +96,8 @@ export const adminCategoriesMessages = defineMessages({
     errors: {
       name: "Isi nama kategori 2 sampai 50 karakter.",
       taken: "Kategori dengan nama ini sudah ada.",
-      notFound: "Kategori ini sudah tidak ada. Muat ulang halamannya ya.",
-      generic: "Ada kendala saat menyimpan. Coba lagi ya.",
+      notFound: "Kategori ini sudah tidak ada. Muat ulang halamannya, ya.",
+      generic: "Ada kendala saat menyimpan. Coba lagi, ya.",
     },
     remove: {
       title: (name: string) => `Hapus ${name}?`,
@@ -113,7 +113,7 @@ export const adminCategoriesMessages = defineMessages({
       confirm: "HAPUS KATEGORI",
       deleting: "MENGHAPUS…",
       viewProducts: "LIHAT PRODUK",
-      failed: "Ada kendala. Coba lagi ya.",
+      failed: "Ada kendala. Coba lagi, ya.",
     },
   },
 });

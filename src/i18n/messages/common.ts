@@ -18,7 +18,6 @@ export const commonMessages = defineMessages({
       cart: "Open cart",
       cartCount: (n: number) => `${n} ${n === 1 ? "item" : "items"} in cart`,
       language: "Language",
-      switchTo: "Bahasa Indonesia",
     },
     nav: {
       title: "Menu",
@@ -97,7 +96,6 @@ export const commonMessages = defineMessages({
       cart: "Buka keranjang",
       cartCount: (n: number) => `${n} item di keranjang`,
       language: "Bahasa",
-      switchTo: "English",
     },
     nav: {
       title: "Menu",
@@ -131,7 +129,7 @@ export const commonMessages = defineMessages({
       },
       decrease: "Kurangi jumlah",
       increase: "Tambah jumlah",
-      updateError: "Keranjang gagal diperbarui. Coba lagi ya.",
+      updateError: "Keranjang gagal diperbarui. Coba lagi, ya.",
       status: (n: number, subtotal: string) => `${n} item, subtotal ${subtotal}`,
     },
     footer: {

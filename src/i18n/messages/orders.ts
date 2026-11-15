@@ -15,7 +15,6 @@ export const ordersMessages = defineMessages({
     payWith: (method: string) => `Paying with ${method}`,
     progress: "Order progress",
     steps: {
-      placed: "Order placed",
       payment: "Payment",
       confirmed: "Confirmed",
       baking: "Baking",
@@ -58,13 +57,12 @@ export const ordersMessages = defineMessages({
     history: "Riwayat pesanan",
     home: "Beranda",
     placed: (date: string) => `Dipesan ${date}`,
-    localDelivery: "Antar lokal",
+    localDelivery: "Diantar",
     pickup: "Ambil di toko",
     paidWith: (method: string) => `Dibayar dengan ${method}`,
     payWith: (method: string) => `Bayar dengan ${method}`,
     progress: "Progres pesanan",
     steps: {
-      placed: "Pesanan dibuat",
       payment: "Pembayaran",
       confirmed: "Dikonfirmasi",
       baking: "Dipanggang",

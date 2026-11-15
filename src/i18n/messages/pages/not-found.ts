@@ -25,7 +25,7 @@ export const notFoundMessages = defineMessages({
     home: "KEMBALI KE BERANDA",
     tryTitle: "Coba salah satu ini saja",
     picks: {
-      "chocolate-chunk": "Lembut di tengah, panggang harian",
+      "chocolate-chunk": "Lembut di tengah, dipanggang tiap hari",
       "fudgy-brownies": "Brownies fudgy, empat ukuran loyang",
       "classic-coffee-tiramisu": "Direndam espresso, disajikan dingin",
     },
