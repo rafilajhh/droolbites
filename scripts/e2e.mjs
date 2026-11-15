@@ -308,7 +308,8 @@ try {
   const rowsOf = async (route) => {
     const page = await open(admin, route);
     await settle(page);
-    const rows = await page.locator("tbody tr").evaluateAll((trs) => trs.map((tr) => ({ th: tr.querySelector("th")?.textContent?.trim() ?? "" })));
+    // The row header's first text is the order number (from xl to 1400px the customer name follows it in the same cell).
+    const rows = await page.locator("tbody tr").evaluateAll((trs) => trs.map((tr) => ({ th: tr.querySelector("th")?.firstChild?.textContent?.trim() ?? "" })));
     await page.close();
     return rows.filter((r) => r.th);
   };

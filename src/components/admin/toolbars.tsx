@@ -1,21 +1,17 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useTransition } from "react";
+import { useTransition } from "react";
 import { Download, X } from "lucide-react";
-import { suggestOrders } from "@/app/actions/admin/orders";
-import { suggestProducts } from "@/app/actions/admin/products";
 import { categoryName } from "@/content/products";
 import { useLocale, useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
 import { cn } from "@/lib/cn";
-import { formatRupiah } from "@/lib/format";
 import { paymentStatusInfo } from "@/lib/order-status";
 import { Dropdown, FilterFace, toolbarFieldClasses, type DropdownOption } from "./dropdown";
 import { categoryStyle } from "./rules";
-import { ResultText, SearchPopover } from "./search-popover";
+import { SearchField } from "./search-field";
 
 function buildUrl(base: string, params: Record<string, string | undefined>) {
   const search = new URLSearchParams();
@@ -56,8 +52,8 @@ export function OrdersToolbar({
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const go = (params: { q?: string; status?: string; needs?: string }) =>
-    startTransition(() => router.push(buildUrl("/admin/orders", params)));
+  const go = (params: { q?: string; status?: string; needs?: string }, replace = false) =>
+    startTransition(() => router[replace ? "replace" : "push"](buildUrl("/admin/orders", params), { scroll: false }));
 
   const options: DropdownOption[] = [
     { value: "", label: t.orders.all },
@@ -68,29 +64,14 @@ export function OrdersToolbar({
   // "Needs action" is a subset of paid orders, so the payment filter reads "Paid" while it is on.
   const current = options.find((o) => o.value === (needsAction ? "paid" : status)) ?? options[0];
 
-  const fetchItems = useCallback(
-    async (query: string) =>
-      (await suggestOrders(query)).map((o) => ({
-        key: o.orderNumber,
-        href: `/admin/orders/${o.orderNumber}`,
-        content: (
-          <ResultText
-            name={o.orderNumber}
-            sub={`${o.customerName} · ${formatRupiah(o.total)} · ${paymentStatusInfo[o.paymentStatus][locale]}`}
-          />
-        ),
-      })),
-    [locale],
-  );
 
   return (
     <div className="flex w-full flex-wrap items-center gap-3">
-      <SearchPopover
+      <SearchField
         label={t.orders.searchLabel}
         placeholder={t.orders.searchPlaceholder}
         query={q}
-        fetchItems={fetchItems}
-        onSubmit={(next) => go({ q: next, status, needs: needsAction ? "action" : undefined })}
+        onSearch={(next) => go({ q: next, status, needs: needsAction ? "action" : undefined }, true)}
       />
       <Dropdown
         label={t.orders.filterLabel}
@@ -143,8 +124,8 @@ export function ProductsToolbar({
   const locale = useLocale();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const go = (params: { q?: string; category?: string }) =>
-    startTransition(() => router.push(buildUrl("/admin/products", params)));
+  const go = (params: { q?: string; category?: string }, replace = false) =>
+    startTransition(() => router[replace ? "replace" : "push"](buildUrl("/admin/products", params), { scroll: false }));
 
   const options: DropdownOption[] = [
     { value: "", label: t.products.all, dot: "bg-primary" },
@@ -156,43 +137,14 @@ export function ProductsToolbar({
   ];
   const current = options.find((o) => o.value === category) ?? options[0];
 
-  const fetchItems = useCallback(
-    async (query: string) =>
-      (await suggestProducts(query)).map((p) => ({
-        key: p.id,
-        href: `/admin/products/${p.id}/edit`,
-        content: (
-          <>
-            <span className="relative size-10 shrink-0 overflow-hidden rounded-lg bg-oat">
-              <Image src={p.imageUrl} alt="" fill sizes="40px" quality={100} className="object-cover" />
-            </span>
-            <ResultText
-              name={p.name}
-              sub={[
-                categoryName(p.categorySlug, p.categoryName, locale),
-                p.fromPrice === null
-                  ? null
-                  : p.variantCount > 1
-                    ? t.products.from(formatRupiah(p.fromPrice))
-                    : formatRupiah(p.fromPrice),
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            />
-          </>
-        ),
-      })),
-    [locale, t.products],
-  );
 
   return (
     <div className="flex w-full flex-wrap items-center gap-3">
-      <SearchPopover
+      <SearchField
         label={t.products.searchLabel}
         placeholder={t.products.searchPlaceholder}
         query={q}
-        fetchItems={fetchItems}
-        onSubmit={(next) => go({ q: next, category })}
+        onSearch={(next) => go({ q: next, category }, true)}
       />
       <Dropdown
         label={t.products.filterLabel}

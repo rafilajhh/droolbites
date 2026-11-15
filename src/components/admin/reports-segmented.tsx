@@ -12,11 +12,14 @@ export function SegmentedLinks({
   label,
   options,
   value,
+  dense = false,
   className,
 }: {
   label: string;
   options: SegmentedOption[];
   value: string;
+  /** Tighter pills below xl, for a long row of options (the report periods) beside the admin sidebar. */
+  dense?: boolean;
   className?: string;
 }) {
   return (
@@ -31,6 +34,7 @@ export function SegmentedLinks({
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex h-11 items-center gap-2 rounded-pill px-4 text-[15px] leading-[18px] font-semibold whitespace-nowrap transition-colors lg:h-10",
+                  dense && "max-xl:px-3",
                   active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-oat",
                 )}
               >

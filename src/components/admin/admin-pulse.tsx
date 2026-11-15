@@ -24,7 +24,7 @@ function titled(count: number) {
  * the background. When a payment newer than any seen before comes in, the page data refreshes
  * (dashboard, lists, sidebar badge) and a card pops up with a link to that order.
  */
-export function AdminPulse({ newOrders, latest, paidAt }: Pulse) {
+export function AdminPulse({ newOrders, paidAt }: Pulse) {
   const t = useMessages(adminMessages).sidebar;
   const router = useRouter();
   const pathname = usePathname();
@@ -86,7 +86,7 @@ export function AdminPulse({ newOrders, latest, paidAt }: Pulse) {
   const card = toast && pathname !== `/admin/orders/${toast}` ? toast : null;
 
   return (
-    <div role="status" aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 left-4 z-40 flex justify-end sm:left-auto">
+    <div role="status" aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 left-4 z-40 flex justify-end sm:left-auto print:hidden">
       {card ? (
         <div className="pointer-events-auto flex w-full max-w-[380px] items-center gap-3 rounded-m bg-white p-4 shadow-[0_12px_32px_rgb(31_42_20/0.15)] inset-ring-1 inset-ring-border-subtle">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-pill bg-highlight">

@@ -3,7 +3,9 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentStatus } from "@/generated/prisma/enums";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { roundedKm } from "@/lib/format";
 import { fulfilmentBadgeInfo, needsActionWhere, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { rangeWhere, resolveReportRange } from "@/lib/reports";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
 
@@ -41,7 +43,8 @@ function cell(value: string | number, sep: string) {
 
 /**
  * GET /admin/orders/export: the orders list as CSV, with the same filters as
- * /admin/orders (q, status, needs=action) but every page.
+ * /admin/orders (q, status, needs=action) but every page. The sales report adds
+ * from/to (YYYY-MM-DD, Surabaya days) for the orders placed in its period.
  */
 export async function GET(request: NextRequest) {
   // Not an admin: redirects to /admin/sign-in, same as the admin pages.
@@ -53,7 +56,15 @@ export async function GET(request: NextRequest) {
   const statusParam = params.get("status") ?? "";
   const status = !needsAction && STATUSES.includes(statusParam as PaymentStatus) ? (statusParam as PaymentStatus) : null;
 
+  // Same reading of the dates as the sales report (swapped, clamped to today; a bad date means no date filter).
+  const range =
+    params.get("from") || params.get("to")
+      ? resolveReportRange({ from: params.get("from") ?? undefined, to: params.get("to") ?? undefined })
+      : null;
+  const dated = range && !range.invalid ? range : null;
+
   const where: Prisma.OrderWhereInput = {
+    ...(dated ? rangeWhere(dated) : {}),
     ...(needsAction ? needsActionWhere : status ? { paymentStatus: status } : {}),
     ...(q
       ? { OR: [{ orderNumber: { contains: q } }, { customerName: { contains: q } }, { email: { contains: q } }] }
@@ -119,7 +130,7 @@ export async function GET(request: NextRequest) {
       o.items.reduce((sum, item) => sum + item.qty, 0),
       o.subtotal,
       // One decimal, with the decimal mark Excel expects for the admin's language.
-      o.deliveryDistanceM === null ? "" : (o.deliveryDistanceM / 1000).toFixed(1).replace(".", locale === "id" ? "," : "."),
+      o.deliveryDistanceM === null ? "" : roundedKm(o.deliveryDistanceM).toFixed(roundedKm(o.deliveryDistanceM) >= 100 ? 0 : 1).replace(".", locale === "id" ? "," : "."),
       o.deliveryFee,
       o.total,
     ];
@@ -134,7 +145,7 @@ export async function GET(request: NextRequest) {
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="droolbites-orders-${jakarta(new Date()).day}.csv"`,
+      "Content-Disposition": `attachment; filename="droolbites-orders-${dated ? `${dated.from ? `${dated.from.replace(/-/g, "")}-` : ""}${dated.to.replace(/-/g, "")}` : jakarta(new Date()).day}.csv"`,
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     },

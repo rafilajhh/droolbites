@@ -126,23 +126,3 @@ function notifyCustomer(orderNumber: string, status: FulfilmentStatus) {
   });
 }
 
-export type OrderSuggestion = {
-  orderNumber: string;
-  customerName: string;
-  total: number;
-  paymentStatus: "awaiting" | "paid" | "expired";
-};
-
-/** Live results for the order search popover (order number, name or email). */
-export async function suggestOrders(query: string): Promise<OrderSuggestion[]> {
-  await requireAdmin();
-  const q = query.trim().slice(0, 100);
-  if (!q) return [];
-  const rows = await db.order.findMany({
-    where: { OR: [{ orderNumber: { contains: q } }, { customerName: { contains: q } }, { email: { contains: q } }] },
-    orderBy: { createdAt: "desc" },
-    take: 6,
-    select: { orderNumber: true, customerName: true, total: true, paymentStatus: true },
-  });
-  return rows;
-}

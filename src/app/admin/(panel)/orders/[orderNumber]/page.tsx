@@ -14,7 +14,7 @@ import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
 import { cancelReasonText, fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { payable } from "@/lib/orders";
+import { orderAddress, payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -27,13 +27,17 @@ export async function generateMetadata({ params }: PageProps<"/admin/orders/[ord
 
 /** A card section: its padding, with a hairline above every section after the first. */
 const sectionClasses = "flex w-full min-w-0 flex-col gap-4 p-5 md:p-6 not-first:shadow-[inset_0_1px_0_var(--border-subtle)]";
+/** A label / value row in the Fulfilment list: label above the value on phones, beside it from sm. */
+const rowClasses =
+  "grid w-full gap-x-6 gap-y-0.5 py-3 text-[15px] leading-[23px] shadow-[inset_0_-1px_0_var(--border-subtle)] first:pt-0 last:pb-0 last:shadow-none sm:grid-cols-[160px_minmax(0,1fr)]";
+const dtClasses = "text-muted-foreground";
 const linkClasses =
   "underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current";
 
 /**
- * Admin / Order detail. Two cards that end together from xl: the order itself (items, then
- * fulfilment and customer side by side) and the store's side (status, then payment). Below xl the
- * status card comes first, since it holds the next thing to do.
+ * Admin / Order detail. From xl two columns that end near each other: what was ordered and where it
+ * goes (items, then fulfilment as label / value rows), and beside it, sticky, who and how (status, payment,
+ * customer). Below xl the side card comes first, since it holds the next thing to do.
  */
 export default async function AdminOrderPage({ params }: PageProps<"/admin/orders/[orderNumber]">) {
   await requireAdmin();
@@ -109,9 +113,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           }
         : { text: o.failedNote, className: "bg-tint-salmon" };
 
-  const address = [order.shippingAddress, [order.shippingCity, order.shippingPostal].filter(Boolean).join(" ")]
-    .filter(Boolean)
-    .join(", ");
+  const address = orderAddress(order);
   const subParts = [o.placed(formatDate(order.createdAt, locale)), methodLabel, payment ? paymentMethodInfo[payment.method].name : null];
   const cancelWhy =
     order.fulfilmentStatus === "cancelled" && order.cancelReason
@@ -173,7 +175,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         </div>
       ) : null}
 
-      <div className="grid w-full grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid w-full grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card as="div" className="flex min-w-0 flex-col">
           <section aria-labelledby="order-items-title" className={sectionClasses}>
             <SectionTitle id="order-items-title">{o.items}</SectionTitle>
@@ -202,66 +204,76 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             </div>
           </section>
 
-          {/* Fulfilment and customer side by side from md, split by a hairline that runs to the card's bottom. */}
-          <div className="grid flex-1 w-full shadow-[inset_0_1px_0_var(--border-subtle)] md:grid-cols-2">
-            <section
-              aria-labelledby="order-fulfilment-title"
-              className="flex min-w-0 flex-col gap-2 p-5 md:p-6"
-            >
-              <SectionTitle id="order-fulfilment-title" className="mb-1">
-                {o.fulfilment}
-              </SectionTitle>
-              <p className="flex items-center gap-2 text-base leading-6 font-bold">
-                {isDelivery ? (
-                  <Truck className="size-[18px] text-primary" aria-hidden />
-                ) : (
-                  <Store className="size-[18px] text-primary" aria-hidden />
-                )}
-                {methodLabel}
-              </p>
-              <p className="text-sm leading-[21px] text-muted-foreground">{isDelivery ? address : o.pickupAt(settings.address)}</p>
+          {/* Fulfilment as label / value rows over the card's full width, so it never leaves a half-empty
+              pane whatever the order holds. Optional facts (recipient, courier note, distance, pin) only add rows. */}
+          <section aria-labelledby="order-fulfilment-title" className={sectionClasses}>
+            <SectionTitle id="order-fulfilment-title">{o.fulfilment}</SectionTitle>
+            <dl className="flex w-full flex-col">
+              <div className={rowClasses}>
+                <dt className={dtClasses}>{o.method}</dt>
+                <dd className="flex items-center gap-2 font-bold">
+                  {isDelivery ? (
+                    <Truck className="size-[18px] shrink-0 text-primary" aria-hidden />
+                  ) : (
+                    <Store className="size-[18px] shrink-0 text-primary" aria-hidden />
+                  )}
+                  {methodLabel}
+                </dd>
+              </div>
+              <div className={rowClasses}>
+                <dt className={dtClasses}>{isDelivery ? o.deliverTo : o.pickupFrom}</dt>
+                <dd className="flex flex-col items-start gap-1.5 break-words">
+                  {isDelivery ? address : settings.address}
+                  {isDelivery && order.shippingLat !== null && order.shippingLng !== null ? (
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative inline-flex items-center gap-1.5 text-sm leading-[18px] font-semibold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
+                    >
+                      <MapPin className="size-4" aria-hidden />
+                      {o.openPin}
+                    </a>
+                  ) : null}
+                </dd>
+              </div>
+              {isDelivery && order.recipientName ? (
+                <div className={rowClasses}>
+                  <dt className={dtClasses}>{o.recipientLabel}</dt>
+                  <dd className="break-words">
+                    {order.recipientName}
+                    {order.recipientPhone ? (
+                      <>
+                        {" · "}
+                        <a href={`tel:${order.recipientPhone.replace(/\s/g, "")}`} className={linkClasses}>
+                          {order.recipientPhone}
+                        </a>
+                      </>
+                    ) : null}
+                  </dd>
+                </div>
+              ) : null}
+              {isDelivery && order.deliveryNote ? (
+                <div className={rowClasses}>
+                  <dt className={dtClasses}>{o.courierNote}</dt>
+                  <dd className="self-start rounded-sm bg-tint-mustard px-3 py-1.5 break-words">{order.deliveryNote}</dd>
+                </div>
+              ) : null}
               {isDelivery && order.deliveryDistanceM !== null ? (
-                <p className="text-sm leading-[21px] font-semibold tabular-nums">
-                  {o.distance(formatDistance(order.deliveryDistanceM, locale))} · {formatRupiah(order.deliveryFee)}
-                </p>
+                <div className={rowClasses}>
+                  <dt className={dtClasses}>{o.distanceLabel}</dt>
+                  <dd className="tabular-nums">
+                    {o.distance(formatDistance(order.deliveryDistanceM, locale))} · <span className="font-bold">{formatRupiah(order.deliveryFee)}</span>
+                  </dd>
+                </div>
               ) : null}
-              {isDelivery && order.shippingLat !== null && order.shippingLng !== null ? (
-                <a
-                  href={`https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative mt-1 inline-flex items-center gap-1.5 self-start text-sm leading-[18px] font-semibold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
-                >
-                  <MapPin className="size-4" aria-hidden />
-                  {o.openPin}
-                </a>
-              ) : null}
-            </section>
-            <section
-              aria-labelledby="order-customer-title"
-              className="flex min-w-0 flex-col gap-2 p-5 shadow-[inset_0_1px_0_var(--border-subtle)] md:p-6 md:shadow-[inset_1px_0_0_var(--border-subtle)]"
-            >
-              <SectionTitle id="order-customer-title" className="mb-1">
-                {o.customer}
-              </SectionTitle>
-              <p className="flex items-center gap-2 text-base leading-6 font-bold">
-                <User className="size-[18px] text-primary" aria-hidden />
-                {order.customerName}
-              </p>
-              <p className="flex flex-col text-sm leading-[21px] break-words text-muted-foreground">
-                <a href={`mailto:${order.email}`} className={cn(linkClasses, "self-start")}>
-                  {order.email}
-                </a>
-                <a href={`tel:${order.phone.replace(/\s/g, "")}`} className={cn(linkClasses, "self-start")}>
-                  {order.phone}
-                </a>
-              </p>
-            </section>
-          </div>
+            </dl>
+          </section>
         </Card>
 
-        <Card as="div" className="flex w-full flex-col max-xl:order-first">
-          <section aria-labelledby="order-status-title" className={sectionClasses}>
+        {/* From md to xl the side card spans the page: status on top, payment and customer side by side under it. */}
+        <Card as="div" className="flex w-full flex-col max-xl:order-first md:max-xl:grid md:max-xl:grid-cols-2 xl:sticky xl:top-6">
+          <section aria-labelledby="order-status-title" className={cn(sectionClasses, "md:max-xl:col-span-2")}>
             <SectionTitle id="order-status-title">{o.status}</SectionTitle>
             {closed ? (
               // The status badge is in the page header. No "closed on" date: updatedAt also moves on later
@@ -298,6 +310,34 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                   <dd className={cn("font-bold", row.mono && "font-mono text-sm font-semibold break-all")}>{row.value}</dd>
                 </div>
               ))}
+            </dl>
+          </section>
+          <section aria-labelledby="order-customer-title" className={cn(sectionClasses, "md:max-xl:shadow-[inset_1px_1px_0_var(--border-subtle)]")}>
+            <SectionTitle id="order-customer-title">{o.customer}</SectionTitle>
+            <dl className="flex w-full flex-col gap-3 text-[15px] leading-[23px]">
+              <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
+                <dt className="text-muted-foreground">{o.contactName}</dt>
+                <dd className="flex min-w-0 items-center gap-2 font-bold break-words">
+                  <User className="size-[18px] shrink-0 text-primary" aria-hidden />
+                  {order.customerName}
+                </dd>
+              </div>
+              <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
+                <dt className="text-muted-foreground">{o.contactEmail}</dt>
+                <dd className="min-w-0 [overflow-wrap:anywhere]">
+                  <a href={`mailto:${order.email}`} className={linkClasses}>
+                    {order.email}
+                  </a>
+                </dd>
+              </div>
+              <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
+                <dt className="text-muted-foreground">{o.contactPhone}</dt>
+                <dd>
+                  <a href={`tel:${order.phone.replace(/\s/g, "")}`} className={linkClasses}>
+                    {order.phone}
+                  </a>
+                </dd>
+              </div>
             </dl>
           </section>
         </Card>

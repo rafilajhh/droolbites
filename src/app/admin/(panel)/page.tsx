@@ -156,7 +156,7 @@ export default async function AdminOverviewPage() {
           iconBg="bg-mint"
           value={formatRupiah(paid._sum.total ?? 0)}
           sub={`${o.receivedSub(paid._count)} · ${o.allTime}`}
-          href="/admin/reports"
+          href="/admin/reports?range=all"
         />
         <StatPane
           label={o.onMenu}
@@ -276,7 +276,8 @@ export default async function AdminOverviewPage() {
               );
             })}
           </ul>
-          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full")}>
+          {/* From xl the pane is as tall as Recent orders: the button closes it at the bottom, level with the last order row. */}
+          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full xl:mt-auto")}>
             {o.manage}
           </Link>
         </section>

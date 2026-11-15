@@ -34,8 +34,16 @@ export default async function AdminCategoriesPage() {
   return (
     <AdminMain>
       <PageHead title={t.title} sub={t.sub} />
-      <CategoriesAddForm />
-      <CategoriesTable rows={rows} />
+      {/* Wide screens: the list on the left and the add form beside it, so neither stretches a short form
+          or a three-row list across the whole page. Below that the form comes first, then the list. */}
+      <div className="grid w-full grid-cols-1 items-start gap-5 min-[1400px]:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 min-[1400px]:col-start-2 min-[1400px]:row-start-1">
+          <CategoriesAddForm />
+        </div>
+        <div className="min-w-0 min-[1400px]:col-start-1 min-[1400px]:row-start-1">
+          <CategoriesTable rows={rows} />
+        </div>
+      </div>
     </AdminMain>
   );
 }

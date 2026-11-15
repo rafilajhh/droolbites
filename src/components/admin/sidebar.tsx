@@ -12,7 +12,7 @@ import { useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
 
-type Props = { storeName: string; city: string; openNow: boolean; /** Paid orders waiting for the store to accept or decline. */ newOrders: number };
+type Props = { storeName: string; /** Paid orders waiting for the store to accept or decline. */ newOrders: number };
 
 type NavKey = "overview" | "orders" | "products" | "categories" | "customers" | "reports" | "settings";
 
@@ -47,7 +47,7 @@ function Brand({ storeName, sub, size = 48 }: { storeName: string; sub: string; 
 }
 
 /** pen: Admin Sidebar (b1FcOS). */
-function SidebarContent({ storeName, city, openNow, newOrders, onNavigate }: Props & { onNavigate?: () => void }) {
+function SidebarContent({ storeName, newOrders, onNavigate }: Props & { onNavigate?: () => void }) {
   const t = useMessages(adminMessages).sidebar;
   const pathname = usePathname();
 
@@ -88,15 +88,8 @@ function SidebarContent({ storeName, city, openNow, newOrders, onNavigate }: Pro
         </nav>
       </div>
 
-      <div className="flex w-full flex-col gap-3">
-        <div className="flex w-full flex-col gap-1 rounded-sm bg-white/8 p-4">
-          <p className="font-mono text-[11px] leading-[17px] font-semibold tracking-[1px] text-mint">
-            {openNow ? t.openToday : t.closedNow}
-          </p>
-          <p className="text-sm leading-[21px] font-semibold text-white">
-            {storeName} · {city}
-          </p>
-        </div>
+      {/* Footer: a hairline, then the storefront link and Sign out with the language switch. */}
+      <div className="flex w-full flex-col gap-1 pt-4 shadow-[inset_0_1px_0_rgb(255_255_255/0.16)]">
         <a
           href="/"
           target="_blank"
@@ -133,11 +126,11 @@ export function AdminSidebar(props: Props) {
 
   return (
     <>
-      <aside className="sticky top-0 hidden h-dvh w-[272px] shrink-0 flex-col justify-between gap-8 overflow-y-auto bg-primary [--focus-ring:var(--white)] px-5 py-7 lg:flex">
+      <aside className="sticky top-0 hidden print:hidden! h-dvh w-[272px] shrink-0 flex-col justify-between gap-8 overflow-y-auto bg-primary [--focus-ring:var(--white)] px-5 py-7 lg:flex">
         <SidebarContent {...props} />
       </aside>
 
-      <div className="sticky top-0 z-30 flex w-full items-center justify-between gap-3 bg-primary [--focus-ring:var(--white)] px-4 py-2.5 lg:hidden">
+      <div className="sticky top-0 z-30 flex w-full items-center justify-between gap-3 bg-primary print:hidden [--focus-ring:var(--white)] px-4 py-2.5 lg:hidden">
         <Brand storeName={props.storeName} sub={t.storeAdmin} size={40} />
         <button
           type="button"

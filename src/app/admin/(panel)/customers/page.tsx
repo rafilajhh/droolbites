@@ -89,8 +89,6 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
         tab={tab === "customers" ? null : tab}
         label={tab === "customers" ? t.search.customersLabel : t.search.newsletterLabel}
         placeholder={tab === "customers" ? t.search.customersPlaceholder : t.search.newsletterPlaceholder}
-        clearLabel={t.search.clear}
-        clearHref={href(1, { q: "" })}
       />
       <p className="ml-auto font-mono text-[13px] leading-5 font-semibold text-muted-foreground" aria-live="polite">
         {count}

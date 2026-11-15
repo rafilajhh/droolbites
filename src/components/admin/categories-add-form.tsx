@@ -8,7 +8,7 @@ import { useMessages } from "@/i18n/client";
 import { adminCategoriesMessages } from "@/i18n/messages/admin-categories";
 import { Card, SectionTitle } from "./ui";
 
-/** The "Add a category" card above the list. */
+/** The "Add a category" card: above the list, or beside it on wide screens (then the button goes under the field). */
 export function CategoriesAddForm() {
   const t = useMessages(adminCategoriesMessages);
   const [pending, startTransition] = useTransition();
@@ -34,9 +34,9 @@ export function CategoriesAddForm() {
   };
 
   return (
-    <Card className="flex w-full flex-col gap-4 p-6">
+    <Card className="@container flex w-full flex-col gap-4 p-6">
       <SectionTitle>{t.add.title}</SectionTitle>
-      <form ref={formRef} onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-4 sm:flex-row sm:items-start">
+      <form ref={formRef} onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-4 @md:flex-row @md:items-start">
         <Field
           label={t.add.label}
           htmlFor="category-new-name"
@@ -60,7 +60,7 @@ export function CategoriesAddForm() {
           />
         </Field>
         {/* Lines the button up with the 52px input under the 18px label + 8px gap. */}
-        <Button type="submit" disabled={pending} className="shrink-0 sm:mt-[26px] sm:py-[17px]">
+        <Button type="submit" disabled={pending} className="shrink-0 @md:mt-[26px] @md:py-[17px]">
           {pending ? t.add.submitting : t.add.submit}
         </Button>
       </form>

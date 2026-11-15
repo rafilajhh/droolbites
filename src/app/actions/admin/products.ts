@@ -10,7 +10,6 @@ import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
 import { MAX_UPLOAD_BYTES, sniffImageType, UPLOAD_TYPES } from "@/components/admin/rules";
-import { productImageUrl } from "@/content/products";
 
 export type ProductErrorKey =
   | "name"
@@ -270,42 +269,3 @@ export async function hideProduct(productId: string): Promise<DeleteProductState
   redirect("/admin/products");
 }
 
-export type ProductSuggestion = {
-  id: string;
-  name: string;
-  /** The photo, or the bundled/placeholder image a product without one shows everywhere else. */
-  imageUrl: string;
-  categorySlug: string;
-  categoryName: string;
-  fromPrice: number | null;
-  variantCount: number;
-};
-
-/** Live results for the product search popover. */
-export async function suggestProducts(query: string): Promise<ProductSuggestion[]> {
-  await requireAdmin();
-  const q = query.trim().slice(0, 100);
-  if (!q) return [];
-  const rows = await db.product.findMany({
-    where: { name: { contains: q } },
-    orderBy: { id: "asc" },
-    take: 6,
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      imageUrl: true,
-      category: { select: { slug: true, name: true } },
-      variants: { select: { price: true }, orderBy: { price: "asc" } },
-    },
-  });
-  return rows.map((p) => ({
-    id: p.id.toString(),
-    name: p.name,
-    imageUrl: productImageUrl(p.slug, p.imageUrl),
-    categorySlug: p.category.slug,
-    categoryName: p.category.name,
-    fromPrice: p.variants[0]?.price ?? null,
-    variantCount: p.variants.length,
-  }));
-}

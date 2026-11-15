@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/ui/badges";
 import { Pagination } from "@/components/admin/pagination";
 import { ORDER_PAGE_SIZE } from "@/components/admin/rules";
 import { OrdersToolbar } from "@/components/admin/toolbars";
-import { AdminMain, Card, CellLabel, listCardClasses, listThClasses, mobileCardRowClasses, PageHead } from "@/components/admin/ui";
+import { AdminMain, Card, CellLabel, listCardClasses, listThClasses, PageHead } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
@@ -78,6 +78,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   const c = t.orders.col;
   const cell = "py-3 text-[15px] leading-[23px] font-medium max-xl:p-0";
   const muted = "max-xl:text-sm max-xl:leading-[21px] max-xl:text-muted-foreground";
+  // Below md a row stacks its cells (flex-wrap, placed with max-md:order-*). From md to xl, where the table
+  // doesn't fit beside the sidebar yet, a row is two lines on four tracks: number, payment, status, total
+  // over customer, date, method, View. Fixed tracks so the columns line up from row to row.
+  const row =
+    "max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:items-center md:max-xl:gap-x-5 md:max-xl:gap-y-1.5";
 
   return (
     <AdminMain>
@@ -89,13 +94,13 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           <table aria-label={t.orders.title} className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[860px]">
             <thead className="max-xl:hidden">
               <tr>
-                <th scope="col" className={cn(listThClasses, "w-[112px] pl-4")}>
+                <th scope="col" className={cn(listThClasses, "w-[112px] pl-4 xl:max-[1400px]:w-[168px]")}>
                   {c.order}
                 </th>
                 <th scope="col" className={cn(listThClasses, "w-[112px]")}>
                   {c.placed}
                 </th>
-                <th scope="col" className={listThClasses}>
+                <th scope="col" className={cn(listThClasses, "xl:max-[1400px]:hidden")}>
                   {c.customer}
                 </th>
                 <th scope="col" className={cn(listThClasses, "w-[124px] pr-3")}>
@@ -129,30 +134,34 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                   const ps = paymentStatusInfo[order.paymentStatus];
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
-                    <tr key={order.orderNumber} className={mobileCardRowClasses}>
+                    <tr key={order.orderNumber} className={row}>
                       <th
                         scope="row"
-                        className="py-3 pr-3 pl-4 text-left text-[15px] leading-[23px] font-bold whitespace-nowrap max-xl:order-1 max-xl:grow max-xl:basis-[55%] max-xl:p-0"
+                        className="py-3 pr-3 pl-4 text-left text-[15px] leading-[23px] font-bold whitespace-nowrap max-xl:order-1 max-xl:grow max-xl:basis-[55%] max-xl:p-0 md:max-xl:col-start-1 md:max-xl:row-start-1"
                       >
                         {order.orderNumber}
+                        {/* From xl to 1400px the customer column doesn't fit yet: the name sits under the number. */}
+                        <span className="hidden text-sm leading-[21px] font-medium whitespace-normal text-muted-foreground xl:max-[1400px]:block">
+                          {order.customerName}
+                        </span>
                       </th>
-                      <td className={cn(cell, muted, "max-xl:order-6")}>
+                      <td className={cn(cell, muted, "max-xl:order-6 md:max-xl:col-start-2 md:max-xl:row-start-2")}>
                         <CellLabel until="xl">{c.placed}</CellLabel>
                         {formatDate(order.createdAt, locale)}
                       </td>
-                      <td className={cn(cell, "pr-3 max-xl:order-5 max-xl:basis-full")}>
+                      <td className={cn(cell, "pr-3 max-xl:order-5 max-xl:basis-full md:max-xl:col-start-1 md:max-xl:row-start-2 md:max-xl:truncate xl:max-[1400px]:hidden")}>
                         <CellLabel until="xl">{c.customer}</CellLabel>
                         {order.customerName}
                       </td>
-                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-xl:order-7 max-xl:before:mr-2 max-xl:before:content-['·']")}>
+                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-xl:order-7 max-md:before:mr-2 max-md:before:content-['·'] md:max-xl:col-start-3 md:max-xl:row-start-2")}>
                         <CellLabel until="xl">{c.method}</CellLabel>
                         {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
                       </td>
-                      <td className="py-3 pr-3 max-xl:order-3 max-xl:p-0">
+                      <td className="py-3 pr-3 max-xl:order-3 max-xl:p-0 md:max-xl:col-start-2 md:max-xl:row-start-1">
                         <CellLabel until="xl">{c.payment}</CellLabel>
                         <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
                       </td>
-                      <td className="py-3 pr-3 max-xl:order-4 max-xl:p-0">
+                      <td className="py-3 pr-3 max-xl:order-4 max-xl:p-0 md:max-xl:col-start-3 md:max-xl:row-start-1">
                         <CellLabel until="xl">{c.status}</CellLabel>
                         {unpaid ? (
                           <span className="text-muted-foreground" aria-label={fs[locale]}>—</span>
@@ -160,11 +169,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                           <StatusBadge tone={fs.tone} className="whitespace-nowrap">{fs[locale]}</StatusBadge>
                         )}
                       </td>
-                      <td className={cn(cell, "pr-6 text-right whitespace-nowrap tabular-nums max-xl:order-2 max-xl:grow max-xl:basis-[calc(45%-0.5rem)] max-xl:text-base max-xl:font-bold")}>
+                      <td className={cn(cell, "pr-6 text-right whitespace-nowrap tabular-nums max-xl:order-2 max-xl:grow max-xl:basis-[calc(45%-0.5rem)] max-xl:text-base max-xl:font-bold md:max-xl:col-start-4 md:max-xl:row-start-1")}>
                         <CellLabel until="xl">{c.total}</CellLabel>
                         {formatRupiah(order.total)}
                       </td>
-                      <td className="py-3 pr-4 text-right max-xl:order-8 max-xl:ml-auto max-xl:p-0">
+                      <td className="py-3 pr-4 text-right max-xl:order-8 max-xl:ml-auto max-xl:p-0 md:max-xl:col-start-4 md:max-xl:row-start-2">
                         <ArrowLink
                           href={`/admin/orders/${order.orderNumber}`}
                           aria-label={t.orders.viewLabel(order.orderNumber)}

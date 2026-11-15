@@ -21,14 +21,14 @@ export default async function AdminSignInPage() {
 
   return (
     <main className="flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:h-dvh lg:min-h-[640px] lg:flex-row">
-      <section className="relative flex min-h-[260px] w-full shrink-0 flex-col justify-between overflow-hidden rounded-m p-6 sm:p-8 lg:w-[640px]">
+      <section className="relative flex min-h-[260px] w-full shrink-0 flex-col justify-between overflow-hidden rounded-m p-6 sm:p-8 lg:w-1/2 xl:w-[640px]">
         <Image
           src="/images/site/admin-sign-in.png"
           alt=""
           fill
           priority
           quality={100}
-          sizes="(min-width: 1024px) 640px, 100vw"
+          sizes="(min-width: 1280px) 640px, (min-width: 1024px) 50vw, 100vw"
           className="object-cover"
         />
         <div aria-hidden className="absolute inset-0 bg-linear-to-b from-ink/0 from-40% to-ink/85" />
@@ -53,7 +53,8 @@ export default async function AdminSignInPage() {
         </div>
       </section>
 
-      <div className="flex flex-1 flex-col items-center justify-center py-6 lg:py-0">
+      {/* Phones: the form follows the photo panel directly; from lg it is centred in the column beside it. */}
+      <div className="flex flex-1 flex-col items-center py-2 lg:justify-center lg:py-0">
         <div className="flex w-full max-w-[440px] flex-col gap-5">
           <div className="flex flex-col gap-2 pb-2">
             <p className="font-mono text-xs leading-[18px] font-semibold tracking-[1px] text-primary">{s.eyebrow}</p>

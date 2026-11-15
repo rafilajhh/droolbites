@@ -1,38 +1,130 @@
 import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
+import type { FulfilmentMethod, PaymentMethod } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 
 /**
  * Admin / Sales report queries. Days are Surabaya days (WIB, UTC+7 all year,
- * no daylight saving), while the server and the database run in UTC.
+ * no daylight saving), while the server and the database run in UTC. A day is
+ * written as its calendar key, "2026-11-02".
  */
-export const REPORT_PERIODS = ["today", "7d", "30d", "all"] as const;
-export type ReportPeriod = (typeof REPORT_PERIODS)[number];
+export const REPORT_PRESETS = ["today", "7d", "30d", "month", "last-month", "year", "all"] as const;
+export type ReportPreset = (typeof REPORT_PRESETS)[number];
+export const DEFAULT_REPORT_PRESET: ReportPreset = "7d";
+/** The first day a custom range may start on. */
+export const REPORT_EARLIEST_DAY = "2020-01-01";
 
-const PERIOD_DAYS: Record<Exclude<ReportPeriod, "all">, number> = { today: 1, "7d": 7, "30d": 30 };
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
-
-export function isReportPeriod(value: string): value is ReportPeriod {
-  return (REPORT_PERIODS as readonly string[]).includes(value);
-}
+const KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** "2026-11-02": the Surabaya calendar day of an instant. */
-function wibDayKey(date: Date) {
+export function wibDayKey(date: Date) {
   return new Date(date.getTime() + WIB_OFFSET_MS).toISOString().slice(0, 10);
 }
 
-/** Midnight WIB at the start of today, as a UTC instant. */
-function startOfWibToday(now: Date) {
-  return new Date(Math.floor((now.getTime() + WIB_OFFSET_MS) / DAY_MS) * DAY_MS - WIB_OFFSET_MS);
+/** Midnight WIB at the start of a day, as a UTC instant. */
+export function wibDayStart(key: string) {
+  return new Date(Date.parse(`${key}T00:00:00Z`) - WIB_OFFSET_MS);
 }
 
-/** [from, to) covering the period's whole WIB days up to the end of today; null for all time. */
-export function periodRange(period: ReportPeriod, now = new Date()) {
-  if (period === "all") return null;
-  const days = PERIOD_DAYS[period];
-  const today = startOfWibToday(now).getTime();
-  return { from: new Date(today - (days - 1) * DAY_MS), to: new Date(today + DAY_MS), days };
+/** The day `n` days after `key` (n may be negative). */
+export function addDays(key: string, n: number) {
+  return new Date(Date.parse(`${key}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
+}
+
+/** Days from `from` to `to`, both counted. */
+export function daysBetween(from: string, to: string) {
+  return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / DAY_MS) + 1;
+}
+
+/** A real calendar day ("2026-02-30" is not). */
+function isDayKey(value: string) {
+  if (!KEY.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
+}
+
+/** First and last day of a preset; `from` is null for all time. */
+function presetDays(preset: ReportPreset, today: string): { from: string | null; to: string } {
+  const [y, m] = today.split("-");
+  switch (preset) {
+    case "today":
+      return { from: today, to: today };
+    case "7d":
+      return { from: addDays(today, -6), to: today };
+    case "30d":
+      return { from: addDays(today, -29), to: today };
+    case "month":
+      return { from: `${y}-${m}-01`, to: today };
+    case "last-month": {
+      const lastDay = addDays(`${y}-${m}-01`, -1);
+      return { from: `${lastDay.slice(0, 7)}-01`, to: lastDay };
+    }
+    case "year":
+      return { from: `${y}-01-01`, to: today };
+    case "all":
+      return { from: null, to: today };
+  }
+}
+
+export function isReportPreset(value: string): value is ReportPreset {
+  return (REPORT_PRESETS as readonly string[]).includes(value);
+}
+
+export type ReportRange = {
+  /** The preset these days match, or null for a custom range. */
+  preset: ReportPreset | null;
+  /** First day, or null for all time. */
+  from: string | null;
+  /** Last day (counted). */
+  to: string;
+  /** The URL asked for a range that can't be shown (a bad date, or only future days); the default is shown instead. */
+  invalid: boolean;
+};
+
+/**
+ * The report period from the URL: ?range=<preset>, or ?from=YYYY-MM-DD&to=YYYY-MM-DD (either may be
+ * left out: from alone runs to today, to alone is that one day). Reversed dates are swapped, days
+ * after today and before REPORT_EARLIEST_DAY are cut off. ?period= is the old name of ?range=.
+ */
+export function resolveReportRange(
+  params: { range?: string; period?: string; from?: string; to?: string },
+  now = new Date(),
+): ReportRange {
+  const today = wibDayKey(now);
+  const asPreset = (preset: ReportPreset, invalid = false): ReportRange => ({ preset, ...presetDays(preset, today), invalid });
+
+  const rawFrom = params.from?.trim() ?? "";
+  const rawTo = params.to?.trim() ?? "";
+  if (rawFrom || rawTo) {
+    if ((rawFrom && !isDayKey(rawFrom)) || (rawTo && !isDayKey(rawTo))) return asPreset(DEFAULT_REPORT_PRESET, true);
+    // Only a start day, and it's still to come: nothing to show.
+    if (rawFrom && !rawTo && rawFrom > today) return asPreset(DEFAULT_REPORT_PRESET, true);
+    let from = rawFrom || rawTo;
+    let to = rawTo || today;
+    if (from > to) [from, to] = [to, from];
+    if (from > today) return asPreset(DEFAULT_REPORT_PRESET, true);
+    if (to > today) to = today;
+    if (from < REPORT_EARLIEST_DAY) from = REPORT_EARLIEST_DAY;
+    if (to < from) return asPreset(DEFAULT_REPORT_PRESET, true);
+    // The same days as a preset light up that preset.
+    const match = REPORT_PRESETS.find((p) => {
+      const d = presetDays(p, today);
+      return d.from === from && d.to === to;
+    });
+    return { preset: match ?? null, from, to, invalid: false };
+  }
+
+  const raw = params.range ?? params.period ?? "";
+  if (!raw) return asPreset(DEFAULT_REPORT_PRESET);
+  return isReportPreset(raw) ? asPreset(raw) : asPreset(DEFAULT_REPORT_PRESET, true);
+}
+
+/** The createdAt filter for orders placed inside a range. */
+export function rangeWhere(range: Pick<ReportRange, "from" | "to">): Prisma.OrderWhereInput {
+  const lt = wibDayStart(addDays(range.to, 1));
+  return { createdAt: range.from ? { gte: wibDayStart(range.from), lt } : { lt } };
 }
 
 /** Orders that count as revenue: paid, and not cancelled by the store afterwards (a refund). */
@@ -41,18 +133,57 @@ export const keptOrderWhere = {
   fulfilmentStatus: { not: "cancelled" },
 } satisfies Prisma.OrderWhereInput;
 
-export async function getSalesReport(period: ReportPeriod, now = new Date()) {
-  const range = periodRange(period, now);
-  const placed: Prisma.OrderWhereInput = range ? { createdAt: { gte: range.from, lt: range.to } } : {};
+export type SeriesUnit = "day" | "week" | "month";
+export type SeriesBucket = { from: string; to: string; revenue: number; orders: number };
+
+/** Up to 45 days by day, up to 26 weeks by week (Monday to Sunday), longer by month. */
+export function seriesUnit(days: number): SeriesUnit {
+  return days <= 45 ? "day" : days <= 182 ? "week" : "month";
+}
+
+/** The buckets covering [from, to], each cut to the range at the edges. */
+function seriesBuckets(from: string, to: string, unit: SeriesUnit): SeriesBucket[] {
+  const buckets: SeriesBucket[] = [];
+  let start = from;
+  while (start <= to) {
+    let end: string;
+    if (unit === "day") end = start;
+    else if (unit === "week") {
+      // getUTCDay: 0 Sunday … 6 Saturday; the week ends on Sunday.
+      const weekday = new Date(`${start}T00:00:00Z`).getUTCDay();
+      end = addDays(start, (7 - weekday) % 7);
+    } else {
+      const [y, m] = start.split("-").map(Number);
+      end = addDays(`${m === 12 ? y + 1 : y}-${String(m === 12 ? 1 : m + 1).padStart(2, "0")}-01`, -1);
+    }
+    if (end > to) end = to;
+    buckets.push({ from: start, to: end, revenue: 0, orders: 0 });
+    start = addDays(end, 1);
+  }
+  return buckets;
+}
+
+export async function getSalesReport(range: ReportRange) {
+  const placed = rangeWhere(range);
   const kept: Prisma.OrderWhereInput = { ...placed, ...keptOrderWhere };
 
-  const [totals, statuses, itemGroups, dailyOrders] = await Promise.all([
-    db.order.aggregate({ where: kept, _sum: { total: true, subtotal: true, deliveryFee: true }, _count: { _all: true } }),
+  const [statuses, itemGroups, keptOrders] = await Promise.all([
     db.order.groupBy({ by: ["paymentStatus", "fulfilmentStatus"], where: placed, _count: { _all: true } }),
     // Grouped by unit price too, so a price change mid-period still sums to the exact revenue.
     db.orderItem.groupBy({ by: ["variantId", "unitPrice"], where: { order: kept }, _sum: { qty: true } }),
-    // At most 30 days of paid orders, two columns each.
-    range && range.days > 1 ? db.order.findMany({ where: kept, select: { createdAt: true, total: true } }) : null,
+    // A small shop: every kept order of the period, a few columns each, feeds the totals, the chart and the splits.
+    db.order.findMany({
+      where: kept,
+      orderBy: { createdAt: "asc" },
+      select: {
+        createdAt: true,
+        total: true,
+        subtotal: true,
+        deliveryFee: true,
+        fulfilmentMethod: true,
+        payments: { where: { status: "paid" }, orderBy: { id: "desc" }, take: 1, select: { method: true } },
+      },
+    }),
   ]);
 
   const variants = itemGroups.length
@@ -105,29 +236,50 @@ export async function getSalesReport(period: ReportPeriod, now = new Date()) {
     } else if (s.paymentStatus === "awaiting") awaiting += n;
   }
 
-  let daily: { date: Date; revenue: number; orders: number }[] | null = null;
-  if (range && dailyOrders) {
-    daily = Array.from({ length: range.days }, (_, i) => ({
-      date: new Date(range.from.getTime() + i * DAY_MS),
-      revenue: 0,
-      orders: 0,
-    }));
-    const byKey = new Map(daily.map((d) => [wibDayKey(d.date), d]));
-    for (const o of dailyOrders) {
-      const day = byKey.get(wibDayKey(o.createdAt));
-      if (!day) continue;
-      day.revenue += o.total;
-      day.orders += 1;
+  // All time starts on the first kept order's day (today when there is none).
+  const from = range.from ?? (keptOrders[0] ? wibDayKey(keptOrders[0].createdAt) : range.to);
+  const days = daysBetween(from, range.to);
+  const unit = seriesUnit(days);
+  const buckets = seriesBuckets(from, range.to, unit);
+
+  let revenue = 0;
+  let itemRevenue = 0;
+  let deliveryRevenue = 0;
+  const fulfilment = new Map<FulfilmentMethod, { method: FulfilmentMethod; orders: number; revenue: number }>();
+  const payments = new Map<PaymentMethod, { method: PaymentMethod; orders: number; revenue: number }>();
+  let b = 0;
+  for (const o of keptOrders) {
+    revenue += o.total;
+    itemRevenue += o.subtotal;
+    deliveryRevenue += o.deliveryFee;
+    // Orders come oldest first, so the bucket only ever moves forward.
+    const day = wibDayKey(o.createdAt);
+    while (b < buckets.length - 1 && day > buckets[b].to) b++;
+    if (day >= buckets[b].from && day <= buckets[b].to) {
+      buckets[b].revenue += o.total;
+      buckets[b].orders += 1;
+    }
+    const f = fulfilment.get(o.fulfilmentMethod) ?? { method: o.fulfilmentMethod, orders: 0, revenue: 0 };
+    f.orders += 1;
+    f.revenue += o.total;
+    fulfilment.set(o.fulfilmentMethod, f);
+    const method = o.payments[0]?.method;
+    if (method) {
+      const p = payments.get(method) ?? { method, orders: 0, revenue: 0 };
+      p.orders += 1;
+      p.revenue += o.total;
+      payments.set(method, p);
     }
   }
 
-  const revenue = totals._sum.total ?? 0;
-  const paidOrders = totals._count._all;
+  const paidOrders = keptOrders.length;
   return {
-    range,
+    from,
+    to: range.to,
+    days,
     revenue,
-    itemRevenue: totals._sum.subtotal ?? 0,
-    deliveryRevenue: totals._sum.deliveryFee ?? 0,
+    itemRevenue,
+    deliveryRevenue,
     paidOrders,
     averageOrder: paidOrders ? Math.round(revenue / paidOrders) : 0,
     itemsSold,
@@ -138,6 +290,11 @@ export async function getSalesReport(period: ReportPeriod, now = new Date()) {
     cancelledPaid,
     topProducts: [...products.values()].sort((a, b) => b.qty - a.qty || b.revenue - a.revenue).slice(0, 10),
     categories: [...categories.values()].sort((a, b) => b.revenue - a.revenue),
-    daily,
+    series: { unit, buckets },
+    // Both methods always listed, delivery first, so the split reads the same in every period.
+    fulfilment: (["delivery", "pickup"] as const).map((m) => fulfilment.get(m) ?? { method: m, orders: 0, revenue: 0 }),
+    payments: [...payments.values()].sort((a, b) => b.orders - a.orders || b.revenue - a.revenue),
   };
 }
+
+export type SalesReport = Awaited<ReturnType<typeof getSalesReport>>;
