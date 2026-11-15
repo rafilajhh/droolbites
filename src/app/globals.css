@@ -149,6 +149,37 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+
+  /*
+   * Scrollbars in the house style: a moss pill on a clear track, darker on hover.
+   * Chromium/Safari use the ::-webkit-scrollbar parts (which allow the pill shape and
+   * inset); setting scrollbar-color there would switch them off, so the standard
+   * properties are only given to browsers without them (Firefox).
+   */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--moss) 45%, transparent) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--moss) padding-box;
+  }
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--moss-deep) padding-box;
+  }
+  @supports not selector(::-webkit-scrollbar) {
+    html {
+      scrollbar-color: color-mix(in srgb, var(--moss) 45%, transparent) transparent;
+    }
+  }
 }
 
 /*
