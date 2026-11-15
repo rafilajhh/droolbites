@@ -6,22 +6,17 @@ import { formatRupiah } from "@/lib/format";
 export type SummaryLine = {
   key: string;
   name: string;
-  /** Variant line, e.g. "2 × 10 × 10 cm · 1 tray"; empty when there is nothing to add. */
+  /** Quantity and variant line, e.g. "1 portion", "2 × 10 × 10 cm · 1 tray". */
   meta: string;
   lineTotal: number;
   imageUrl: string | null;
 };
 
-/** Labels `variantLabel` gives the catalog's one-size products ("1 piece" cookies, "1 portion" tiramisu). */
-const SINGLE_SIZE_LABELS = new Set(["1 piece", "1 buah", "1 portion", "1 porsi"]);
-
 /**
- * The variant line under an order line: "10 × 10 cm · 1 tray", "2 × 10 × 10 cm · 1 tray".
- * One-size products get none, since "1 piece" only repeats the quantity. Lists
- * without a quantity stepper (order summaries) pass `showQty` to keep "2 × 1 piece".
+ * The variant line under a summary line: "1 portion", "2 × 1 piece", "2 × 10 × 10 cm · 1 tray". Summaries
+ * have no quantity stepper, so every line states its quantity and unit (and all rows share one height).
  */
-export function lineMeta(qty: number, label: string, showQty = false) {
-  if (SINGLE_SIZE_LABELS.has(label) && !(showQty && qty > 1)) return "";
+export function lineMeta(qty: number, label: string) {
   return qty > 1 ? `${qty} × ${label}` : label;
 }
 

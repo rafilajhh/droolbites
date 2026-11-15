@@ -11,7 +11,8 @@ import { PAYMENT_GROUPS, PRIMARY_VA_COUNT, paymentMethodInfo } from "@/lib/order
 export type PaymentLogos = Partial<Record<PaymentMethod, string>>;
 
 /**
- * The E-wallet / QRIS / Virtual account / Retail cards with their radio tiles.
+ * The E-wallet / QRIS / Virtual account / Retail groups with their radio tiles, each straight on the
+ * paper under a hairline and its heading (the tiles are the only bordered things).
  * `methods` is what the server allows right now (store settings + gateway
  * channels); a group without any of them is left out. Banks past the pen's four
  * stay folded until asked for, or while one of them is selected. The group
@@ -43,7 +44,7 @@ export function PaymentMethodGroups({
   const [showMore, setShowMore] = useState(() => selected !== null && extraBanks.includes(selected));
 
   return (
-    <div className={cn("flex w-full flex-col gap-5", className)}>
+    <div className={cn("flex w-full flex-col gap-8", className)}>
       {groups.map((group) => {
         const titleId = `pay-group-${group.key}`;
         const folds = group.key === "va" && extraBanks.length > 0;
@@ -54,11 +55,11 @@ export function PaymentMethodGroups({
             role="radiogroup"
             aria-labelledby={titleId}
             className={cn(
-              "flex w-full flex-col gap-3 rounded-m bg-white p-5 inset-ring-1 inset-ring-border-subtle sm:p-7",
+              "flex w-full flex-col gap-4 pt-8 shadow-[inset_0_1px_0_var(--border-subtle)]",
               leadMethod && (group.methods as readonly PaymentMethod[]).includes(leadMethod) && "order-first",
             )}
           >
-            <h2 id={titleId} className="pb-1 font-display text-[22px] leading-[25px] font-bold text-foreground">
+            <h2 id={titleId} className="font-display text-xl leading-7 font-bold text-foreground sm:text-[22px]">
               {t.groups[group.key].title}
             </h2>
             <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
@@ -86,7 +87,7 @@ export function PaymentMethodGroups({
                 onClick={() => setShowMore((v) => !v)}
                 aria-expanded={showMore}
                 aria-controls={`${titleId}-options`}
-                className="flex min-h-11 w-fit items-center gap-1.5 self-center rounded-pill px-4 text-sm leading-[21px] font-semibold text-primary transition-colors hover:bg-background"
+                className="flex min-h-11 w-fit items-center gap-1.5 self-center rounded-pill px-4 text-sm leading-[21px] font-semibold text-primary transition-colors hover:bg-card"
               >
                 {showMore ? t.fewerBanks : t.moreBanks(extraBanks.length)}
                 <ChevronDown

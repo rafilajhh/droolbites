@@ -28,7 +28,8 @@ const STORE_HTML =
 
 /**
  * Where to deliver: an address search, the map with the store, its delivery range and a pin the
- * customer drops or drags, and a line with the road distance and fee. The map is OpenStreetMap via
+ * customer drops or drags, and a line with the road distance and fee (distances rounded up to 0.1 km
+ * by formatDistance, so they never read shorter than the started km the fee charges). The map is OpenStreetMap via
  * Leaflet, loaded in the browser only.
  */
 export function DeliveryPicker({
@@ -334,15 +335,13 @@ function QuotePanel({
   return (
     <div
       aria-live="polite"
-      className={cn(
-        "flex w-full flex-wrap items-center gap-x-3 gap-y-3 rounded-sm px-4 py-3.5 transition-colors duration-200",
-        tooFar ? "bg-tint-salmon" : quote.status === "ok" ? "bg-mint" : "bg-card",
-      )}
+      // A caption under the map, flat on the paper: the fee in Bricolage when priced, the route icon red when out of range.
+      className="flex w-full flex-wrap items-center gap-x-3 gap-y-3 py-1"
     >
       {quote.status === "loading" ? (
         <LoaderCircle className="size-5 shrink-0 animate-spin text-primary motion-reduce:animate-none" aria-hidden />
       ) : (
-        <Route className={cn("size-5 shrink-0", quote.status === "ok" || tooFar ? "text-primary" : "text-muted-foreground")} aria-hidden />
+        <Route className={cn("size-5 shrink-0", tooFar ? "text-error" : quote.status === "ok" ? "text-primary" : "text-muted-foreground")} aria-hidden />
       )}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <p
@@ -373,7 +372,7 @@ function QuotePanel({
         <span className="font-display text-[22px] leading-7 font-bold text-foreground tabular-nums">{formatRupiah(quote.fee)}</span>
       ) : null}
       {tooFar && onSwitchToPickup ? (
-        <Button variant="secondary" onClick={onSwitchToPickup} className="w-full bg-white py-3 sm:w-auto">
+        <Button variant="secondary" onClick={onSwitchToPickup} className="w-full py-3 sm:w-auto">
           {d.switchPickup}
         </Button>
       ) : null}

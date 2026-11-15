@@ -1,16 +1,16 @@
 import { Minus, Plus } from "lucide-react";
 
 /**
- * "How to pay" card on Checkout · Pay (KKqcJ). Native <details> per channel;
- * the first one starts open. The toggle swaps + for − on an oat circle.
+ * "How to pay" on Checkout · Pay (KKqcJ), straight on the paper under a hairline like the other
+ * checkout sections. Native <details> per channel; the first one starts open. The toggle swaps + for − on an oat circle.
  */
 export function HowToPay({ title, sections }: { title: string; sections: readonly { title: string; steps: readonly string[] }[] }) {
   return (
     <section
       aria-labelledby="how-to-pay"
-      className="flex w-full flex-col rounded-m bg-white px-5 pt-6 pb-2 inset-ring-1 inset-ring-border-subtle sm:px-7"
+      className="flex w-full flex-col pt-8 shadow-[inset_0_1px_0_var(--border-subtle)]"
     >
-      <h2 id="how-to-pay" className="font-display text-[22px] leading-[25px] font-bold text-foreground">
+      <h2 id="how-to-pay" className="font-display text-xl leading-7 font-bold text-foreground sm:text-[22px]">
         {title}
       </h2>
       {sections.map((section, i) => (

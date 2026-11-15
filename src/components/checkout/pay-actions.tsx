@@ -87,7 +87,7 @@ export function SimulatePayment({ orderNumber, token, sandbox = false }: { order
     <form
       id="simulate"
       action={simulatePayment}
-      className="flex w-full flex-col gap-3 rounded-m border border-dashed border-border-subtle px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+      className="flex w-full flex-col gap-3 pt-6 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-center sm:justify-between"
     >
       <input type="hidden" name="orderNumber" value={orderNumber} />
       <input type="hidden" name="t" value={token} />

@@ -2,6 +2,9 @@
 //
 //   node scripts/shot.mjs <route> [--width 1440] [--height 900]
 //        [--full] [--click "<css selector>"] [--cookie name=value] [--out name]
+//        [--cart "<variantId>:<qty>,…"]   (repeat --cookie for several cookies)
+//
+// Git Bash rewrites "/checkout" into a Windows path; run it with MSYS_NO_PATHCONV=1.
 //
 // Writes .shots/<name>.png. Each run uses its own headless browser, so several
 // people/agents can run it at the same time.
@@ -35,6 +38,14 @@ const cookies = all("cookie").map((c) => {
   const [n, ...v] = c.split("=");
   return { name: n, value: v.join("="), url: base };
 });
+// --cart "1:2,6:1" fills the cart cookie (variant id:qty, comma separated), e.g. for /checkout.
+if (opt("cart")) {
+  const lines = opt("cart")
+    .split(",")
+    .map((pair) => pair.split(":"))
+    .map(([v, q]) => ({ v: String(v), q: Number(q ?? 1) }));
+  cookies.push({ name: "db_cart", value: encodeURIComponent(JSON.stringify(lines)), url: base });
+}
 if (cookies.length) await context.addCookies(cookies);
 const page = await context.newPage();
 const errors = [];
@@ -65,6 +76,11 @@ for (const sel of all("hover")) {
   await page.waitForTimeout(300);
 }
 if (opt("wait")) await page.waitForTimeout(Number(opt("wait")));
+// --scroll <px> scrolls the window before a viewport shot (e.g. to check sticky columns).
+if (opt("scroll")) {
+  await page.evaluate((y) => window.scrollTo(0, y), Number(opt("scroll")));
+  await page.waitForTimeout(300);
+}
 await page.waitForTimeout(300);
 
 // next/image lazy-loads below-the-fold images, and a full-page screenshot does

@@ -13,32 +13,31 @@ import { MenuSearch } from "./menu-search";
 import { rankProducts, setMenuParams } from "./menu-url";
 import type { ShopCategory } from "./shop-product";
 
+/** Static class names for Tailwind: a group's columns at lg in the shared four-column grid. */
+const LG_SPAN = ["lg:col-span-1", "lg:col-span-1", "lg:col-span-2", "lg:col-span-3", "lg:col-span-4"] as const;
 const COLUMNS = 4;
 
-type Group = { key: string; categories: ShopCategory[] };
-
 /**
- * Categories that fill a row of four stand alone; smaller neighbours share a
- * group ("Brownies & tiramisu"). Based on the full menu so the layout does
- * not jump around while searching.
+ * Lays the groups into rows of the four-column (lg) grid. A group takes as many columns as it has
+ * products, up to four; a one-product group shows its card as a two-column landscape banner, so it
+ * takes two. Each group goes into the first row it still fits (first fit), which keeps the filter's
+ * order except where a later, smaller group can fill a gap ("Brownies" beside "Tiramisu" rather than
+ * alone above a full row of cookies). The last group in a row stretches over any columns left, so its
+ * heading rule runs to the edge; its cards keep their one-column width.
  */
-function groupCategories(categories: ShopCategory[]): Group[] {
-  const groups: Group[] = [];
-  let pending: ShopCategory[] = [];
-  const flush = () => {
-    if (pending.length) groups.push({ key: pending.map((c) => c.slug).join("+"), categories: pending });
-    pending = [];
-  };
-  for (const c of categories) {
-    if (c.products.length >= COLUMNS) {
-      flush();
-      groups.push({ key: c.slug, categories: [c] });
-    } else {
-      pending.push(c);
-    }
+function packRows<G extends { products: unknown[] }>(groups: G[]) {
+  const rows: { used: number; groups: { group: G; span: number }[] }[] = [];
+  for (const group of groups) {
+    const span = group.products.length === 1 ? 2 : Math.min(group.products.length, COLUMNS);
+    const row = rows.find((r) => r.used + span <= COLUMNS);
+    if (row) {
+      row.groups.push({ group, span });
+      row.used += span;
+    } else rows.push({ used: span, groups: [{ group, span }] });
   }
-  flush();
-  return groups;
+  return rows.flatMap((row) =>
+    row.groups.map((g, i) => (i === row.groups.length - 1 ? { ...g, span: g.span + COLUMNS - row.used } : g)),
+  );
 }
 
 export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
@@ -76,15 +75,12 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
     ...categories.map((c) => ({ slug: c.slug, name: c.name, count: c.products.filter((p) => matching.has(p.id)).length })),
   ];
 
-  const groups = groupCategories(categories)
-    .map((g) => {
-      const cats = g.categories.filter((c) => !active || c.slug === active);
-      const products = cats.flatMap((c) => c.products).filter((p) => matching.has(p.id));
-      return { ...g, cats, products };
-    })
+  // One group per category, in the filter's order, with the products the search and category leave.
+  const groups = categories
+    .filter((c) => !active || c.slug === active)
+    .map((c) => ({ key: c.slug, name: c.name, products: c.products.filter((p) => matching.has(p.id)) }))
     .filter((g) => g.products.length > 0);
   const shown = groups.reduce((n, g) => n + g.products.length, 0);
-  const filteredView = Boolean(query || active);
 
   return (
     <>
@@ -98,7 +94,7 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
         <CategoryFilter options={options} active={active} onSelect={selectCategory} />
       </div>
 
-      <div className="flex w-full flex-col gap-14 px-4 pt-10 pb-12 sm:px-8 lg:gap-[72px] lg:px-16 lg:pt-12 lg:pb-20">
+      <div className="flex w-full flex-col px-4 pt-10 pb-12 sm:px-8 lg:px-16 lg:pt-12 lg:pb-20">
         {groups.length === 0 ? (
           <div className="flex w-full flex-col items-start gap-4 rounded-m bg-card p-8 lg:p-12" role="status">
             <p className="font-display text-[28px] leading-[31px] font-semibold">{t.empty.title(query)}</p>
@@ -108,52 +104,36 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
             </Link>
           </div>
         ) : (
-          groups.map((g) => {
-            const single = g.cats.length === 1;
-            const title = single ? g.cats[0].name : t.group.join(g.cats.map((c) => c.name));
-            // Full menu: a group of three gets three equal columns at lg. Below lg its tray-size product
-            // (at an even index, so it never splits a pair) takes a landscape row and the other two pair up
-            // like the cookies. Filtered and search results keep the 2 / 4 widths and start at the left,
-            // reading on from the search field; the full menu centres its last row.
-            const thirds = !filteredView && g.products.length === 3;
-            const bannerId = thirds
-              ? g.products.find((p, i) => i % 2 === 0 && p.variants.length > 1)?.id
-              : undefined;
-            return (
-              <section key={g.key} aria-labelledby={`group-${g.key}`} className="flex w-full flex-col gap-7">
-                <div className="flex w-full pb-5 shadow-[inset_0_-1px_0_var(--border-subtle)]">
-                  <h2
-                    id={`group-${g.key}`}
-                    className="font-display text-[28px] leading-[30px] font-bold tracking-[-0.5px] text-foreground lg:text-[32px] lg:leading-[34px]"
-                  >
-                    {title}
-                  </h2>
-                </div>
-                {/* Same widths as a 2 / 4 column grid; on the full menu, centring leaves no hole in the last row. */}
-                <div
-                  className={cn(
-                    "flex w-full flex-wrap gap-x-4 gap-y-8 lg:gap-6",
-                    filteredView ? "justify-start" : "justify-center",
-                  )}
+          // One grid for the whole menu: 2 columns, 4 from lg. Each category is a subgrid on those same
+          // tracks, so every card is the same size in every group. Below lg a group takes the full row;
+          // from lg groups are packed into full rows (see packRows), so short groups share a row instead
+          // of leaving one card alone under a wide heading. Groups and results start at the left edge.
+          <div className="grid w-full grid-cols-2 gap-x-4 gap-y-14 lg:grid-cols-4 lg:gap-x-6 lg:gap-y-[72px]">
+            {packRows(groups).map(({ group: g, span }) => (
+              <section
+                key={g.key}
+                aria-labelledby={`group-${g.key}`}
+                className={cn(
+                  "col-span-2 grid grid-cols-subgrid gap-y-8",
+                  // A banner fills its section's height, so it ends level with the portrait cards beside it.
+                  g.products.length === 1 ? "grid-rows-[auto_1fr]" : "content-start",
+                  LG_SPAN[span],
+                )}
+              >
+                <h2
+                  id={`group-${g.key}`}
+                  className="col-span-full -mb-1 pb-5 font-display text-[28px] leading-[30px] font-bold tracking-[-0.5px] text-foreground shadow-[inset_0_-1px_0_var(--border-subtle)] lg:text-[32px] lg:leading-[34px]"
                 >
-                  {g.products.map((p) => {
-                    const banner = p.id === bannerId;
-                    return (
-                      <MenuItemCard
-                        key={p.id}
-                        product={p}
-                        layout={banner ? "banner" : thirds ? "third" : undefined}
-                        className={cn(
-                          banner ? "w-full" : "w-[calc(50%-8px)]",
-                          thirds ? "lg:w-[calc((100%-48px)/3)]" : "lg:w-[calc(25%-18px)]",
-                        )}
-                      />
-                    );
-                  })}
-                </div>
+                  {g.name}
+                </h2>
+                {g.products.length === 1 ? (
+                  <MenuItemCard product={g.products[0]} layout="banner" className="col-span-2" />
+                ) : (
+                  g.products.map((p) => <MenuItemCard key={p.id} product={p} />)
+                )}
               </section>
-            );
-          })
+            ))}
+          </div>
         )}
       </div>
     </>

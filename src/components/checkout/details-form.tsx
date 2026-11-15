@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Field, TextInput } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
+import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import type { Place } from "@/lib/geocode";
-import { CheckoutSection } from "./checkout-section";
+import { CheckoutColumns, CheckoutHeading, CheckoutSection, TotalEcho } from "./checkout-section";
 import { DeliveryPicker, type LatLng, type PinSource, type QuoteState } from "./delivery-picker";
 import { OrderSummary, type SummaryLine } from "./order-summary";
 import { SummaryToggle } from "./summary-toggle";
@@ -73,6 +74,8 @@ export function DetailsForm({
   const d = t.details;
   const [state, formAction, pending] = useActionState(saveCheckoutDetails, initialState);
   const [values, setValues] = useState(initial);
+  // What the last submit sent: a field's server error stands only while the field still holds that value.
+  const [submitted, setSubmitted] = useState(initial);
   const [pin, setPin] = useState<LatLng | null>(initialPin);
   const [quote, setQuote] = useState<QuoteState>(initialQuote ?? { status: "idle" });
   const [pinLabel, setPinLabel] = useState<string | undefined>(undefined);
@@ -153,9 +156,12 @@ export function DetailsForm({
 
   const err = (key: keyof DetailsState["errors"]) => {
     const code = state.errors[key];
+    if (!code) return undefined;
     // A pin error is answered by moving the pin; the next submit checks again.
     if (key === "lat" && pinMovedAt === state.attempt) return undefined;
-    return code ? t.errors[code] : undefined;
+    // An edited field (or a newly chosen option) drops its error at once; untouched fields keep theirs.
+    if (key in values && values[key as keyof DetailsValues] !== submitted[key as keyof DetailsValues]) return undefined;
+    return t.errors[code];
   };
 
   const input = (key: TextKey, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => {
@@ -178,40 +184,44 @@ export function DetailsForm({
   const fee = delivery ? (quote.status === "ok" ? quote.fee : null) : 0;
   const closed = !options.delivery && !options.pickup;
 
+  const total = summary.subtotal + (fee ?? 0);
+  const linkClass =
+    "relative text-sm leading-normal font-semibold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline";
+
   return (
-    // Below lg the Continue button is pinned to the bottom of the screen, so the page keeps room for it.
-    <div className="flex w-full flex-col gap-8 px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24">
-      {/* First in reading order: below lg it is a toggle bar above the form; at lg it moves to the right column. */}
-      <SummaryToggle
-        id="checkout-summary"
-        labels={t.summary}
-        total={formatRupiah(summary.subtotal + (fee ?? 0))}
-        className="lg:order-last lg:w-[440px] lg:shrink-0"
-      >
-        <OrderSummary
-          t={t.summary}
-          lines={summary.lines}
-          itemCount={summary.itemCount}
-          subtotal={summary.subtotal}
-          fulfilment={values.fulfilment}
-          fee={fee}
-          total={summary.subtotal + (fee ?? 0)}
-        />
-      </SummaryToggle>
+    <CheckoutColumns
+      summaryFirst
+      // Below lg the Continue bar is pinned to the bottom of the screen, so the page keeps room for it.
+      className="pb-[calc(8rem+env(safe-area-inset-bottom))] lg:pb-24"
+      summary={
+        <SummaryToggle id="checkout-summary" labels={t.summary} total={formatRupiah(total)}>
+          <OrderSummary
+            t={t.summary}
+            lines={summary.lines}
+            itemCount={summary.itemCount}
+            subtotal={summary.subtotal}
+            fulfilment={values.fulfilment}
+            fee={fee}
+            total={total}
+          />
+        </SummaryToggle>
+      }
+    >
       <form
         ref={formRef}
         action={formAction}
+        onSubmit={() => setSubmitted(values)}
         noValidate
-        className="flex w-full min-w-0 flex-1 flex-col gap-5"
+        className="flex w-full flex-col gap-8"
       >
-        <h1 className="type-checkout pb-3 font-display font-bold text-foreground">{d.title}</h1>
+        <CheckoutHeading title={d.title} />
 
         <CheckoutSection
           id="checkout-contact"
           title={d.contact}
           meta={
             signInHref ? (
-              <Link href={signInHref} className="relative text-sm leading-normal font-semibold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline">
+              <Link href={signInHref} className={linkClass}>
                 {d.signIn}
               </Link>
             ) : null
@@ -248,16 +258,14 @@ export function DetailsForm({
           </div>
         </CheckoutSection>
 
+        {/* The fieldset takes its name from this heading, so the section itself stays unnamed. */}
         <CheckoutSection
           id="checkout-receive"
           title={d.receive}
+          named={false}
           meta={
             delivery && saved ? (
-              <button
-                type="button"
-                onClick={() => void applySavedAddress()}
-                className="relative text-sm leading-normal font-semibold whitespace-nowrap text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
-              >
+              <button type="button" onClick={() => void applySavedAddress()} className={cn(linkClass, "whitespace-nowrap")}>
                 {d.useSaved}
               </button>
             ) : null
@@ -269,11 +277,11 @@ export function DetailsForm({
             <>
               <fieldset
                 className="flex w-full flex-col gap-3"
-                aria-invalid={state.errors.fulfilment ? true : undefined}
-                aria-describedby={state.errors.fulfilment ? "checkout-fulfilment-error" : undefined}
+                aria-labelledby="checkout-receive"
+                aria-invalid={err("fulfilment") ? true : undefined}
+                aria-describedby={err("fulfilment") ? "checkout-fulfilment-error" : undefined}
               >
-                <legend className="sr-only">{d.receive}</legend>
-                <div className="flex w-full flex-col gap-4 md:flex-row lg:flex-col xl:flex-row">
+                <div className="grid w-full gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-1 xl:grid-cols-2">
                   {options.delivery ? (
                     <OptionTile
                       name="fulfilment"
@@ -289,7 +297,7 @@ export function DetailsForm({
                           {quote.status === "ok" ? formatRupiah(quote.fee) : d.feeFrom(formatRupiah(store.baseFee))}
                         </span>
                       }
-                      className="min-w-0 flex-1 items-start"
+                      className="min-w-0 items-start"
                     />
                   ) : null}
                   {options.pickup ? (
@@ -303,7 +311,7 @@ export function DetailsForm({
                       title={<span className="block leading-[21px]">{d.pickup}</span>}
                       sub={<span className="block leading-5">{store.shortAddress}</span>}
                       meta={<span className="block leading-[21px] text-primary">{d.free}</span>}
-                      className="min-w-0 flex-1 items-start"
+                      className="min-w-0 items-start"
                     />
                   ) : null}
                 </div>
@@ -368,14 +376,23 @@ export function DetailsForm({
           )}
         </CheckoutSection>
 
-        <div className="flex w-full flex-col items-center gap-4 pt-2 lg:flex-row lg:gap-6">
-          {/* Below lg this bar is pinned to the bottom of the screen, like the PAY bar on the payment step. */}
-          <div data-pinned-bar className="fixed inset-x-0 bottom-0 z-30 flex bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:shadow-none">
-            <Button type="submit" className="w-full lg:w-auto" disabled={pending || closed}>
+        {/* The end of the form: the total it leads to and the way on. From lg it closes the column under a
+            hairline; below lg the same bar is pinned to the bottom of the screen, like PAY on the payment step. */}
+        <div className="flex w-full flex-col gap-5 lg:pt-8 lg:shadow-[inset_0_1px_0_var(--border-subtle)]">
+          <div
+            data-pinned-bar
+            className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-4 bg-background px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[inset_0_1px_0_var(--border-subtle)] md:px-8 lg:static lg:z-auto lg:bg-transparent lg:p-0 lg:shadow-none"
+          >
+            <TotalEcho
+              label={fee === null ? t.summary.subtotal : t.summary.total}
+              note={fee === null ? `${t.summary.delivery}: ${t.summary.pinFirst}` : undefined}
+              amount={formatRupiah(total)}
+            />
+            <Button type="submit" className="shrink-0 px-5 sm:px-7" disabled={pending || closed}>
               {pending ? d.saving : d.continue}
             </Button>
           </div>
-          <div className="flex items-center justify-center gap-6">
+          <div className="flex items-center justify-center gap-6 lg:justify-end">
             <Link
               href="/shipping-policy"
               className="relative text-sm leading-normal font-semibold text-muted-foreground after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:text-foreground"
@@ -391,7 +408,6 @@ export function DetailsForm({
           </div>
         </div>
       </form>
-
-    </div>
+    </CheckoutColumns>
   );
 }

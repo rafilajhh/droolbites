@@ -53,10 +53,10 @@ export function MenuItemCard({
   /** "You may also like" cards in w7mQL carry no badge. */
   showBadge?: boolean;
   /**
-   * Menu group of three: "third" is one of three columns at lg; "banner" also takes a full
-   * landscape row below lg.
+   * "banner": a landscape card (photo left, text right) for a menu group with a single product; the
+   * parent gives it two grid columns. From sm a multi-size product lists its sizes there.
    */
-  layout?: "third" | "banner";
+  layout?: "banner";
   /** Width in the parent layout, e.g. the menu's wrapping rows. */
   className?: string;
 }) {
@@ -66,11 +66,55 @@ export function MenuItemCard({
   const multi = product.variants.length > 1;
   const price = formatRupiah(product.fromPrice);
   const badge = showBadge ? product.badge : undefined;
+  const banner = layout === "banner";
+
+  const text = (
+    <>
+      <div className="flex w-full flex-col gap-1.5">
+        <h3 className={cn("font-display font-semibold text-foreground", s.name)}>
+          <Link href={href} className="hover:underline hover:decoration-1 hover:underline-offset-4">
+            {product.name}
+            {/* The visual sticker is aria-hidden, so screen readers get the badge here. */}
+            {badge ? <span className="sr-only">, {badge.label}</span> : null}
+          </Link>
+        </h3>
+        <p className={cn("text-muted-foreground", s.desc)}>{product.description}</p>
+      </div>
+      {/* A landscape card has the height of a portrait one beside it; its sizes and prices fill it. */}
+      {banner && multi ? (
+        <ul className="hidden w-full flex-col sm:flex">
+          {product.variants.map((v) => (
+            <li
+              key={v.id}
+              className="flex items-baseline justify-between gap-3 py-2 text-sm leading-5 shadow-[inset_0_-1px_0_var(--border-subtle)] first:shadow-[inset_0_1px_0_var(--border-subtle),inset_0_-1px_0_var(--border-subtle)]"
+            >
+              <span className="min-w-0 text-foreground">
+                {v.name}
+                {v.serves ? <span className="text-muted-foreground"> · {v.serves}</span> : null}
+              </span>
+              <span className="shrink-0 font-semibold text-foreground tabular-nums">{formatRupiah(v.price)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="mt-auto flex w-full items-center justify-between gap-2">
+        <p className={cn("font-display font-semibold text-foreground", s.price)}>{multi ? t.from(price) : price}</p>
+        <AddButton product={product} />
+      </div>
+    </>
+  );
 
   return (
-    <article className={cn("group/card flex min-w-0 flex-col gap-3 sm:gap-4", className)}>
+    <article
+      className={cn(
+        "group/card min-w-0",
+        // Banner: two equal columns, the photo as tall as the row (a portrait card's height beside it at lg).
+        banner ? "grid grid-cols-2 gap-x-4 sm:gap-x-6" : "flex flex-col gap-3 sm:gap-4",
+        className,
+      )}
+    >
       {/* The sticker sits outside the clipped photo so it can overlap the card corner. */}
-      <div className="relative w-full">
+      <div className={cn("relative w-full", banner && "h-full")}>
         <Link
           href={href}
           tabIndex={-1}
@@ -78,20 +122,14 @@ export function MenuItemCard({
           className={cn(
             photoFrame,
             "flex w-full flex-col bg-oat transition-transform duration-300 ease-out group-hover/card:-translate-y-1 motion-reduce:transition-none motion-reduce:group-hover/card:translate-y-0",
-            layout === "banner" ? "h-[200px] sm:h-[280px] lg:h-[240px] xl:h-[300px]" : s.media,
+            banner ? "h-full min-h-[180px] sm:min-h-[240px] xl:min-h-[300px]" : s.media,
           )}
         >
           <Image
             src={product.imageUrl}
             alt=""
             fill
-            sizes={
-              layout === "banner"
-                ? "(min-width: 1024px) 421px, 100vw"
-                : layout === "third"
-                  ? "(min-width: 1024px) 421px, 50vw"
-                  : s.sizes
-            }
+            sizes={banner ? "(min-width: 1024px) 316px, 50vw" : s.sizes}
             quality={100}
             className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100"
           />
@@ -108,20 +146,7 @@ export function MenuItemCard({
           </Sticker>
         ) : null}
       </div>
-      <div className="flex w-full flex-col gap-1.5">
-        <h3 className={cn("font-display font-semibold text-foreground", s.name)}>
-          <Link href={href} className="hover:underline hover:decoration-1 hover:underline-offset-4">
-            {product.name}
-            {/* The visual sticker is aria-hidden, so screen readers get the badge here. */}
-            {badge ? <span className="sr-only">, {badge.label}</span> : null}
-          </Link>
-        </h3>
-        <p className={cn("text-muted-foreground", s.desc)}>{product.description}</p>
-      </div>
-      <div className="mt-auto flex w-full items-center justify-between gap-2">
-        <p className={cn("font-display font-semibold text-foreground", s.price)}>{multi ? t.from(price) : price}</p>
-        <AddButton product={product} />
-      </div>
+      {banner ? <div className="flex min-w-0 flex-col gap-3 pt-1 sm:gap-4">{text}</div> : text}
     </article>
   );
 }

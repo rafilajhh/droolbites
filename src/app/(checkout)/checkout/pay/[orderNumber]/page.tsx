@@ -5,6 +5,7 @@ import { BellRing, CircleX, ExternalLink, Timer } from "lucide-react";
 import QRCode from "qrcode";
 import { ChangeMethodForm } from "@/components/checkout/change-method-form";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
+import { CheckoutColumns, CheckoutHeading } from "@/components/checkout/checkout-section";
 import { CopyButton } from "@/components/checkout/copy-button";
 import { Countdown } from "@/components/checkout/countdown";
 import { HowToPay } from "@/components/checkout/how-to-pay";
@@ -60,9 +61,9 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   const statusUrl = withOrderToken(`/api/orders/${orderNumber}/payment-status`, token);
   const deadline = formatDateTime(live?.expiresAt ?? orderDeadline(order), locale);
 
-  // Below lg the summary folds into a bar under the payment details.
+  // Below lg the summary folds into a bar above the payment details, as on every checkout step.
   const summary = (
-    <SummaryToggle id="pay-summary" labels={{ show: t.summary.show, hide: t.summary.hide }} total={amount} className="lg:w-[440px] lg:shrink-0">
+    <SummaryToggle id="pay-summary" labels={{ show: t.summary.show, hide: t.summary.hide }} total={amount}>
       <OrderSummary
         t={t.summary}
         lines={orderSummaryLines(order, locale)}
@@ -80,17 +81,12 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
     <>
       <CheckoutHeader step={3} />
       <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
-        <div className="flex w-full flex-col gap-8 px-4 pt-8 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-12 lg:px-16 lg:pt-12 lg:pb-24">
-          <div className="flex w-full min-w-0 flex-1 flex-col gap-5">
-            <div className="flex flex-col items-start gap-2.5 pb-2">
-              <StatusBadge tone={status.tone}>{status[locale]}</StatusBadge>
-              <h1 className="type-checkout font-display font-bold text-foreground">{title}</h1>
-              <p className="text-[17px] leading-[26px] text-muted-foreground">{sub}</p>
-            </div>
+        <CheckoutColumns summaryFirst summary={summary}>
+          <div className="flex w-full flex-col gap-8">
+            <CheckoutHeading lead={<StatusBadge tone={status.tone}>{status[locale]}</StatusBadge>} title={title} sub={sub} />
             {body}
           </div>
-          {summary}
-        </div>
+        </CheckoutColumns>
       </main>
     </>
   );
@@ -189,21 +185,10 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
     p.title,
     sub,
     <>
-      <div className="flex w-full flex-wrap items-center gap-4 rounded-m bg-tint-mustard px-5 py-[18px] sm:flex-nowrap sm:px-6">
-        <Timer className="size-6 shrink-0 text-foreground" aria-hidden />
-        <p className="min-w-0 flex-1 basis-[calc(100%-40px)] text-base leading-6 font-bold text-foreground sm:basis-0">
-          {p.payBefore(deadline)}
-        </p>
-        {live.expiresAt ? (
-          <div className="w-full pl-10 sm:w-auto sm:pl-0">
-            <Countdown expiresAt={live.expiresAt.toISOString()} label={p.timeLeft} />
-          </div>
-        ) : null}
-      </div>
-
+      {/* The moss outline is drawn on an overlay so the mint header's fill can't cover its top edge. */}
       <section
         aria-label={info.name}
-        className="flex w-full flex-col overflow-hidden rounded-m bg-white inset-ring-[1.5px] inset-ring-border"
+        className="relative flex w-full flex-col overflow-hidden rounded-m bg-white after:pointer-events-none after:absolute after:inset-0 after:rounded-m after:inset-ring-[1.5px] after:inset-ring-border after:content-['']"
       >
         {/* Below sm "Change method" sits under the name, so a long name like "BCA Virtual Account" keeps one line. */}
         <div className="flex w-full items-center gap-3.5 bg-mint px-5 py-[18px] sm:px-6">
@@ -217,6 +202,19 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
               {p.changeMethod}
             </Link>
           </div>
+        </div>
+
+        {/* The deadline belongs to this payment, so it lives on the ticket instead of in a band of its own. */}
+        <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-4 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:flex-nowrap sm:px-6">
+          <Timer className="size-5 shrink-0 text-foreground" aria-hidden />
+          <p className="min-w-0 flex-1 basis-[calc(100%-36px)] text-[15px] leading-[23px] font-bold text-foreground sm:basis-0">
+            {p.payBefore(deadline)}
+          </p>
+          {live.expiresAt ? (
+            <div className="w-full pl-9 sm:w-auto sm:pl-0">
+              <Countdown expiresAt={live.expiresAt.toISOString()} label={p.timeLeft} />
+            </div>
+          ) : null}
         </div>
 
         {live.vaNumber ? (
