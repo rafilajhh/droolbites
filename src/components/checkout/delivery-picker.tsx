@@ -42,6 +42,7 @@ export function DeliveryPicker({
   onPin,
   onPlace,
   onSwitchToPickup,
+  showQuote = true,
 }: {
   store: LatLng;
   maxKm: number;
@@ -54,6 +55,11 @@ export function DeliveryPicker({
   /** A search result was chosen: the form takes its address and moves the pin there. */
   onPlace: (place: Place) => void;
   onSwitchToPickup?: () => void;
+  /**
+   * The distance and fee caption under the map. Checkout only: the saved address in the account
+   * shows where the pin is instead, because the fee belongs to an order.
+   */
+  showQuote?: boolean;
 }) {
   const d = useMessages(checkoutMessages).details;
   const locale = useLocale();
@@ -306,7 +312,14 @@ export function DeliveryPicker({
         </p>
       ) : null}
 
-      <QuotePanel quote={quote} km={km} maxKm={maxKm} pinLabel={pinLabel} onSwitchToPickup={onSwitchToPickup} />
+      {showQuote ? (
+        <QuotePanel quote={quote} km={km} maxKm={maxKm} pinLabel={pinLabel} onSwitchToPickup={onSwitchToPickup} />
+      ) : pinLabel ? (
+        <p className="flex items-start gap-2 text-[13px] leading-5 text-muted-foreground">
+          <MapPin className="size-4 shrink-0 translate-y-0.5 text-primary" aria-hidden />
+          {d.pinNear(pinLabel)}
+        </p>
+      ) : null}
 
       {error ? (
         <p id="checkout-location-error" role="alert" className="text-[13px] leading-normal text-error">

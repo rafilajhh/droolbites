@@ -3,9 +3,10 @@ import { ArrowLink, ButtonLink } from "@/components/ui/button";
 import { photoFrame } from "@/components/ui/snapshot";
 import { getLocale, getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
+import { OrderSteps } from "@/components/ui/order-steps";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, formatRupiah } from "@/lib/format";
-import { getAccountOrders, itemNames, type AccountOrder } from "./account-orders";
+import { getAccountOrders, getOrderCounts, itemNames, type AccountOrder } from "./account-orders";
 
 type StepState = "done" | "current" | "todo";
 
@@ -15,8 +16,12 @@ type StepState = "done" | "current" | "todo";
  * moves it on: pay while it's unpaid, otherwise follow it.
  */
 export async function ActiveOrder({ userId }: { userId: bigint }) {
-  const [orders, t, locale] = await Promise.all([getAccountOrders(userId), getMessages(accountMessages), getLocale()]);
-  const active = orders.filter((o) => o.bucket === "active");
+  const [active, counts, t, locale] = await Promise.all([
+    getAccountOrders(userId, "active", 1),
+    getOrderCounts(userId),
+    getMessages(accountMessages),
+    getLocale(),
+  ]);
   const order = active[0];
   if (!order) return null;
   const a = t.active;
@@ -49,7 +54,7 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
         >
           {a.title}
         </h2>
-        {active.length > 1 ? <ArrowLink href="/account?status=active#order-history">{a.more(active.length - 1)}</ArrowLink> : null}
+        {counts.active > 1 ? <ArrowLink href="/account?status=active#order-history">{a.more(counts.active - 1)}</ArrowLink> : null}
       </div>
 
       <div className="flex w-full items-start gap-4 sm:gap-5">
@@ -68,31 +73,7 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
         </div>
       </div>
 
-      <ol aria-label={a.progress} className="grid w-full grid-cols-5 gap-1.5 sm:gap-2">
-        {steps.map((step) => (
-          <li key={step.label} aria-current={step.state === "current" ? "step" : undefined} className="flex min-w-0 flex-col gap-2">
-            <span
-              aria-hidden
-              className={cn(
-                "h-1.5 w-full rounded-pill",
-                step.state === "done" ? "bg-primary" : step.state === "current" ? "bg-highlight" : "bg-border-divider",
-              )}
-            />
-            {/* Below sm the headline above says where the order is; the labels stay for screen readers. */}
-            <span
-              className={cn(
-                "truncate text-[13px] leading-[18px] max-sm:sr-only",
-                step.state === "todo" ? "text-muted-foreground" : "font-semibold text-foreground",
-              )}
-            >
-              {step.label}
-              <span className="sr-only">
-                {step.state === "done" ? ` (${a.stepDone})` : step.state === "current" ? ` (${a.stepCurrent})` : ""}
-              </span>
-            </span>
-          </li>
-        ))}
-      </ol>
+      <OrderSteps steps={steps} label={a.progress} doneLabel={a.stepDone} currentLabel={a.stepCurrent} />
 
       <div className="flex w-full flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex min-w-0 flex-col gap-0.5">

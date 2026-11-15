@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDateTime, formatDistance, formatRupiah } from "@/lib/format";
 import { paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { formatAddress, payable } from "@/lib/orders";
+import { orderAddress, payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
@@ -145,10 +145,16 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
               <h2 className={cn(thClasses, "print:text-neutral-700")}>{t.fulfilment}</h2>
               <p className="text-[15px] leading-[23px] font-bold">{isDelivery ? t.delivery : t.pickup}</p>
               <p className={cn("text-sm leading-[21px] break-words", muted)}>
-                {isDelivery
-                  ? formatAddress({ address: order.shippingAddress, city: order.shippingCity, postal: order.shippingPostal })
-                  : t.pickupAt(settings.address)}
+                {isDelivery ? orderAddress(order) : t.pickupAt(settings.address)}
               </p>
+              {isDelivery && order.recipientName ? (
+                <p className={cn("text-sm leading-[21px] break-words", muted)}>
+                  {t.recipient(order.recipientName, order.recipientPhone ?? order.phone)}
+                </p>
+              ) : null}
+              {isDelivery && order.deliveryNote ? (
+                <p className={cn("text-sm leading-[21px] break-words", muted)}>{t.note(order.deliveryNote)}</p>
+              ) : null}
             </section>
           </div>
 

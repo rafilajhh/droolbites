@@ -22,11 +22,13 @@ const getPaidOrderItems = cache((userId: bigint) =>
   }),
 );
 
-const line = "flex flex-wrap items-center gap-x-2 gap-y-1 text-[15px] leading-[23px] text-muted-foreground";
+const value = "font-display text-[24px] leading-[28px] font-bold tracking-[-0.5px] text-foreground sm:text-[28px] sm:leading-8";
+const label = "text-sm leading-[21px] text-muted-foreground";
 
 /**
- * One summary line under the account greeting: paid orders, desserts in them and
- * the most ordered product, all from the customer's own orders. Cancelled orders don't count.
+ * The customer's orders so far, beside the greeting: paid orders, desserts in them and the most
+ * ordered product with a link to order it again, as three figures split by hairlines (two side by
+ * side and the favorite under them on phones). Cancelled orders don't count.
  */
 export async function SweetStats({ userId, className }: { userId: bigint; className?: string }) {
   const [orders, t] = await Promise.all([getPaidOrderItems(userId), getMessages(accountMessages)]);
@@ -44,28 +46,38 @@ export async function SweetStats({ userId, className }: { userId: bigint; classN
 
   if (!favorite) {
     return (
-      <p className={cn(line, className)}>
+      <p className={cn("flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] leading-[23px] text-muted-foreground", className)}>
         <span>{s.empty}</span>
         <ArrowLink href="/menu">{s.emptyCta}</ArrowLink>
       </p>
     );
   }
 
+  // Each figure: the value on top, its label under it (the label comes first for screen readers).
+  const cell = "flex min-w-0 flex-col-reverse justify-end gap-1";
   return (
-    <p className={cn(line, className)}>
-      <span className="tabular-nums">{s.summary(orders.length, desserts)}</span>
-      <span aria-hidden>·</span>
-      <span>
-        {s.favorite}: <span className="font-semibold text-foreground">{favorite.name}</span>
-      </span>
-      {/* An unavailable product's page 404s, so only link to one still on the menu. */}
-      {favorite.isAvailable ? (
-        // One unit, so the line never wraps between the dot and the link.
-        <span className="inline-flex basis-full items-center gap-[inherit] whitespace-nowrap sm:basis-auto">
-          <span aria-hidden className="max-sm:hidden">·</span>
-          <ArrowLink href={`/menu/${favorite.slug}`}>{s.again}</ArrowLink>
-        </span>
-      ) : null}
-    </p>
+    <dl aria-label={s.label} className={cn("grid grid-cols-2 gap-y-4 sm:flex sm:items-stretch", className)}>
+      <div className={cn(cell, "pr-5 sm:px-6 sm:pl-0")}>
+        <dt className={label}>{s.orders(orders.length)}</dt>
+        <dd className={cn(value, "tabular-nums")}>{orders.length}</dd>
+      </div>
+      <div className={cn(cell, "pl-5 shadow-[inset_1px_0_0_var(--border-subtle)] sm:px-6")}>
+        <dt className={label}>{s.desserts(desserts)}</dt>
+        <dd className={cn(value, "tabular-nums")}>{desserts}</dd>
+      </div>
+      <div
+        className={cn(
+          cell,
+          "col-span-2 pt-4 shadow-[inset_0_1px_0_var(--border-subtle)] sm:pt-0 sm:pl-6 sm:shadow-[inset_1px_0_0_var(--border-subtle)]",
+        )}
+      >
+        <dt className={label}>{s.favorite}</dt>
+        <dd className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className={value}>{favorite.name}</span>
+          {/* An unavailable product's page 404s, so only link to one still on the menu. */}
+          {favorite.isAvailable ? <ArrowLink href={`/menu/${favorite.slug}`}>{s.again}</ArrowLink> : null}
+        </dd>
+      </div>
+    </dl>
   );
 }

@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   images: {
     // "Jangan dikompres": photos are served at full quality.
     qualities: [100],
+    // Google profile photos (users.avatar_url, checked in src/lib/google-account.ts).
+    remotePatterns: [{ protocol: "https", hostname: "*.googleusercontent.com", port: "", pathname: "/**", search: "" }],
   },
   async redirects() {
     // The common guess for the reset flow; the real route is /reset-password.

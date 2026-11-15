@@ -48,6 +48,9 @@ type ErrorKey =
   | "street"
   | "city"
   | "postal"
+  | "recipientName"
+  | "recipientPhone"
+  | "note"
   | "location"
   | "tooFar"
   | "lookupBusy"
@@ -163,8 +166,12 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
     phone: str(formData, "phone"),
     street: str(formData, "street"),
     apartment: str(formData, "apartment"),
+    district: str(formData, "district"),
     city: str(formData, "city"),
     postal: str(formData, "postal"),
+    recipientName: str(formData, "recipientName"),
+    recipientPhone: str(formData, "recipientPhone"),
+    note: str(formData, "note"),
     lat: coord(formData, "lat"),
     lng: coord(formData, "lng"),
     // Measured below, never taken from the client.
@@ -183,7 +190,7 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
           ? "method"
           : field === "apartment"
             ? "street"
-            : field === "lat" || field === "lng" || field === "distanceM"
+            : field === "lat" || field === "lng" || field === "distanceM" || field === "district"
               ? "location"
               : (field as ErrorKey);
     }
@@ -197,8 +204,12 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
     Object.assign(details, {
       street: "",
       apartment: "",
+      district: "",
       city: "",
       postal: "",
+      recipientName: "",
+      recipientPhone: "",
+      note: "",
       lat: null,
       lng: null,
       distanceM: null,
@@ -331,11 +342,16 @@ async function createOrder(
             phone: details.phone,
             fulfilmentMethod: details.fulfilment,
             shippingAddress: delivery ? joinStreet(details.street, details.apartment) : null,
+            shippingDistrict: delivery ? details.district || null : null,
             shippingCity: delivery ? details.city : null,
             shippingPostal: delivery ? details.postal : null,
             shippingLat: delivery ? details.lat : null,
             shippingLng: delivery ? details.lng : null,
             deliveryDistanceM: delivery ? details.distanceM : null,
+            // Nobody else named: the contact receives it.
+            recipientName: delivery ? details.recipientName || details.fullName : null,
+            recipientPhone: delivery ? details.recipientPhone || details.phone : null,
+            deliveryNote: delivery ? details.note || null : null,
             subtotal,
             deliveryFee,
             total: subtotal + deliveryFee,

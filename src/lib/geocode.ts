@@ -22,6 +22,8 @@ export type Place = {
   /** One line for the result list: "Jalan Raya Darmo, Wonokromo, Surabaya". */
   label: string;
   street: string;
+  /** Kecamatan, when OpenStreetMap knows it ("Genteng"); else "". */
+  district: string;
   city: string;
   postal: string;
 };
@@ -57,6 +59,18 @@ async function get(path: string, params: Record<string, string>, lang: string): 
   });
   if (!res.ok) throw new Error(`nominatim ${res.status}`);
   return res.json();
+}
+
+/**
+ * The kecamatan of a result. Indonesian OpenStreetMap files it as city_district, district or
+ * municipality (Surabaya: "village": "Ketabang" is the kelurahan, "municipality": "Genteng" the
+ * kecamatan); suburb and village are the kelurahan, already part of the street line.
+ */
+function districtOf(a: NominatimAddress, city: string): string {
+  const found = a.city_district ?? a.district ?? a.municipality ?? "";
+  const name = found.replace(/^(Kecamatan|Kec\.)\s+/i, "").trim();
+  // A municipality tag that is really the city (or empty) says nothing more.
+  return name && comparable(name) !== comparable(city) ? name.slice(0, 100) : "";
 }
 
 /** "Kota Malang" → "Malang", "KABUPATEN MALANG" → "Malang". */
@@ -112,7 +126,7 @@ function toPlace(p: NominatimPlace, city: string): Place | null {
   const street = [landmark, road, area].filter(Boolean).join(", ");
   const postal = /^\d{5}$/.test(a.postcode ?? "") ? a.postcode! : "";
   const label = [street, city].filter(Boolean).join(", ") || p.display_name || "";
-  return { lat, lng, label, street: street.slice(0, 180), city: city.slice(0, 100), postal };
+  return { lat, lng, label, street: street.slice(0, 180), district: districtOf(a, city), city: city.slice(0, 100), postal };
 }
 
 /** A result with its city; when the result doesn't say, the city at its point (a coarse reverse lookup). */

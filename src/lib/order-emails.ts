@@ -7,7 +7,7 @@ import { formatDateTime, formatDistance, formatRupiah } from "./format";
 import { button, fallbackLink, highlight, infoBox, itemsTable, paragraph, renderEmail, type EmailItem } from "./email-template";
 import { appUrl, sendMail } from "./mail";
 import { cancelReasonText, paymentMethodInfo } from "./order-status";
-import { formatAddress, orderAccessToken, orderDeadline, payable, type FullOrder } from "./orders";
+import { orderAccessToken, orderAddress, orderDeadline, payable, type FullOrder } from "./orders";
 import { getStoreSettings } from "./settings";
 
 /**
@@ -31,7 +31,7 @@ async function context(order: FullOrder) {
   }));
   const where: Row =
     order.fulfilmentMethod === "delivery"
-      ? [t.common.deliveryTo, formatAddress({ address: order.shippingAddress, city: order.shippingCity, postal: order.shippingPostal })]
+      ? [t.common.deliveryTo, orderAddress(order)]
       : [t.common.pickupAt, settings.address];
   return {
     lang,
@@ -288,9 +288,11 @@ export async function sendStoreNewOrderEmail(order: FullOrder) {
     [s.customer, order.customerName],
     [s.phone, order.phone],
     [s.method, delivery ? s.delivery(order.deliveryDistanceM !== null ? formatDistance(order.deliveryDistanceM, lang) : null) : s.pickup],
-    ...(delivery
-      ? ([[s.address, formatAddress({ address: order.shippingAddress, city: order.shippingCity, postal: order.shippingPostal })]] as Row[])
+    ...(delivery ? ([[s.address, orderAddress(order)]] as Row[]) : []),
+    ...(delivery && order.recipientName
+      ? ([[s.recipient, `${order.recipientName} · ${order.recipientPhone ?? order.phone}`]] as Row[])
       : []),
+    ...(delivery && order.deliveryNote ? ([[s.note, order.deliveryNote]] as Row[]) : []),
     ...(delivery && order.shippingLat !== null && order.shippingLng !== null
       ? ([[s.pin, `https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`]] as Row[])
       : []),

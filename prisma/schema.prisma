@@ -66,22 +66,33 @@ enum PaymentMethod {
 }
 
 model User {
-  id           BigInt    @id @default(autoincrement())
-  fullName     String    @map("full_name") @db.VarChar(100)
-  email        String    @unique @db.VarChar(150)
-  phone        String?   @db.VarChar(20)
+  id             BigInt    @id @default(autoincrement())
+  fullName       String    @map("full_name") @db.VarChar(100)
+  email          String    @unique @db.VarChar(150)
+  phone          String?   @db.VarChar(20)
   // Null for accounts created with "Continue with Google" until a password is set via reset.
-  passwordHash String?   @map("password_hash") @db.VarChar(255)
-  googleId     String?   @unique @map("google_id") @db.VarChar(255)
-  role         UserRole  @default(customer)
-  address      String?   @db.VarChar(255)
-  city         String?   @db.VarChar(100)
-  postalCode   String?   @map("postal_code") @db.VarChar(10)
+  passwordHash   String?   @map("password_hash") @db.VarChar(255)
+  googleId       String?   @unique @map("google_id") @db.VarChar(255)
+  /// Google profile photo (https, *.googleusercontent.com), refreshed on every Google sign-in.
+  avatarUrl      String?   @map("avatar_url") @db.VarChar(500)
+  role           UserRole  @default(customer)
+  address        String?   @db.VarChar(255)
+  city           String?   @db.VarChar(100)
+  postalCode     String?   @map("postal_code") @db.VarChar(10)
   /// Map pin of the saved address (checkout measures the delivery distance from it).
-  addressLat   Float?    @map("address_lat")
-  addressLng   Float?    @map("address_lng")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime? @updatedAt @map("updated_at")
+  addressLat     Float?    @map("address_lat")
+  addressLng     Float?    @map("address_lng")
+  /// Who receives deliveries at the saved address; checkout falls back to the contact name and phone.
+  recipientName  String?   @map("recipient_name") @db.VarChar(100)
+  recipientPhone String?   @map("recipient_phone") @db.VarChar(20)
+  /// Block, floor or unit (checkout's "apartment" field).
+  addressDetail  String?   @map("address_detail") @db.VarChar(70)
+  /// Landmark or note for the courier.
+  addressNote    String?   @map("address_note") @db.VarChar(200)
+  /// Kecamatan, filled from the pin.
+  district       String?   @db.VarChar(100)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
 
   orders Order[]
 
@@ -140,6 +151,13 @@ model Order {
   shippingAddress   String?          @map("shipping_address") @db.VarChar(255)
   shippingCity      String?          @map("shipping_city") @db.VarChar(100)
   shippingPostal    String?          @map("shipping_postal") @db.VarChar(10)
+  /// Kecamatan at the pin.
+  shippingDistrict  String?          @map("shipping_district") @db.VarChar(100)
+  /// Who receives a delivery (the contact name and phone unless the customer named someone else).
+  recipientName     String?          @map("recipient_name") @db.VarChar(100)
+  recipientPhone    String?          @map("recipient_phone") @db.VarChar(20)
+  /// Landmark or note for the courier.
+  deliveryNote      String?          @map("delivery_note") @db.VarChar(200)
   /// The customer's pin on the map, for the courier.
   shippingLat       Float?           @map("shipping_lat")
   shippingLng       Float?           @map("shipping_lng")

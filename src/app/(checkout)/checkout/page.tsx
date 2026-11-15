@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
-import { DetailsForm, type DetailsValues } from "@/components/checkout/details-form";
+import { DetailsForm, type DetailsValues, type SavedAddress } from "@/components/checkout/details-form";
 import { cartSummaryLines } from "@/components/checkout/summary-lines";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
@@ -35,8 +35,12 @@ export default async function CheckoutDetailsPage() {
         phone: details.phone,
         street: details.street,
         apartment: details.apartment,
+        district: details.district,
         city: details.city,
         postal: details.postal,
+        recipientName: details.recipientName,
+        recipientPhone: details.recipientPhone,
+        note: details.note,
       }
     : {
         email: user?.email ?? "",
@@ -44,20 +48,28 @@ export default async function CheckoutDetailsPage() {
         fullName: user?.fullName ?? "",
         phone: user?.phone ?? "",
         street: user?.address ?? "",
-        apartment: "",
+        apartment: user?.addressDetail ?? "",
+        district: user?.district ?? "",
         city: user?.city ?? "",
         postal: user?.postalCode ?? "",
+        recipientName: user?.recipientName ?? "",
+        recipientPhone: user?.recipientPhone ?? "",
+        note: user?.addressNote ?? "",
       };
   if (initial.fulfilment === "delivery" && !settings.deliveryEnabled && settings.pickupEnabled) initial.fulfilment = "pickup";
   if (initial.fulfilment === "pickup" && !settings.pickupEnabled) initial.fulfilment = "delivery";
 
-  const saved =
+  const saved: SavedAddress | null =
     user?.address && user.city && user.postalCode
       ? {
           street: user.address,
-          apartment: "",
+          apartment: user.addressDetail ?? "",
+          district: user.district ?? "",
           city: user.city,
           postal: user.postalCode,
+          recipientName: user.recipientName ?? "",
+          recipientPhone: user.recipientPhone ?? "",
+          note: user.addressNote ?? "",
           pin: savedPin(user),
         }
       : null;

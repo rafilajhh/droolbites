@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ReorderButton } from "@/components/checkout/reorder-button";
 import { StatusBadge } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink } from "@/components/ui/button";
@@ -10,7 +11,15 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatItemCount, formatRupiah } from "@/lib/format";
 import { awaitingConfirmationInfo, fulfilmentStatusInfo, paymentStatusInfo, statusLabel } from "@/lib/order-status";
 import { accountTitleClasses } from "./account-card";
-import { getAccountOrders, itemNames, ORDER_FILTERS, type AccountOrder, type OrderFilter } from "./account-orders";
+import {
+  getAccountOrders,
+  getOrderCounts,
+  itemNames,
+  ORDER_FILTERS,
+  ORDERS_PER_PAGE,
+  type AccountOrder,
+  type OrderFilter,
+} from "./account-orders";
 
 /** Unpaid orders show the payment state; a paid one waits for the shop to accept it; then the kitchen state. */
 function orderStatus(order: AccountOrder) {
@@ -23,13 +32,15 @@ function orderStatus(order: AccountOrder) {
  * Order history, flat on the page: heading and filters (all / in progress / completed / cancelled) on
  * one line, then a hairline table with the first item's photo and the next thing to do on each order
  * (pay an unpaid one, order a completed one again). Columns size to their content and the items
- * column takes the rest. A table at desktop, stacked rows on phones.
+ * column takes the rest. A table at desktop, stacked rows on phones. Ten orders a page (`?page=`, kept
+ * with the filter; choosing a filter starts again at page 1), paged by the database.
  */
-export async function OrderHistory({ userId, filter }: { userId: bigint; filter: OrderFilter }) {
-  const [all, t, locale] = await Promise.all([getAccountOrders(userId), getMessages(accountMessages), getLocale()]);
+export async function OrderHistory({ userId, filter, page }: { userId: bigint; filter: OrderFilter; page: number }) {
+  const [counts, t, locale] = await Promise.all([getOrderCounts(userId), getMessages(accountMessages), getLocale()]);
   const o = t.orders;
-  const count = (f: OrderFilter) => (f === "all" ? all.length : all.filter((order) => order.bucket === f).length);
-  const orders = filter === "all" ? all : all.filter((order) => order.bucket === filter);
+  const pages = Math.max(1, Math.ceil(counts[filter] / ORDERS_PER_PAGE));
+  const current = Math.min(Math.max(1, page), pages);
+  const orders = await getAccountOrders(userId, filter, current);
 
   // What was in it ("2 × Chocolate Chunk, Fudgy Brownies 15 × 15"), and under it the count and how it gets to the customer.
   const summary = (order: AccountOrder) => {
@@ -51,7 +62,7 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
   // Stacked rows (below xl) have no visible header row, so each cell carries its label for screen readers.
   const cellLabel = (label: string) => <span className="sr-only xl:hidden">{label}: </span>;
 
-  if (all.length === 0) {
+  if (counts.all === 0) {
     return (
       <section id="order-history" aria-labelledby="order-history-title" className="flex w-full scroll-mt-[88px] flex-col gap-4">
         {heading}
@@ -90,7 +101,7 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
                   >
                     {o.filters[f]}
                     <span className={cn("font-mono text-xs tabular-nums", current ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                      {count(f)}
+                      {counts[f]}
                     </span>
                   </Link>
                 </li>
@@ -188,6 +199,98 @@ export async function OrderHistory({ userId, filter }: { userId: bigint; filter:
           </tbody>
         </table>
       )}
+      {pages > 1 ? (
+        <Pagination
+          filter={filter}
+          current={current}
+          pages={pages}
+          showing={o.showing((current - 1) * ORDERS_PER_PAGE + 1, (current - 1) * ORDERS_PER_PAGE + orders.length, counts[filter])}
+          labels={o}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function pageHref(filter: OrderFilter, page: number) {
+  const params = new URLSearchParams();
+  if (filter !== "all") params.set("status", filter);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return `/account${query ? `?${query}` : ""}#order-history`;
+}
+
+/** 1 … 4 5 6 … 12: the first and last page, and the pages around the current one. */
+function pageList(current: number, pages: number): (number | "gap")[] {
+  if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
+  const around = [current - 1, current, current + 1].filter((n) => n > 1 && n < pages);
+  const list: (number | "gap")[] = [1];
+  if (around[0] > 2) list.push("gap");
+  list.push(...around);
+  if (around[around.length - 1] < pages - 1) list.push("gap");
+  list.push(pages);
+  return list;
+}
+
+/**
+ * Under the table: which orders are shown on the left, then previous, the page numbers (the current
+ * one a moss pill, like the filters) and next. Previous/next at either end stay in place, dimmed.
+ */
+function Pagination({
+  filter,
+  current,
+  pages,
+  showing,
+  labels,
+}: {
+  filter: OrderFilter;
+  current: number;
+  pages: number;
+  showing: string;
+  labels: { pages: string; prev: string; next: string; page: (n: number) => string };
+}) {
+  const pill =
+    "relative inline-flex h-9 min-w-9 items-center justify-center rounded-pill px-2.5 text-sm leading-[18px] font-semibold tabular-nums transition-colors after:absolute after:-inset-1 after:content-[''] motion-reduce:transition-none";
+  const idle = "bg-card text-foreground hover:inset-ring-[1.25px] hover:inset-ring-border";
+  const step = (to: number, label: string, Icon: typeof ChevronLeft, edge: boolean) =>
+    edge ? (
+      <span aria-disabled="true" className={cn(pill, "bg-card text-muted-foreground opacity-50")}>
+        <Icon className="size-4" aria-hidden />
+        <span className="sr-only">{label}</span>
+      </span>
+    ) : (
+      <Link href={pageHref(filter, to)} scroll={false} rel={to < current ? "prev" : "next"} className={cn(pill, idle)}>
+        <Icon className="size-4" aria-hidden />
+        <span className="sr-only">{label}</span>
+      </Link>
+    );
+
+  return (
+    <nav aria-label={labels.pages} className="flex w-full flex-wrap items-center justify-between gap-x-6 gap-y-3">
+      <p className="text-sm leading-[21px] text-muted-foreground tabular-nums">{showing}</p>
+      <ul className="flex flex-wrap items-center gap-2">
+        <li>{step(current - 1, labels.prev, ChevronLeft, current === 1)}</li>
+        {pageList(current, pages).map((n, i) =>
+          n === "gap" ? (
+            <li key={`gap-${i}`} aria-hidden className="px-1 text-sm text-muted-foreground">
+              …
+            </li>
+          ) : (
+            <li key={n}>
+              <Link
+                href={pageHref(filter, n)}
+                scroll={false}
+                aria-label={labels.page(n)}
+                aria-current={n === current ? "page" : undefined}
+                className={cn(pill, n === current ? "bg-primary text-primary-foreground" : idle)}
+              >
+                {n}
+              </Link>
+            </li>
+          ),
+        )}
+        <li>{step(current + 1, labels.next, ChevronRight, current === pages)}</li>
+      </ul>
+    </nav>
   );
 }

@@ -25,13 +25,21 @@ export const getCurrentUser = cache(async () => {
       postalCode: true,
       addressLat: true,
       addressLng: true,
+      recipientName: true,
+      recipientPhone: true,
+      addressDetail: true,
+      addressNote: true,
+      district: true,
+      avatarUrl: true,
+      googleId: true,
       createdAt: true,
     },
   });
   if (!row) return null;
-  // The hash only decides validity; it never leaves this function.
-  const { passwordHash, ...user } = row;
-  return session.pv === passwordStamp(passwordHash) ? user : null;
+  // The hash only decides validity and whether a password is set; it never leaves this function.
+  const { passwordHash, googleId, ...user } = row;
+  if (session.pv !== passwordStamp(passwordHash)) return null;
+  return { ...user, hasPassword: passwordHash !== null, google: googleId !== null };
 });
 
 export type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;

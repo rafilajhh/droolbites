@@ -45,6 +45,7 @@ export default async function CheckoutPaymentPage() {
             address: delivery
               ? formatAddress({
                   address: joinStreet(details.street, details.apartment),
+                  district: details.district,
                   city: details.city,
                   postal: details.postal,
                 })

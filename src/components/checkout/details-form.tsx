@@ -6,7 +6,7 @@ import { Store, Truck } from "lucide-react";
 import { addressAt, findPlaces, quoteDelivery, saveCheckoutDetails, type DeliveryQuote, type DetailsState } from "@/app/actions/checkout";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { Button } from "@/components/ui/button";
-import { Field, TextInput } from "@/components/ui/form-field";
+import { Field, TextArea, TextInput } from "@/components/ui/form-field";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
@@ -24,9 +24,22 @@ export type DetailsValues = {
   phone: string;
   street: string;
   apartment: string;
+  /** Kecamatan at the pin; read-only, it follows the pin. */
+  district: string;
   city: string;
   postal: string;
+  /** Empty: the contact receives it. */
+  recipientName: string;
+  recipientPhone: string;
+  /** Landmark or note for the courier. */
+  note: string;
 };
+
+/** The saved address "Use saved address" fills in. */
+export type SavedAddress = Pick<
+  DetailsValues,
+  "street" | "apartment" | "district" | "city" | "postal" | "recipientName" | "recipientPhone" | "note"
+> & { pin: LatLng | null };
 
 type TextKey = Exclude<keyof DetailsValues, "fulfilment">;
 type AddressKey = "street" | "city" | "postal";
@@ -36,8 +49,9 @@ const initialState: DetailsState = { errors: {}, attempt: 0 };
 /**
  * Checkout · Details, after pen frame PPHfX with the owner-approved simpler
  * flow: 1 Contact (email, name, phone) and 2 Delivery or pickup (the two
- * tiles, then the delivery pin on the map with its distance and fee, and the
- * address, or the store's pickup details). No country/province selects,
+ * tiles, then the delivery pin on the map with its distance and fee, the
+ * address with its kecamatan from the pin, a note for the courier and who
+ * receives it, or the store's pickup details). No country/province selects,
  * single delivery-method card or billing address.
  */
 export function DetailsForm({
@@ -53,7 +67,7 @@ export function DetailsForm({
   initial: DetailsValues;
   initialPin: LatLng | null;
   initialQuote: DeliveryQuote | null;
-  saved: (Pick<DetailsValues, "street" | "apartment" | "city" | "postal"> & { pin: LatLng | null }) | null;
+  saved: SavedAddress | null;
   signInHref: string | null;
   options: { delivery: boolean; pickup: boolean };
   store: {
@@ -92,9 +106,10 @@ export function DetailsForm({
    * that place); a tap, drag or GPS fix only fills fields that are empty or still hold what the map
    * filled before, and clears those when the new spot has no value for them.
    */
-  const fillAddress = (place: Pick<Place, AddressKey>, replace = false) =>
+  const fillAddress = (place: Pick<Place, AddressKey | "district">, replace = false) =>
     setValues((v) => {
-      const next = { ...v };
+      // The kecamatan always follows the pin.
+      const next = { ...v, district: place.district };
       for (const key of ["street", "city", "postal"] as const) {
         const value = place[key];
         const ours = v[key].trim() === "" || v[key] === autoFilled.current[key];
@@ -112,6 +127,8 @@ export function DetailsForm({
     setPinMovedAt(state.attempt);
     setPinLabel(label);
     setQuote({ status: "loading" });
+    // A tapped, dragged or located pin looks its kecamatan up below; until then the old one is wrong.
+    if (source === "map" || source === "gps") setValues((v) => ({ ...v, district: "" }));
     const [q, place] = await Promise.all([
       quoteDelivery(at.lat, at.lng).catch((): DeliveryQuote => ({ status: "busy" })),
       // A search result (or the saved address) already carries its address.
@@ -151,7 +168,7 @@ export function DetailsForm({
     first?.focus();
   }, [state]);
 
-  const set = (key: TextKey) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (key: TextKey) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setValues((v) => ({ ...v, [key]: e.target.value }));
 
   const err = (key: keyof DetailsState["errors"]) => {
@@ -164,7 +181,7 @@ export function DetailsForm({
     return t.errors[code];
   };
 
-  const input = (key: TextKey, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => {
+  const input = (key: TextKey, { "aria-describedby": help, ...extra }: React.InputHTMLAttributes<HTMLInputElement> = {}) => {
     const error = err(key);
     return (
       <TextInput
@@ -173,7 +190,7 @@ export function DetailsForm({
         value={values[key]}
         onChange={set(key)}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `checkout-${key}-error` : undefined}
+        aria-describedby={error ? `checkout-${key}-error` : help}
         {...extra}
       />
     );
@@ -352,7 +369,17 @@ export function DetailsForm({
                       maxLength: 70,
                     })}
                   </Field>
-                  <div className="grid w-full gap-5 sm:grid-cols-2 sm:gap-4">
+                  <div className="grid w-full gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,11.5rem)] sm:gap-4">
+                    {/* The kecamatan comes from the pin, so it reads but can't be typed. */}
+                    <Field label={d.district} htmlFor="checkout-district" helper={d.districtHelp}>
+                      {input("district", {
+                        readOnly: true,
+                        // OpenStreetMap doesn't know every kecamatan; the field then stays empty, which is fine.
+                        placeholder: pin && quote.status !== "loading" ? d.districtUnknown : d.districtEmpty,
+                        className: "bg-card text-ellipsis",
+                        "aria-describedby": "checkout-district-helper",
+                      })}
+                    </Field>
                     <Field label={d.city} htmlFor="checkout-city" error={err("city")}>
                       {input("city", { autoComplete: "address-level2", placeholder: d.cityPlaceholder, required: true, maxLength: 100 })}
                     </Field>
@@ -365,6 +392,45 @@ export function DetailsForm({
                         maxLength: 5,
                       })}
                     </Field>
+                  </div>
+                  <Field label={d.note} htmlFor="checkout-note" error={err("note")}>
+                    <TextArea
+                      id="checkout-note"
+                      name="note"
+                      rows={2}
+                      maxLength={200}
+                      value={values.note}
+                      onChange={set("note")}
+                      placeholder={d.notePlaceholder}
+                      aria-invalid={err("note") ? true : undefined}
+                      className="min-h-[88px]"
+                    />
+                  </Field>
+                  {/* Who receives it: empty fields fall back to the contact above (on the server too). */}
+                  <div className="flex w-full flex-col gap-2">
+                    <div className="grid w-full gap-5 sm:grid-cols-2 sm:gap-4">
+                      <Field label={d.recipientName} htmlFor="checkout-recipientName" error={err("recipientName")}>
+                        {input("recipientName", {
+                          autoComplete: "shipping name",
+                          placeholder: values.fullName.trim() || d.fullNamePlaceholder,
+                          maxLength: 100,
+                          "aria-describedby": "checkout-recipient-help",
+                        })}
+                      </Field>
+                      <Field label={d.recipientPhone} htmlFor="checkout-recipientPhone" error={err("recipientPhone")}>
+                        {input("recipientPhone", {
+                          type: "tel",
+                          inputMode: "tel",
+                          autoComplete: "shipping tel",
+                          placeholder: values.phone.trim() || d.phonePlaceholder,
+                          maxLength: 20,
+                          "aria-describedby": "checkout-recipient-help",
+                        })}
+                      </Field>
+                    </div>
+                    <p id="checkout-recipient-help" className="text-[13px] leading-5 text-muted-foreground">
+                      {d.recipientHelp}
+                    </p>
                   </div>
                 </>
               ) : (

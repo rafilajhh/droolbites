@@ -44,8 +44,19 @@ export const checkoutDetailsSchema = z
     phone: z.string().trim().max(20).refine(isIdMobile),
     street: text(180),
     apartment: text(70),
+    /** Kecamatan, filled from the pin (read-only in the form). */
+    district: text(100).default(""),
     city: text(100),
     postal: text(10),
+    /** Who receives a delivery; empty means the contact name and phone. */
+    recipientName: text(100)
+      .default("")
+      .refine((v) => v === "" || v.length >= 2),
+    recipientPhone: text(20)
+      .default("")
+      .refine((v) => v === "" || isIdMobile(v)),
+    /** Landmark or note for the courier. */
+    note: text(200).default(""),
     /** The delivery pin on the map. */
     lat: z.number().nullable().default(null),
     lng: z.number().nullable().default(null),
@@ -97,10 +108,21 @@ export function checkoutDeliveryFee(rates: DeliveryRates, details: CheckoutDetai
   return deliveryFeeFor(rates, details.distanceM);
 }
 
-/** "Jl. Raya Darmo No. 12, Wonokromo, Surabaya 60241" */
-export function formatAddress(parts: { address: string | null; city: string | null; postal: string | null }) {
+/** "Jl. Raya Darmo No. 12, Wonokromo, Kec. Wonokromo, Surabaya 60241" (the kecamatan when known). */
+export function formatAddress(parts: { address: string | null; district?: string | null; city: string | null; postal: string | null }) {
   const tail = [parts.city, parts.postal].filter(Boolean).join(" ");
-  return [parts.address, tail].filter(Boolean).join(", ");
+  // A no-break space keeps "Kec." on the line of its name.
+  return [parts.address, parts.district ? `Kec.\u00a0${parts.district}` : null, tail].filter(Boolean).join(", ");
+}
+
+/** The order's delivery address with its kecamatan, for the store, emails and the invoice. */
+export function orderAddress(order: {
+  shippingAddress: string | null;
+  shippingDistrict: string | null;
+  shippingCity: string | null;
+  shippingPostal: string | null;
+}) {
+  return formatAddress({ address: order.shippingAddress, district: order.shippingDistrict, city: order.shippingCity, postal: order.shippingPostal });
 }
 
 /** Street + apartment as stored in orders.shipping_address. */

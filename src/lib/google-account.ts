@@ -7,7 +7,7 @@ import type { PrismaClient } from "@/generated/prisma/client";
  * signInWithGoogle in ./google-auth.ts.
  */
 
-export type GoogleClaims = { sub: string; email: string; name: string | null };
+export type GoogleClaims = { sub: string; email: string; name: string | null; picture: string | null };
 
 export type GoogleLinkResult =
   | { ok: true; userId: bigint; created: boolean }
@@ -16,6 +16,21 @@ export type GoogleLinkResult =
 const ISSUERS = new Set(["accounts.google.com", "https://accounts.google.com"]);
 const FULL_NAME_MAX = 100; // users.full_name
 const EMAIL_MAX = 150; // users.email
+const AVATAR_MAX = 500; // users.avatar_url
+/** Google serves profile photos from lh3.googleusercontent.com and its siblings (next.config.ts lets next/image load them). */
+const AVATAR_HOST = /^lh\d\.googleusercontent\.com$/;
+
+/** The `picture` claim when it is an https URL on Google's photo host; anything else is dropped. */
+function avatarUrl(value: unknown): string | null {
+  if (typeof value !== "string" || value.length > AVATAR_MAX) return null;
+  try {
+    const url = new URL(value);
+    const ok = url.protocol === "https:" && !url.username && !url.password && !url.port && AVATAR_HOST.test(url.hostname);
+    return ok && url.href.length <= AVATAR_MAX ? url.href : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The ID token comes straight from Google's token endpoint over TLS during
@@ -33,7 +48,7 @@ export function parseGoogleClaims(raw: unknown, clientId: string, now = Date.now
   const email = c.email.trim().toLowerCase();
   if (!email || email.length > EMAIL_MAX) return null;
   const name = typeof c.name === "string" ? c.name.trim().replace(/\s+/g, " ") : "";
-  return { sub: c.sub, email, name: name || null };
+  return { sub: c.sub, email, name: name || null, picture: avatarUrl(c.picture) };
 }
 
 /**
@@ -41,13 +56,20 @@ export function parseGoogleClaims(raw: unknown, clientId: string, now = Date.now
  * without a password. An email that already has an account is never linked:
  * sign-up and profile edits don't verify addresses, so that row may belong to
  * someone else (account pre-hijacking). Its owner signs in with the password;
- * admins always use /admin/sign-in.
+ * admins always use /admin/sign-in. Every sign-in stores the account's current Google photo.
  */
 export async function linkGoogleAccount(prisma: PrismaClient, claims: GoogleClaims): Promise<GoogleLinkResult> {
-  const select = { id: true, role: true, googleId: true } as const;
+  const select = { id: true, role: true, googleId: true, avatarUrl: true } as const;
 
   const byGoogle = await prisma.user.findUnique({ where: { googleId: claims.sub }, select });
-  if (byGoogle) return byGoogle.role === "admin" ? { ok: false, reason: "admin" } : { ok: true, userId: byGoogle.id, created: false };
+  if (byGoogle) {
+    if (byGoogle.role === "admin") return { ok: false, reason: "admin" };
+    // The photo follows Google: a new one replaces it, a removed one clears it.
+    if (byGoogle.avatarUrl !== claims.picture) {
+      await prisma.user.update({ where: { id: byGoogle.id }, data: { avatarUrl: claims.picture } });
+    }
+    return { ok: true, userId: byGoogle.id, created: false };
+  }
 
   const byEmail = await prisma.user.findUnique({ where: { email: claims.email }, select });
   if (byEmail) return { ok: false, reason: byEmail.role === "admin" ? "admin" : "exists" };
@@ -55,7 +77,7 @@ export async function linkGoogleAccount(prisma: PrismaClient, claims: GoogleClai
   const fullName = (claims.name ?? claims.email.split("@")[0]).slice(0, FULL_NAME_MAX).trim() || claims.email.slice(0, FULL_NAME_MAX);
   try {
     const user = await prisma.user.create({
-      data: { fullName, email: claims.email, passwordHash: null, googleId: claims.sub, role: "customer" },
+      data: { fullName, email: claims.email, passwordHash: null, googleId: claims.sub, avatarUrl: claims.picture, role: "customer" },
       select: { id: true },
     });
     return { ok: true, userId: user.id, created: true };

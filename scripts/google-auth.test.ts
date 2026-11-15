@@ -36,6 +36,7 @@ const token = (over: Record<string, unknown> = {}) => ({
   email: `google-${RUN}@example.test`,
   email_verified: true,
   name: "  Nadia   Google  ",
+  picture: "https://lh3.googleusercontent.com/a/ACg8ocTestPhoto=s96-c",
   ...over,
 });
 const claims = (over: Record<string, unknown> = {}) => {
@@ -57,6 +58,26 @@ async function main() {
       return JSON.stringify(c);
     });
 
+    await check("parseGoogleClaims keeps an https Google photo URL and drops any other picture claim", async () => {
+      assert(claims().picture === "https://lh3.googleusercontent.com/a/ACg8ocTestPhoto=s96-c", `kept ${claims().picture}`);
+      assert(claims({ picture: "https://lh5.googleusercontent.com/-abc/photo.jpg" }).picture !== null, "lh5 photo dropped");
+      for (const bad of [
+        "http://lh3.googleusercontent.com/a/x",
+        "https://evil.example/a.png",
+        "https://lh3.googleusercontent.com.evil.example/a",
+        "https://user:pw@lh3.googleusercontent.com/a",
+        "https://lh3.googleusercontent.com:8443/a",
+        "javascript:alert(1)",
+        `https://lh3.googleusercontent.com/${"x".repeat(500)}`,
+        42,
+      ]) {
+        const c = claims({ picture: bad });
+        assert(c.picture === null, `accepted ${String(bad).slice(0, 60)}`);
+      }
+      assert(claims({ picture: undefined }).picture === null, "missing picture not null");
+      return "lh3/lh5 https kept; http, other hosts, credentials, ports, non-URLs, >500 chars dropped";
+    });
+
     let newId: bigint | undefined;
     await check("New Google user -> customer created with null password and google_id", async () => {
       const r = await linkGoogleAccount(prisma, claims());
@@ -66,7 +87,8 @@ async function main() {
       const u = await prisma.user.findUniqueOrThrow({ where: { id: r.userId } });
       assert(u.passwordHash === null && u.googleId === `g-${RUN}-new` && u.role === "customer", `row ${u.passwordHash} ${u.googleId} ${u.role}`);
       assert(u.fullName === "Nadia Google" && u.email === `google-${RUN}@example.test`, `${u.fullName} ${u.email}`);
-      return `user ${u.id} "${u.fullName}" <${u.email}>`;
+      assert(u.avatarUrl === "https://lh3.googleusercontent.com/a/ACg8ocTestPhoto=s96-c", `avatar ${u.avatarUrl}`);
+      return `user ${u.id} "${u.fullName}" <${u.email}> with photo`;
     });
 
     await check("Second sign-in by the same google_id finds the same user (even with a changed email claim)", async () => {
@@ -74,6 +96,19 @@ async function main() {
       assert(r.ok && !r.created && r.userId === newId, `got ${r.ok ? r.userId : r.reason}`);
       assert((await prisma.user.count({ where: { googleId: `g-${RUN}-new` } })) === 1, "duplicate rows");
       return `user ${newId}`;
+    });
+
+    await check("Every sign-in refreshes the stored photo: a new picture replaces it, a missing one clears it", async () => {
+      const next = "https://lh3.googleusercontent.com/a/ACg8ocNewPhoto=s96-c";
+      const r1 = await linkGoogleAccount(prisma, claims({ picture: next }));
+      assert(r1.ok && r1.userId === newId, "other user");
+      const u1 = await prisma.user.findUniqueOrThrow({ where: { id: newId! } });
+      assert(u1.avatarUrl === next, `after new photo ${u1.avatarUrl}`);
+      const r2 = await linkGoogleAccount(prisma, claims({ picture: undefined }));
+      assert(r2.ok && r2.userId === newId, "other user");
+      const u2 = await prisma.user.findUniqueOrThrow({ where: { id: newId! } });
+      assert(u2.avatarUrl === null, `after no photo ${u2.avatarUrl}`);
+      return "replaced, then cleared";
     });
 
     await check("No name claim -> full name falls back to the email local part", async () => {
