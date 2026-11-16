@@ -68,6 +68,8 @@ export const getCart = cache(async () => {
         unitPrice: variant.price,
         lineTotal: variant.price * entry.q,
         variantName: variant.name,
+        /** Units left of a tracked size (null: not tracked). The stepper stops there; fewer than qty marks the line. */
+        stock: variant.stock,
         productName: variant.product.name,
         productSlug: variant.product.slug,
         categorySlug: variant.product.category.slug,

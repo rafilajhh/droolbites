@@ -12,13 +12,31 @@ import { useAddToCart } from "./use-add-to-cart";
 /**
  * The round 40px "+" on Card/Menu Item. Single-variant products go straight to
  * the cart; products with several sizes open the size picker (kfcyP) instead.
+ * A product with every size sold out gets a disabled button.
  */
 export function AddButton({ product, className }: { product: ShopProduct; className?: string }) {
-  const t = useMessages(menuMessages).card;
-  const { add, pending, failed } = useAddToCart();
+  const m = useMessages(menuMessages);
+  const t = m.card;
+  const { add, pending, failed, left } = useAddToCart();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const multi = product.variants.length > 1;
+
+  if (product.soldOut) {
+    return (
+      <button
+        type="button"
+        disabled
+        aria-label={m.stock.soldOutLabel(product.name)}
+        className={cn(
+          "flex size-10 shrink-0 cursor-not-allowed items-center justify-center rounded-pill bg-oat text-muted-foreground",
+          className,
+        )}
+      >
+        <Plus className="size-5" aria-hidden />
+      </button>
+    );
+  }
 
   return (
     <>
@@ -49,7 +67,7 @@ export function AddButton({ product, className }: { product: ShopProduct; classN
         <span role="status" className="pointer-events-none absolute right-0 bottom-full z-10 mb-2">
           {failed ? (
             <span className="block rounded-pill bg-error px-3 py-1.5 text-xs leading-[16px] font-semibold whitespace-nowrap text-white shadow-[0_4px_12px_color-mix(in_srgb,var(--ink)_15%,transparent)]">
-              {t.errorShort}
+              {left === null ? t.errorShort : left === 0 ? m.stock.soldOut : m.stock.allInCartShort(left)}
             </span>
           ) : null}
         </span>

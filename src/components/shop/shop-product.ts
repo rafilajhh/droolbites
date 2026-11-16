@@ -11,9 +11,17 @@ import {
 import type { Locale } from "@/i18n/config";
 import { pickMessages } from "@/i18n/config";
 import { menuMessages } from "@/i18n/messages/menu";
+import { stockLeft } from "@/lib/stock";
 
 /** Plain, serializable product used by the client-side shop components. */
-export type ShopVariant = { id: string; name: string; price: number; serves?: string };
+export type ShopVariant = {
+  id: string;
+  name: string;
+  price: number;
+  serves?: string;
+  /** Units left when 0 to LOW_STOCK (0 = sold out); absent when not tracked or plenty are left. */
+  left?: number;
+};
 
 export type ShopProduct = {
   id: string;
@@ -28,6 +36,8 @@ export type ShopProduct = {
   badge?: { label: string; className: string };
   variants: ShopVariant[];
   fromPrice: number;
+  /** Every size is sold out: the card says so and nothing can be added. */
+  soldOut: boolean;
 };
 
 export type ShopCategory = { slug: string; name: string; products: ShopProduct[] };
@@ -45,14 +55,17 @@ type ProductInput = Pick<MenuProduct, "id" | "slug" | "name" | "description" | "
 };
 
 export function toShopProduct(product: ProductInput, locale: Locale): ShopProduct {
-  const t = pickMessages(menuMessages, locale).card;
+  const m = pickMessages(menuMessages, locale);
+  const t = m.card;
   const content = productContent[product.slug];
   const variants: ShopVariant[] = product.variants.map((v) => ({
     id: v.id.toString(),
     name: v.name,
     price: v.price,
     serves: brownieServings[v.name]?.[locale],
+    left: stockLeft(v.stock),
   }));
+  const soldOut = variants.length > 0 && variants.every((v) => v.left === 0);
   const multi = variants.length > 1;
   const tray = isTrayCategory(product.category.slug);
   const last = variants[variants.length - 1]?.name ?? "";
@@ -61,7 +74,10 @@ export function toShopProduct(product: ProductInput, locale: Locale): ShopProduc
   const firstName = variants[0]?.name ?? "";
   const first = cm.test(firstName) && cm.test(last) ? firstName.replace(cm, "") : firstName;
 
-  const badge = content?.badge
+  // Sold out says so instead of Bestseller/New or the size count.
+  const badge = soldOut
+    ? { label: m.stock.soldOut, className: "bg-oat!" }
+    : content?.badge
     ? { label: content.badge.label[locale], className: badgeFill[content.badge.tone] }
     : multi
       ? { label: t.sizes(variants.length), className: badgeFill.lavender }
@@ -83,6 +99,7 @@ export function toShopProduct(product: ProductInput, locale: Locale): ShopProduc
     badge,
     variants,
     fromPrice: variants.reduce((min, v) => Math.min(min, v.price), Number.POSITIVE_INFINITY),
+    soldOut,
   };
 }
 

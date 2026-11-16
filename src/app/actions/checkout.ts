@@ -36,6 +36,7 @@ import {
   type CheckoutField,
 } from "@/lib/orders";
 import { sendOrderPlacedEmail } from "@/lib/order-emails";
+import { findShortLines, type ShortLine } from "@/lib/stock";
 import { canSimulatePayment, getPaymentOptions, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { getStoreSettings, type StoreSettings } from "@/lib/settings";
 import { getLocale } from "@/i18n/server";
@@ -62,6 +63,8 @@ type ErrorKey =
   | "gatewayUnavailable"
   | "gatewayBusy"
   | "cartChanged"
+  | "stock"
+  | "stockGone"
   | "generic";
 
 export type DetailsState = {
@@ -70,7 +73,10 @@ export type DetailsState = {
   attempt: number;
 };
 
-export type PlaceOrderState = { error?: ErrorKey; attempt: number };
+/** A cart line asking for more than is left: "Fudgy Brownies · 15 × 15 cm", 2 left (0 = sold out). */
+export type ShortItem = { name: string; left: number };
+
+export type PlaceOrderState = { error?: ErrorKey; short?: ShortItem[]; attempt: number };
 
 export type PayCheckState = { result?: "awaiting"; attempt: number };
 
@@ -230,6 +236,12 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
 
 class CartChangedError extends Error {}
 
+class StockShortError extends Error {
+  constructor(readonly lines: ShortLine[]) {
+    super("stock");
+  }
+}
+
 /**
  * Step 2 → 3: create the order and its items in one transaction (prices and
  * totals come from the database, never the client), then ask the gateway for
@@ -278,7 +290,7 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   if (!placed.ok) {
     // Failures aren't kept: the customer fixes the cart or method and submits again.
     if (submissions.get(session) === submission) submissions.delete(session);
-    return { error: placed.error, attempt };
+    return { error: placed.error, short: placed.short, attempt };
   }
 
   await writeCartEntries([]);
@@ -288,7 +300,7 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   redirect(placed.charged.ok ? `/checkout/pay/${placed.orderNumber}` : `/checkout/pay/${placed.orderNumber}?change=1&error=${placed.charged.error}`);
 }
 
-type Placed = { ok: true; orderNumber: string; charged: ChargeResult } | { ok: false; error: ErrorKey };
+type Placed = { ok: true; orderNumber: string; charged: ChargeResult } | { ok: false; error: ErrorKey; short?: ShortItem[] };
 
 /**
  * Placed orders per checkout session (hash of the signed db_checkout cookie), kept for
@@ -329,6 +341,9 @@ async function createOrder(
           qty: Math.min(e.q, MAX_QTY),
           unitPrice: prices.get(e.v)!,
         }));
+        // A guard, not a hold: stock only goes down when the order is paid.
+        const short = await findShortLines(tx, items);
+        if (short.length > 0) throw new StockShortError(short);
         const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.qty, 0);
         const deliveryFee = checkoutDeliveryFee(settings, details) ?? 0;
 
@@ -363,6 +378,17 @@ async function createOrder(
       });
     } catch (error) {
       if (error instanceof CartChangedError) return { ok: false, error: "cartChanged" };
+      if (error instanceof StockShortError) {
+        return {
+          ok: false,
+          error: "stock",
+          short: error.lines.map((l) => ({
+            // One-size products ("1 piece", "1 portion") are named alone; sizes are added after a dot.
+            name: /^1 (piece|portion)$/.test(l.variantName) ? l.productName : `${l.productName} · ${l.variantName}`,
+            left: l.left,
+          })),
+        };
+      }
       // Two orders raced for the same number: try the next one.
       if ((error as { code?: string }).code === "P2002" && tries < 2) continue;
       console.error("[checkout] could not place order", error);
@@ -477,7 +503,10 @@ export async function changePaymentMethod(prev: ChangeMethodState, formData: For
   if (outcome.kind !== "charged") redirect(payHref);
   revalidatePath(`/orders/${orderNumber}`);
   const { charged } = outcome;
-  if (!charged.ok) return { error: charged.error === "unavailable" ? "gatewayUnavailable" : "gatewayBusy", attempt };
+  if (!charged.ok) {
+    const error = charged.error === "unavailable" ? "gatewayUnavailable" : charged.error === "stock" ? "stockGone" : "gatewayBusy";
+    return { error, attempt };
+  }
   redirect(payHref);
 }
 
@@ -489,17 +518,19 @@ export async function reorder(prev: ReorderState, formData: FormData): Promise<R
   if (!order) redirect("/menu");
   const available = await db.productVariant.findMany({
     where: { id: { in: order.items.map((i) => i.variantId) }, product: { isAvailable: true } },
-    select: { id: true },
+    select: { id: true, stock: true },
   });
-  const ok = new Set(available.map((v) => v.id.toString()));
+  // Most each size may hold: what's left of a tracked size, else MAX_QTY. Sold-out sizes are skipped.
+  const cap = new Map(available.map((v) => [v.id.toString(), Math.min(MAX_QTY, v.stock ?? MAX_QTY)]));
   const entries = await readCartEntries();
   let added = 0;
   for (const item of order.items) {
     const v = item.variantId.toString();
-    if (!ok.has(v)) continue;
+    const max = cap.get(v) ?? 0;
+    if (max <= 0) continue;
     const existing = entries.find((e) => e.v === v);
-    if (existing) existing.q = Math.min(MAX_QTY, existing.q + item.qty);
-    else entries.push({ v, q: Math.min(MAX_QTY, item.qty) });
+    if (existing) existing.q = Math.max(existing.q, Math.min(max, existing.q + item.qty));
+    else entries.push({ v, q: Math.min(max, item.qty) });
     added++;
   }
   if (added === 0) return { failed: true, attempt: prev.attempt + 1 };

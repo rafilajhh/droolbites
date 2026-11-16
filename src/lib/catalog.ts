@@ -4,7 +4,7 @@ import { db } from "./db";
 
 const productInclude = {
   category: { select: { id: true, name: true, slug: true } },
-  variants: { orderBy: { price: "asc" as const }, select: { id: true, name: true, price: true } },
+  variants: { orderBy: { price: "asc" as const }, select: { id: true, name: true, price: true, stock: true } },
 };
 
 /**

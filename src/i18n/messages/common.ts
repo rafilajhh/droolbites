@@ -48,6 +48,11 @@ export const commonMessages = defineMessages({
       increase: "Increase quantity",
       updateError: "Couldn't update your cart. Please try again.",
       status: (n: number, subtotal: string) => `${n} ${n === 1 ? "item" : "items"}, subtotal ${subtotal}`,
+      /** Stock on a cart line: sold out or short since it was added, or the last ones are in the cart. */
+      soldOut: "Sold out now. Remove it to check out.",
+      short: (n: number) => `Only ${n} left. Lower the quantity to check out.`,
+      last: (n: number) => (n === 1 ? "That's the last one." : `That's all ${n} we have left.`),
+      fixFirst: "Some items ran low. Fix the marked lines before you check out.",
     },
     footer: {
       tagline: "Soft cookies, fudgy brownies and creamy tiramisu from Sememi, Surabaya.",
@@ -121,6 +126,10 @@ export const commonMessages = defineMessages({
       increase: "Tambah jumlah",
       updateError: "Keranjang gagal diperbarui. Coba lagi, ya.",
       status: (n: number, subtotal: string) => `${n} item, subtotal ${subtotal}`,
+      soldOut: "Lagi habis. Hapus dulu untuk checkout.",
+      short: (n: number) => `Sisa ${n}. Kurangi jumlahnya untuk checkout.`,
+      last: (n: number) => (n === 1 ? "Ini yang terakhir." : `Sisa ${n}, semuanya sudah di keranjangmu.`),
+      fixFirst: "Ada item yang stoknya menipis. Perbaiki yang ditandai dulu sebelum checkout.",
     },
     footer: {
       tagline: "Soft cookies, brownies fudgy dan tiramisu yang creamy dari Sememi, Surabaya.",

@@ -10,6 +10,7 @@ import { deliverLater } from "./mail";
 import { sendOrderCancelledEmail, sendOrderPaidEmail, sendStoreNewOrderEmail } from "./order-emails";
 import { getPaymentProvider, PAYMENT_WINDOW_MS, PaymentGatewayError } from "./payments";
 import { signToken, verifyToken } from "./session";
+import { deductOrderStock, findShortLines } from "./stock";
 
 export const ORDER_NUMBER_RE = /^DB-\d{4,9}$/;
 
@@ -301,7 +302,8 @@ export function cancelledByStore(order: {
  * baking. Idempotent (returns false if nothing changed). A late payment is
  * accepted too: gateways confirm up to days after expiry, so an expired or
  * superseded payment can still turn paid and revive an order that was
- * auto-cancelled. The paid email goes out once, after the response.
+ * auto-cancelled. The paid email goes out once, after the response. The
+ * order's items leave stock in the same transaction (deductOrderStock).
  *
  * An order the store cancelled is not revived: the payment is recorded as
  * paid (the money arrived) but the order stays cancelled and unpaid, no email
@@ -327,7 +329,7 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
       if (order.paymentStatus === "awaiting") {
         await tx.order.updateMany({ where: { id: orderId, paymentStatus: "awaiting" }, data: { paymentStatus: "expired" } });
       }
-      return { refund: order.orderNumber };
+      return { refund: order.orderNumber, short: null };
     }
     const { count: orderCount } = await tx.order.updateMany({
       where: { id: orderId, paymentStatus: order.paymentStatus },
@@ -339,11 +341,14 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
     if (order.paymentStatus === "expired" && order.fulfilmentStatus === "cancelled") {
       await tx.order.update({ where: { id: orderId }, data: { fulfilmentStatus: "pending" } });
     }
-    return { refund: null };
+    // Stock goes down with the paid transition, in this transaction, once per order.
+    const { short } = await deductOrderStock(tx, orderId);
+    return { refund: null, short: short ? order.orderNumber : null };
   });
   if (result?.refund) {
     console.warn(`[orders] ${result.refund}: payment ${paymentId} arrived after the order was cancelled; refund needed`);
   }
+  if (result?.short) console.warn(`[orders] ${result.short}: paid while a size had fewer left than ordered (stock stopped at 0)`);
   const changed = result !== null;
   if (result && !result.refund) {
     deliverLater(async () => {
@@ -357,17 +362,23 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
   return changed;
 }
 
-export type ChargeResult = { ok: true } | { ok: false; error: "unavailable" | "busy" };
+export type ChargeResult = { ok: true } | { ok: false; error: "unavailable" | "busy" | "stock" };
 
 /**
  * Ask the gateway for a new payment on an unpaid order (a new reference per
  * attempt: DB-0007-1, DB-0007-2, …) and store it. A gateway refusal comes
  * back as an error kind for the UI; the order is left without a live payment.
+ * Nothing is charged while a tracked size has fewer left than the order holds.
  */
 export async function chargeOrder(
   order: Pick<FullOrder, "id" | "orderNumber" | "total" | "createdAt" | "customerName" | "email" | "phone">,
   method: PaymentMethod,
 ): Promise<ChargeResult> {
+  const items = await db.orderItem.findMany({ where: { orderId: order.id }, select: { variantId: true, qty: true } });
+  if ((await findShortLines(db, items)).length > 0) {
+    console.warn(`[orders] ${order.orderNumber}: not charged, a size has fewer left than ordered`);
+    return { ok: false, error: "stock" };
+  }
   const provider = getPaymentProvider();
   const attempt = (await db.payment.count({ where: { orderId: order.id } })) + 1;
   let reference = `${order.orderNumber}-${attempt}`;

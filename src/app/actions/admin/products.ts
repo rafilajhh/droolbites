@@ -9,6 +9,7 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { slugify } from "@/lib/slug";
+import { MAX_STOCK } from "@/lib/stock";
 import { MAX_UPLOAD_BYTES, sniffImageType, UPLOAD_TYPES } from "@/components/admin/rules";
 
 export type ProductErrorKey =
@@ -18,6 +19,7 @@ export type ProductErrorKey =
   | "sizes"
   | "sizeName"
   | "sizePrice"
+  | "sizeStock"
   | "sizeDuplicate"
   | "sizeInUse"
   | "photoType"
@@ -33,7 +35,7 @@ export type ProductFormState = {
     description?: ProductErrorKey;
     photo?: ProductErrorKey;
     sizes?: ProductErrorKey;
-    rows?: Record<number, { name?: ProductErrorKey; price?: ProductErrorKey }>;
+    rows?: Record<number, { name?: ProductErrorKey; price?: ProductErrorKey; stock?: ProductErrorKey }>;
     form?: ProductErrorKey;
   };
 };
@@ -53,6 +55,10 @@ const productSchema = z.object({
         id: z.union([idSchema, z.literal("")]),
         name: z.string().trim().min(1).max(50),
         price: z.number().int().positive().max(100_000_000),
+        /** Units left; null = not tracked. */
+        stock: z.number().int().min(0).max(MAX_STOCK).nullable(),
+        /** The stock the form was opened with: unchanged means "leave it", so an order paid meanwhile isn't undone. */
+        stockWas: z.number().int().nullable(),
       }),
     )
     .min(1),
@@ -85,10 +91,19 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
   const ids = formData.getAll("variantId").map(String);
   const names = formData.getAll("variantName").map(String);
   const prices = formData.getAll("variantPrice").map((p) => String(p).replace(/\D/g, ""));
+  // Empty = not tracked; anything but whole digits fails the 0..MAX_STOCK check.
+  const stockOf = (value: FormDataEntryValue | undefined) => {
+    const text = String(value ?? "").trim();
+    return text === "" ? null : /^\d{1,5}$/.test(text) ? Number(text) : -1;
+  };
+  const stocks = formData.getAll("variantStock").map(stockOf);
+  const stocksWas = formData.getAll("variantStockWas").map(stockOf);
   const rawVariants = names.map((name, i) => ({
     id: ids[i] ?? "",
     name,
     price: prices[i] ? Number(prices[i]) : 0,
+    stock: stocks[i] ?? null,
+    stockWas: stocksWas[i] ?? null,
   }));
 
   const parsed = productSchema.safeParse({
@@ -110,6 +125,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
         errors.rows[index] ??= {};
         if (sub === "name") errors.rows[index].name = "sizeName";
         else if (sub === "price") errors.rows[index].price = "sizePrice";
+        else if (sub === "stock") errors.rows[index].stock = "sizeStock";
       } else if (field === "variants") errors.sizes = "sizes";
     }
   }
@@ -190,7 +206,7 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
           description: data.description || null,
           imageUrl,
           isAvailable: data.isAvailable,
-          variants: { create: data.variants.map((v) => ({ name: v.name, price: v.price })) },
+          variants: { create: data.variants.map((v) => ({ name: v.name, price: v.price, stock: v.stock })) },
         },
       });
     } else {
@@ -215,10 +231,13 @@ export async function saveProduct(_prev: ProductFormState, formData: FormData): 
           db.productVariant.update({ where: { id: BigInt(v.id) }, data: { name: `~${randomUUID().slice(0, 40)}` } }),
         ),
         ...updates.map((v) =>
-          db.productVariant.update({ where: { id: BigInt(v.id) }, data: { name: v.name, price: v.price } }),
+          db.productVariant.update({
+            where: { id: BigInt(v.id) },
+            data: { name: v.name, price: v.price, ...(v.stock !== v.stockWas ? { stock: v.stock } : {}) },
+          }),
         ),
         ...creates.map((v) =>
-          db.productVariant.create({ data: { productId: existing.id, name: v.name, price: v.price } }),
+          db.productVariant.create({ data: { productId: existing.id, name: v.name, price: v.price, stock: v.stock } }),
         ),
       ]);
       if (savedFile && existing.imageUrl !== savedFile) await removeUpload(existing.imageUrl);

@@ -120,7 +120,15 @@ export const checkoutMessages = defineMessages({
       gatewayUnavailable: "This payment method isn't available right now. Please choose another one.",
       gatewayBusy: "The payment service is busy. Please try again in a moment.",
       cartChanged: "Some items in your cart are no longer available. Please review your cart.",
+      stock: "Sorry, some items just ran low:",
+      stockGone: "Some items in this order sold out in the meantime, so it can't be paid now. Please order again from the menu.",
       generic: "Something went wrong. Please try again.",
+    },
+    /** What's short when the order is placed: "Red Velvet (sold out)", "Fudgy Brownies · 15 × 15 cm (only 2 left)". */
+    stock: {
+      soldOut: (name: string) => `${name} (sold out)`,
+      left: (name: string, n: number) => `${name} (only ${n} left)`,
+      fix: "Fix my cart",
     },
     payment: {
       title: "Payment",
@@ -561,7 +569,14 @@ export const checkoutMessages = defineMessages({
       gatewayUnavailable: "Metode pembayaran ini sedang tidak tersedia. Pilih yang lain, ya.",
       gatewayBusy: "Layanan pembayaran sedang sibuk. Coba lagi sebentar lagi, ya.",
       cartChanged: "Ada item di keranjang yang sudah tidak tersedia. Cek lagi keranjangmu, ya.",
+      stock: "Maaf, stok beberapa item barusan menipis:",
+      stockGone: "Ada item di pesanan ini yang keburu habis, jadi belum bisa dibayar. Pesan lagi dari menu, ya.",
       generic: "Ada kendala. Coba lagi, ya.",
+    },
+    stock: {
+      soldOut: (name: string) => `${name} (habis)`,
+      left: (name: string, n: number) => `${name} (sisa ${n})`,
+      fix: "Perbaiki keranjang",
     },
     payment: {
       title: "Pembayaran",

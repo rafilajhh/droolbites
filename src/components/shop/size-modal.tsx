@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X } from "lucide-react";
@@ -13,6 +13,7 @@ import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
 import { formatRupiah } from "@/lib/format";
 import type { ShopProduct } from "./shop-product";
+import { SizeSub, useAddError, useSizeChoice } from "./stock";
 import { useAddToCart } from "./use-add-to-cart";
 
 /**
@@ -25,15 +26,14 @@ export function SizeModal({ product, open, onClose }: { product: ShopProduct; op
 }
 
 function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: () => void }) {
-  const t = useMessages(menuMessages).sizeModal;
+  const m = useMessages(menuMessages);
+  const t = m.sizeModal;
   const panelRef = useModal(true, onClose);
   const titleId = useId();
-  const [variantId, setVariantId] = useState(product.variants[0].id);
-  const [qty, setQty] = useState(1);
-  const { add, pending, failed } = useAddToCart();
-  const errorText = useMessages(menuMessages).card.error;
+  const { variant, setVariantId, qty, setQty, max, soldOut } = useSizeChoice(product);
+  const { add, pending, failed, left } = useAddToCart();
+  const errorText = useAddError(left, m.card.error);
 
-  const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   const isTray = isTrayCategory(product.categorySlug);
 
   return (
@@ -80,10 +80,11 @@ function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: (
                 key={v.id}
                 name={`size-${product.id}`}
                 value={v.id}
-                checked={v.id === variantId}
+                checked={v.id === variant.id}
                 onChange={setVariantId}
+                disabled={v.left === 0}
                 title={v.name}
-                sub={v.serves}
+                sub={<SizeSub serves={v.serves} left={v.left} />}
                 meta={<span className="text-base font-bold">{formatRupiah(v.price)}</span>}
                 className="min-h-[71px] px-[18px]! py-3.5! inset-ring-[1.5px]!"
               />
@@ -95,21 +96,27 @@ function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: (
               value={qty}
               onChange={setQty}
               min={1}
-              max={99}
+              max={max}
+              disabled={soldOut}
               labels={{ decrease: t.decrease, increase: t.increase }}
               className="bg-white"
             />
             <Button
               className="min-w-0 flex-1 px-4 aria-disabled:cursor-wait aria-disabled:opacity-50 sm:px-7"
+              disabled={soldOut}
               aria-disabled={pending || undefined}
               aria-busy={pending || undefined}
               onClick={() => add(variant.id, qty, onClose)}
             >
-              <span>
-                {t.addVerb}
-                <span className="max-sm:sr-only">{t.addRest}</span>
-                {` · ${formatRupiah(variant.price * qty)}`}
-              </span>
+              {soldOut ? (
+                <span className="uppercase">{m.stock.soldOut}</span>
+              ) : (
+                <span>
+                  {t.addVerb}
+                  <span className="max-sm:sr-only">{t.addRest}</span>
+                  {` · ${formatRupiah(variant.price * qty)}`}
+                </span>
+              )}
             </Button>
           </div>
           {failed ? (

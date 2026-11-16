@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BellRing, CircleCheck, Cookie, Hourglass, Wallet } from "lucide-react";
+import { BellRing, CircleAlert, CircleCheck, Cookie, Hourglass, Wallet } from "lucide-react";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badges";
 import { AdminMain, CellLabel, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatRupiah, formatTime } from "@/lib/format";
 import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere, paymentStatusInfo } from "@/lib/order-status";
 import { cn } from "@/lib/cn";
+import { LOW_STOCK } from "@/lib/stock";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
 
@@ -33,6 +34,9 @@ function jakartaNow(locale: "en" | "id", now = new Date()) {
   return { label: `${get("weekday")}, ${get("day")} ${get("month")}`.toUpperCase(), hour: Number(get("hour")) };
 }
 
+/** Low-stock sizes listed in "Your menu"; the rest are a link to the products page. */
+const LOW_ROWS = 5;
+
 const dayKey = (date: Date) => date.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
 
 /** pen: Admin / Overview (a6LxRK). */
@@ -47,7 +51,7 @@ export default async function AdminOverviewPage() {
     createdAt: true,
     payments: { where: { status: "paid" }, orderBy: { paidAt: "desc" }, take: 1, select: { paidAt: true } },
   } as const;
-  const [awaiting, paid, productsOnMenu, variantsOnMenu, newOrders, inProgress, recent, categories] = await Promise.all([
+  const [awaiting, paid, productsOnMenu, variantsOnMenu, newOrders, inProgress, recent, categories, lowStock, shortOrders] = await Promise.all([
     db.order.count({ where: { paymentStatus: "awaiting", fulfilmentStatus: { not: "cancelled" } } }),
     // Paid but later cancelled by the store (a refund) is not money kept.
     db.order.aggregate({
@@ -73,6 +77,23 @@ export default async function AdminOverviewPage() {
         name: true,
         products: { where: { isAvailable: true }, select: { _count: { select: { variants: true } } } },
       },
+    }),
+    // Sizes on the menu with LOW_STOCK or fewer left (sold out first).
+    db.productVariant.findMany({
+      where: { stock: { not: null, lte: LOW_STOCK }, product: { isAvailable: true } },
+      orderBy: [{ stock: "asc" }, { productId: "asc" }, { price: "asc" }],
+      select: {
+        id: true,
+        name: true,
+        stock: true,
+        product: { select: { id: true, name: true, _count: { select: { variants: true } } } },
+      },
+    }),
+    // Paid while a size had fewer left than ordered, and still to be baked or handed over.
+    db.order.findMany({
+      where: { stockShort: true, paymentStatus: "paid", fulfilmentStatus: { notIn: ["completed", "cancelled"] } },
+      orderBy: { createdAt: "asc" },
+      select: { orderNumber: true },
     }),
   ]);
 
@@ -139,6 +160,33 @@ export default async function AdminOverviewPage() {
           </div>
         </div>
       )}
+
+      {/* Paid orders that came up short: a slim banner of their own, each order linked. */}
+      {shortOrders.length > 0 ? (
+        <div className="flex w-full flex-wrap items-center gap-4 rounded-m bg-tint-salmon px-5 py-[18px]" role="alert">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-pill bg-white">
+            <CircleAlert className="size-5 text-error" aria-hidden />
+          </span>
+          <div className="flex min-w-[200px] flex-1 flex-col">
+            <p className="text-base leading-6 font-bold">
+              {shortOrders.length === 1 ? o.shortOne(shortOrders[0].orderNumber) : o.shortMany(shortOrders.length)}
+            </p>
+            <p className="text-sm leading-[21px] text-muted-foreground">{o.shortSub}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {shortOrders.slice(0, 3).map(({ orderNumber }) => (
+              <Link
+                key={orderNumber}
+                href={`/admin/orders/${orderNumber}`}
+                aria-label={t.orders.viewLabel(orderNumber)}
+                className="inline-flex items-center justify-center rounded-sm bg-primary px-5 py-3 font-display text-[13px] leading-4 font-semibold tracking-[0.5px] text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                {shortOrders.length === 1 ? o.viewOrder : orderNumber}
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* One strip for the three figures; from xl its last column lines up with "Your menu" below. */}
       <PaneCard as="div" cols="grid-cols-1 md:grid-cols-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_360px]">
@@ -276,6 +324,34 @@ export default async function AdminOverviewPage() {
               );
             })}
           </ul>
+          {/* Sizes running low, under the categories in the same pane: each links to its product. */}
+          {lowStock.length > 0 ? (
+            <div className="flex flex-col pt-2">
+              <p className={cn(thClasses, "pb-1")}>{o.stockTitle}</p>
+              <ul className="flex flex-col">
+                {lowStock.slice(0, LOW_ROWS).map((v) => (
+                  <li key={v.id.toString()} className="shadow-[inset_0_-1px_0_var(--border-subtle)]">
+                    <Link
+                      href={`/admin/products/${v.product.id}/edit`}
+                      className="group flex items-center gap-2.5 py-2.5 text-[15px] leading-[23px]"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-semibold group-hover:underline">
+                        {v.product._count.variants > 1 ? `${v.product.name} · ${v.name}` : v.product.name}
+                      </span>
+                      <StatusBadge tone={v.stock === 0 ? "crimson" : "mustard"} className="whitespace-nowrap">
+                        {v.stock === 0 ? t.products.soldOut : t.products.stockLeft(v.stock ?? 0)}
+                      </StatusBadge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              {lowStock.length > LOW_ROWS ? (
+                <Link href="/admin/products" className="pt-2.5 text-sm leading-[21px] font-semibold text-primary hover:underline">
+                  {o.stockMore(lowStock.length - LOW_ROWS)}
+                </Link>
+              ) : null}
+            </div>
+          ) : null}
           {/* From xl the pane is as tall as Recent orders: the button closes it at the bottom, level with the last order row. */}
           <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full xl:mt-auto")}>
             {o.manage}

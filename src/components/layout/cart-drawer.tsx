@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { ArrowRight, Trash2, X } from "lucide-react";
 import { setCartQty, removeFromCart } from "@/app/actions/cart";
 import { useLocale, useMessages } from "@/i18n/client";
@@ -11,6 +11,8 @@ import { variantLabel } from "@/content/products";
 import { buttonClasses } from "@/components/ui/button";
 import { SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
+import { StockBadge } from "@/components/shop/stock";
+import { LOW_STOCK } from "@/lib/stock";
 import { photoFrame } from "@/components/ui/snapshot";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -29,8 +31,17 @@ const singleUnit = /^1 (piece|portion)$/;
 export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: number }) {
   const t = useMessages(commonMessages).cart;
   const locale = useLocale();
-  const { panel, close } = useShopUI();
+  const { panel, open, close } = useShopUI();
   const isOpen = panel === "cart";
+
+  // Checkout sends a shopper whose cart ran short to /menu?cart=open: open the drawer on the marked lines.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("cart") !== "open") return;
+    url.searchParams.delete("cart");
+    window.history.replaceState(window.history.state, "", url);
+    open("cart");
+  }, [open]);
   const panelRef = useModal(isOpen, close);
   const [, startTransition] = useTransition();
 
@@ -40,6 +51,7 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
       : current.map((l) => (l.variantId === change.id ? { ...l, qty: change.qty, lineTotal: l.unitPrice * change.qty } : l)),
   );
   const count = lines.reduce((s, l) => s + l.qty, 0);
+  const anyShort = lines.some((l) => l.stock !== null && l.qty > l.stock);
   const subtotal = lines.reduce((s, l) => s + l.lineTotal, 0);
 
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -132,6 +144,8 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                 ]
                   .filter(Boolean)
                   .join(" · ");
+                const stock = line.stock === null ? null : Math.max(line.stock, 0);
+                const short = stock !== null && line.qty > stock;
                 return (
                   <li key={line.variantId} className="flex w-full gap-4 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] last:shadow-none">
                     <div className={cn(photoFrame, "size-[72px] shrink-0 rounded-sm bg-oat")}>
@@ -144,6 +158,15 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                         <div className="flex min-w-0 flex-col gap-0.5">
                           <p className="font-display text-[17px] leading-[21px] font-semibold text-foreground">{line.productName}</p>
                           {meta ? <p className="text-[13px] leading-[18px] text-muted-foreground">{meta}</p> : null}
+                          {short ? (
+                            <p className="text-[13px] leading-[18px] font-semibold text-error">
+                              {stock === 0 ? t.soldOut : t.short(stock)}
+                            </p>
+                          ) : stock !== null && line.qty === stock ? (
+                            <p className="text-[13px] leading-[18px] text-muted-foreground">{t.last(stock)}</p>
+                          ) : stock !== null && stock <= LOW_STOCK ? (
+                            <StockBadge left={stock} className="mt-1" />
+                          ) : null}
                         </div>
                         <p className="shrink-0 text-[15px] leading-[21px] font-bold text-foreground tabular-nums">
                           {formatRupiah(line.lineTotal)}
@@ -154,6 +177,8 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                           size="sm"
                           value={line.qty}
                           min={1}
+                          // A tracked size stops at what's left (a line already over it can only go down).
+                          max={stock === null ? 99 : Math.min(99, Math.max(stock, 1))}
                           onChange={(qty) => changeQty(line.variantId, qty)}
                           labels={{ decrease: t.decrease, increase: t.increase }}
                         />
@@ -183,6 +208,8 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                 <p role="alert" className="text-[13px] leading-normal font-semibold text-error">
                   {t.updateError}
                 </p>
+              ) : anyShort ? (
+                <p className="text-[13px] leading-normal font-semibold text-error">{t.fixFirst}</p>
               ) : null}
               <div className="flex flex-col gap-1">
                 <SummaryRow

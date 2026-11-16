@@ -53,9 +53,19 @@ export function PaymentForm({
   const errorText = error ? (
     <>
       {t.errors[error]}{" "}
+      {error === "stock" && state.short?.length ? (
+        <>
+          {state.short.map((item) => (item.left === 0 ? t.stock.soldOut(item.name) : t.stock.left(item.name, item.left))).join(", ")}.{" "}
+        </>
+      ) : null}
       {error === "cartChanged" ? (
         <Link href="/menu" className="font-bold underline">
           {t.header.back}
+        </Link>
+      ) : error === "stock" ? (
+        // The menu opens the cart drawer, where those lines are marked.
+        <Link href="/menu?cart=open" className="font-bold underline">
+          {t.stock.fix}
         </Link>
       ) : null}
     </>

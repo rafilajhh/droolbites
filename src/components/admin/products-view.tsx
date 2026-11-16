@@ -7,6 +7,7 @@ import { categoryName, productImageUrl } from "@/content/products";
 import { db } from "@/lib/db";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { LOW_STOCK, stockStatus } from "@/lib/stock";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
 import { categoryStyle } from "./rules";
@@ -56,7 +57,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
       imageUrl: true,
       isAvailable: true,
       category: { select: { slug: true, name: true } },
-      variants: { select: { price: true }, orderBy: { price: "asc" } },
+      variants: { select: { name: true, price: true, stock: true }, orderBy: [{ price: "asc" }, { id: "asc" }] },
     },
   });
 
@@ -81,7 +82,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
           <div className="relative w-full overflow-x-auto">
             <table
               aria-label={t.products.title}
-              className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[820px]"
+              className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[900px]"
             >
               <thead className="max-xl:hidden">
                 <tr>
@@ -97,7 +98,10 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                   <th scope="col" className={cn(listThClasses, "w-[150px]")}>
                     {c.price}
                   </th>
-                  <th scope="col" className={cn(listThClasses, "w-[150px]")}>
+                  <th scope="col" className={cn(listThClasses, "w-[170px]")}>
+                    {c.stock}
+                  </th>
+                  <th scope="col" className={cn(listThClasses, "w-[120px]")}>
                     {c.availability}
                   </th>
                   <th scope="col" className={cn(listThClasses, "w-[96px] pr-4")}>
@@ -110,7 +114,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                 {products.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground xl:table-cell"
                     >
                       {t.products.empty}
@@ -119,6 +123,19 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                 ) : (
                   products.map((p) => {
                     const from = p.variants[0]?.price;
+                    // Stock: plenty shows the total of the tracked sizes; running low or sold out shows the badge,
+                    // with what's left under it (one size) or which sizes are low (several).
+                    const tracked = p.variants.filter((v): v is typeof v & { stock: number } => v.stock !== null);
+                    const stock = stockStatus(p.variants.map((v) => v.stock));
+                    const stockNote =
+                      stock !== "low"
+                        ? null
+                        : p.variants.length > 1
+                          ? tracked
+                              .filter((v) => v.stock <= LOW_STOCK)
+                              .map((v) => t.products.sizeLeft(v.name, v.stock))
+                              .join(" · ")
+                          : t.products.stockLeft(tracked[0]?.stock ?? 0);
                     return (
                       <tr key={p.id.toString()} className={mobileCardRowClasses}>
                         <th
@@ -161,6 +178,23 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                               ? t.products.from(formatRupiah(from))
                               : formatRupiah(from)}
                           <span className="xl:hidden"> · {t.products.optionsCount(p.variants.length)}</span>
+                        </td>
+                        <td className={cn("py-3 pr-4 max-xl:order-4 max-xl:p-0", !stock && "max-xl:hidden")}>
+                          <CellLabel until="xl">{c.stock}</CellLabel>
+                          {tracked.length === 0 ? (
+                            <span className="text-sm leading-[21px] text-muted-foreground">{t.products.notTracked}</span>
+                          ) : stock ? (
+                            <span className="inline-flex flex-col items-start gap-1">
+                              <StatusBadge tone={stock === "soldOut" ? "crimson" : "mustard"} className="whitespace-nowrap">
+                                {stock === "soldOut" ? t.products.soldOut : t.products.lowStock}
+                              </StatusBadge>
+                              {stockNote ? <span className="text-[13px] leading-5 text-muted-foreground">{stockNote}</span> : null}
+                            </span>
+                          ) : (
+                            <span className="text-[15px] leading-[23px] font-medium tabular-nums">
+                              {t.products.stockLeft(tracked.reduce((sum, v) => sum + v.stock, 0))}
+                            </span>
+                          )}
                         </td>
                         <td className="py-3 max-xl:order-4 max-xl:p-0">
                           <CellLabel until="xl">{c.availability}</CellLabel>

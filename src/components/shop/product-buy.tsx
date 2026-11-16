@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { useMessages } from "@/i18n/client";
+import { menuMessages } from "@/i18n/messages/menu";
 import { productMessages } from "@/i18n/messages/product";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import type { ShopProduct } from "./shop-product";
+import { SizeSub, StockBadge, useAddError, useSizeChoice } from "./stock";
 import { useAddToCart } from "./use-add-to-cart";
 
 /**
@@ -38,10 +40,10 @@ export function ProductBuy({
   pickup: boolean;
 }) {
   const t = useMessages(productMessages);
-  const [variantId, setVariantId] = useState(product.variants[0].id);
-  const [qty, setQty] = useState(1);
-  const { add, pending, failed } = useAddToCart();
-  const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
+  const stock = useMessages(menuMessages).stock;
+  const { variant, setVariantId, qty, setQty, max, soldOut } = useSizeChoice(product);
+  const { add, pending, failed, left } = useAddToCart();
+  const errorText = useAddError(left, t.error);
   const multi = product.variants.length > 1;
 
   // The pinned bar shows while the in-box Add row is off screen, and hides once the page's end
@@ -65,7 +67,9 @@ export function ProductBuy({
   }, []);
   const barShown = !addRowVisible && !endVisible;
 
-  const addLabel = (
+  const addLabel = soldOut ? (
+    <span className="uppercase">{stock.soldOut}</span>
+  ) : (
     // One inline run so the button's flex gap does not split the label.
     <span>
       {t.addToCart.verb}
@@ -84,6 +88,9 @@ export function ProductBuy({
             {formatRupiah(variant.price)}
           </span>
           {unit ? <span className="text-[15px] leading-[23px] text-muted-foreground">{unit}</span> : null}
+          {/* One size running low: the note sits with the price (sold out is the photo's sticker and the
+              button; several sizes show it on each tile). */}
+          {!multi && variant.left ? <StockBadge left={variant.left} className="mb-[3px]" /> : null}
         </p>
         {rating ? (
           <a
@@ -117,10 +124,11 @@ export function ProductBuy({
                 key={v.id}
                 name="size"
                 value={v.id}
-                checked={v.id === variantId}
+                checked={v.id === variant.id}
                 onChange={setVariantId}
+                disabled={v.left === 0}
                 title={v.name}
-                sub={v.serves}
+                sub={<SizeSub serves={v.serves} left={v.left} />}
                 meta={<span className="text-base font-bold">{formatRupiah(v.price)}</span>}
                 className="min-h-[71px] px-[18px]! py-3.5! inset-ring-[1.5px]!"
               />
@@ -132,12 +140,14 @@ export function ProductBuy({
             value={qty}
             onChange={setQty}
             min={1}
-            max={99}
+            max={max}
+            disabled={soldOut}
             labels={{ decrease: t.decrease, increase: t.increase }}
             className="bg-white"
           />
           <Button
             className="min-w-0 flex-1 px-4 aria-disabled:cursor-wait aria-disabled:opacity-50 sm:min-w-[200px] sm:px-7"
+            disabled={soldOut}
             aria-disabled={pending || undefined}
             aria-busy={pending || undefined}
             onClick={() => add(variant.id, qty)}
@@ -147,7 +157,7 @@ export function ProductBuy({
         </div>
         {failed ? (
           <p role="alert" className="text-sm leading-[21px] font-semibold text-error">
-            {t.error}
+            {errorText}
           </p>
         ) : null}
         {deliveryFee || pickup ? (
@@ -178,7 +188,7 @@ export function ProductBuy({
         )}
       >
         {/* The box's own alert announces the error; this is the visible copy next to the button used. */}
-        {failed ? <p className="text-sm leading-[21px] font-semibold text-error">{t.error}</p> : null}
+        {failed ? <p className="text-sm leading-[21px] font-semibold text-error">{errorText}</p> : null}
         <div className="flex items-center gap-3 sm:gap-4">
           <p className="flex min-w-0 flex-1 flex-col">
             <span className="truncate text-[13px] leading-5 text-muted-foreground">
@@ -192,12 +202,14 @@ export function ProductBuy({
             value={qty}
             onChange={setQty}
             min={1}
-            max={99}
+            max={max}
+            disabled={soldOut}
             labels={{ decrease: t.decrease, increase: t.increase }}
             className="hidden bg-white sm:inline-flex"
           />
           <Button
             className="shrink-0 px-5 aria-disabled:cursor-wait aria-disabled:opacity-50"
+            disabled={soldOut}
             aria-disabled={pending || undefined}
             aria-busy={pending || undefined}
             onClick={() => add(variant.id, qty)}

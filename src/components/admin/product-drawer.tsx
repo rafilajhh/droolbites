@@ -27,16 +27,17 @@ export type DrawerProduct = {
   isAvailable: boolean;
   imageUrl: string | null;
   hasOrders: boolean;
-  variants: { id: string; name: string; price: number; inUse: boolean }[];
+  variants: { id: string; name: string; price: number; stock: number | null; inUse: boolean }[];
 };
 
-type Row = { key: string; id: string; name: string; price: string; inUse: boolean };
+/** `stock` is the field's text ("" = not tracked); `stockWas` what the size had when the form opened. */
+type Row = { key: string; id: string; name: string; price: string; stock: string; stockWas: string; inUse: boolean };
 
 const cellClasses =
   "w-full rounded-sm bg-white px-3.5 py-[11px] text-[15px] leading-[23px] text-foreground placeholder:text-muted-foreground inset-ring-[1.25px] inset-ring-border-input outline-hidden transition-shadow focus-visible:inset-ring-2 focus-visible:inset-ring-primary aria-[invalid=true]:inset-ring-error";
 
 let rowSeq = 0;
-const newRow = (): Row => ({ key: `new-${++rowSeq}`, id: "", name: "", price: "", inUse: false });
+const newRow = (): Row => ({ key: `new-${++rowSeq}`, id: "", name: "", price: "", stock: "", stockWas: "", inUse: false });
 
 /** pen: Add Drawer (AxKj6) and Edit Drawer (Z3eYvb), 560px from the right over the product list. */
 export function ProductDrawer({
@@ -64,7 +65,10 @@ export function ProductDrawer({
   const [available, setAvailable] = useState(product?.isAvailable ?? true);
   const [rows, setRows] = useState<Row[]>(() =>
     product?.variants.length
-      ? product.variants.map((v) => ({ key: v.id, id: v.id, name: v.name, price: String(v.price), inUse: v.inUse }))
+      ? product.variants.map((v) => {
+          const stock = v.stock === null ? "" : String(v.stock);
+          return { key: v.id, id: v.id, name: v.name, price: String(v.price), stock, stockWas: stock, inUse: v.inUse };
+        })
       : [newRow()],
   );
   const [preview, setPreview] = useState<string | null>(null);
@@ -278,9 +282,16 @@ export function ProductDrawer({
                   {t.addSize}
                 </button>
               </div>
+              {/* Column names over the size rows; the inputs carry their own labels for screen readers. */}
+              <div aria-hidden className="flex w-full items-center gap-2.5 text-xs leading-4 font-semibold text-muted-foreground">
+                <span className="min-w-0 flex-1">{t.colSize}</span>
+                <span className="w-[112px] shrink-0 sm:w-[144px]">{t.colPrice}</span>
+                <span className="w-[72px] shrink-0 sm:w-[88px]">{t.colStock}</span>
+                {rows.length > 1 ? <span className="w-[18px] shrink-0" /> : null}
+              </div>
               {rows.map((row, i) => {
                 const rowErr = errors.rows?.[i];
-                const rowErrId = rowErr?.name || rowErr?.price ? `${id}-row-${i}-error` : undefined;
+                const rowErrId = rowErr?.name || rowErr?.price || rowErr?.stock ? `${id}-row-${i}-error` : undefined;
                 return (
                   <div key={row.key} className="flex w-full flex-col gap-1">
                     <div className="flex w-full items-center gap-2.5">
@@ -307,7 +318,19 @@ export function ProductDrawer({
                         aria-required="true"
                         aria-invalid={rowErr?.price ? true : undefined}
                         aria-describedby={rowErr?.price ? rowErrId : undefined}
-                        className={cn(cellClasses, "w-[120px] shrink-0 sm:w-[160px]")}
+                        className={cn(cellClasses, "w-[112px] shrink-0 sm:w-[144px]")}
+                      />
+                      <input type="hidden" name="variantStockWas" value={row.stockWas} />
+                      <input
+                        name="variantStock"
+                        inputMode="numeric"
+                        value={row.stock}
+                        onChange={(e) => update(row.key, { stock: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                        placeholder="—"
+                        aria-label={t.sizeStock(i + 1)}
+                        aria-describedby={[rowErr?.stock ? rowErrId : null, `${id}-stock-hint`].filter(Boolean).join(" ")}
+                        aria-invalid={rowErr?.stock ? true : undefined}
+                        className={cn(cellClasses, "w-[72px] shrink-0 tabular-nums sm:w-[88px]")}
                       />
                       {rows.length > 1 ? (
                         <button
@@ -327,7 +350,7 @@ export function ProductDrawer({
                     </div>
                     {rowErrId ? (
                       <p id={rowErrId} role="alert" className="text-[13px] leading-5 text-error">
-                        {err(rowErr?.name) ?? err(rowErr?.price)}
+                        {err(rowErr?.name) ?? err(rowErr?.price) ?? err(rowErr?.stock)}
                       </p>
                     ) : null}
                   </div>
@@ -338,6 +361,9 @@ export function ProductDrawer({
                   {err(errors.sizes)}
                 </p>
               ) : null}
+              <p id={`${id}-stock-hint`} className="text-[13px] leading-5 text-muted-foreground">
+                {t.stockHint}
+              </p>
               {rows.some((r) => r.inUse) ? (
                 <p className="flex items-center gap-1.5 text-[13px] leading-5 text-muted-foreground">
                   <Lock className="size-3.5 shrink-0" aria-hidden />

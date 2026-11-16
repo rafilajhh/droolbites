@@ -20,7 +20,7 @@ async function loadProduct(id: string) {
       imageUrl: true,
       variants: {
         orderBy: [{ price: "asc" }, { id: "asc" }],
-        select: { id: true, name: true, price: true, _count: { select: { orderItems: true } } },
+        select: { id: true, name: true, price: true, stock: true, _count: { select: { orderItems: true } } },
       },
     },
   });
@@ -60,6 +60,7 @@ export default async function AdminEditProductPage({ params, searchParams }: Pag
             id: v.id.toString(),
             name: v.name,
             price: v.price,
+            stock: v.stock,
             inUse: v._count.orderItems > 0,
           })),
         }}

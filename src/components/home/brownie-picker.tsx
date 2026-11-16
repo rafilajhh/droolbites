@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -8,6 +7,7 @@ import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
 import { formatRupiah } from "@/lib/format";
 import type { ShopProduct } from "@/components/shop/shop-product";
+import { SizeSub, useAddError, useSizeChoice } from "@/components/shop/stock";
 import { useAddToCart } from "@/components/shop/use-add-to-cart";
 
 /**
@@ -17,10 +17,9 @@ import { useAddToCart } from "@/components/shop/use-add-to-cart";
 export function BrowniePicker({ product, legend }: { product: ShopProduct; legend: string }) {
   const m = useMessages(menuMessages);
   const t = m.sizeModal;
-  const [variantId, setVariantId] = useState(product.variants[0].id);
-  const [qty, setQty] = useState(1);
-  const { add, pending, failed } = useAddToCart();
-  const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
+  const { variant, setVariantId, qty, setQty, max, soldOut } = useSizeChoice(product);
+  const { add, pending, failed, left } = useAddToCart();
+  const errorText = useAddError(left, m.card.error);
 
   return (
     <div className="@container flex w-full flex-col gap-4">
@@ -32,10 +31,11 @@ export function BrowniePicker({ product, legend }: { product: ShopProduct; legen
             key={v.id}
             name={`home-size-${product.id}`}
             value={v.id}
-            checked={v.id === variantId}
+            checked={v.id === variant.id}
             onChange={setVariantId}
+            disabled={v.left === 0}
             title={<span className="whitespace-nowrap">{v.name}</span>}
-            sub={v.serves}
+            sub={<SizeSub serves={v.serves} left={v.left} />}
             meta={<span className="text-base font-bold">{formatRupiah(v.price)}</span>}
             className="min-h-16 px-[18px]! py-3!"
           />
@@ -47,26 +47,32 @@ export function BrowniePicker({ product, legend }: { product: ShopProduct; legen
           value={qty}
           onChange={setQty}
           min={1}
-          max={99}
+          max={max}
+          disabled={soldOut}
           labels={{ decrease: t.decrease, increase: t.increase }}
           className="bg-white"
         />
         <Button
           className="min-w-0 flex-1 px-4 aria-disabled:cursor-wait aria-disabled:opacity-50 sm:px-7"
+          disabled={soldOut}
           aria-disabled={pending || undefined}
           aria-busy={pending || undefined}
           onClick={() => add(variant.id, qty)}
         >
-          <span>
-            {t.addVerb}
-            <span className="max-sm:sr-only">{t.addRest}</span>
-            {` · ${formatRupiah(variant.price * qty)}`}
-          </span>
+          {soldOut ? (
+            <span className="uppercase">{m.stock.soldOut}</span>
+          ) : (
+            <span>
+              {t.addVerb}
+              <span className="max-sm:sr-only">{t.addRest}</span>
+              {` · ${formatRupiah(variant.price * qty)}`}
+            </span>
+          )}
         </Button>
       </div>
       {failed ? (
         <p role="alert" className="text-sm leading-normal font-semibold text-error">
-          {m.card.error}
+          {errorText}
         </p>
       ) : null}
     </div>

@@ -89,6 +89,16 @@ export const menuMessages = defineMessages({
       decrease: "Decrease quantity",
       increase: "Increase quantity",
     },
+    /** Stock notes on cards, the size picker and the product page (shown only for 0 to 5 left). */
+    stock: {
+      left: (n: number) => `Only ${n} left`,
+      soldOut: "Sold out",
+      soldOutLabel: (name: string) => `${name} is sold out`,
+      /** Why an add was refused: sold out meanwhile, or the cart already holds all that's left. */
+      soldOutNow: "Sorry, that just sold out.",
+      allInCart: (n: number) => (n === 1 ? "The last one is already in your cart." : `All ${n} left are already in your cart.`),
+      allInCartShort: (n: number) => (n === 1 ? "Last one's in your cart" : `All ${n} are in your cart`),
+    },
   },
   id: {
     metaTitle: "Menu kami",
@@ -137,6 +147,14 @@ export const menuMessages = defineMessages({
       addRest: " KE KERANJANG",
       decrease: "Kurangi jumlah",
       increase: "Tambah jumlah",
+    },
+    stock: {
+      left: (n: number) => `Sisa ${n}`,
+      soldOut: "Habis",
+      soldOutLabel: (name: string) => `${name} lagi habis`,
+      soldOutNow: "Yah, barusan habis.",
+      allInCart: (n: number) => (n === 1 ? "Yang terakhir sudah ada di keranjangmu." : `Semua sisa ${n} sudah ada di keranjangmu.`),
+      allInCartShort: (n: number) => (n === 1 ? "Yang terakhir sudah di keranjang" : `Sisa ${n} sudah di keranjang semua`),
     },
   },
 });

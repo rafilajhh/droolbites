@@ -86,13 +86,17 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   // Completed and Cancelled are final: the status shows as information, not as a disabled form.
   const closed = order.fulfilmentStatus === "completed" || order.fulfilmentStatus === "cancelled";
 
+  // Paid while a size had fewer left than ordered (stock stopped at 0): warn until the order is closed.
+  const stockShort = order.stockShort && !closed;
   const lines = order.items.map((item) => {
     const label = variantLabel(item.variant.name, item.variant.product.category.slug, locale);
+    const short = stockShort && item.stockTaken !== null && item.stockTaken < item.qty;
     return {
       id: item.id.toString(),
       name: item.variant.product.name,
       imageUrl: productImageUrl(item.variant.product.slug, item.variant.product.imageUrl),
       meta: item.qty === 1 ? label : `${item.qty} × ${label}`,
+      short: short ? o.shortItem(item.stockTaken ?? 0, item.qty) : null,
       price: formatRupiah(item.unitPrice * item.qty),
     };
   });
@@ -175,6 +179,16 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         </div>
       ) : null}
 
+      {stockShort ? (
+        <div role="alert" className="flex w-full items-start gap-4 rounded-m bg-tint-salmon px-6 py-[18px]">
+          <CircleAlert className="mt-0.5 size-6 shrink-0 text-error" aria-hidden />
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <p className="text-base leading-6 font-bold text-foreground">{o.shortTitle}</p>
+            <p className="text-sm leading-[21px] text-muted-foreground">{o.shortBody}</p>
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid w-full grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
         <Card as="div" className="flex min-w-0 flex-col">
           <section aria-labelledby="order-items-title" className={sectionClasses}>
@@ -191,6 +205,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="font-display text-base leading-5 font-semibold">{line.name}</span>
                     <span className="text-[13px] leading-5 text-muted-foreground">{line.meta}</span>
+                    {line.short ? <span className="text-[13px] leading-5 font-semibold text-error">{line.short}</span> : null}
                   </span>
                   <span className="shrink-0 text-[15px] leading-[23px] font-bold tabular-nums">{line.price}</span>
                 </li>

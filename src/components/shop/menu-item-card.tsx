@@ -10,6 +10,7 @@ import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { ShopProduct } from "./shop-product";
 import { AddButton } from "./add-to-cart";
+import { StockBadge } from "./stock";
 
 type CardSize = "md" | "lg" | "sm";
 
@@ -67,6 +68,8 @@ export function MenuItemCard({
   const price = formatRupiah(product.fromPrice);
   const badge = showBadge ? product.badge : undefined;
   const banner = layout === "banner";
+  // A one-size product running low says so on the card (sold out is the sticker).
+  const left = !multi && !product.soldOut ? product.variants[0]?.left : undefined;
 
   const text = (
     <>
@@ -79,6 +82,7 @@ export function MenuItemCard({
           </Link>
         </h3>
         <p className={cn("text-muted-foreground", s.desc)}>{product.description}</p>
+        {left !== undefined ? <StockBadge left={left} className="mt-0.5" /> : null}
       </div>
       {/* A landscape card has the height of a portrait one beside it; its sizes and prices fill it. */}
       {banner && multi ? (
@@ -88,9 +92,12 @@ export function MenuItemCard({
               key={v.id}
               className="flex items-baseline justify-between gap-3 py-2 text-sm leading-5 shadow-[inset_0_-1px_0_var(--border-subtle)] first:shadow-[inset_0_1px_0_var(--border-subtle),inset_0_-1px_0_var(--border-subtle)]"
             >
-              <span className="min-w-0 text-foreground">
-                {v.name}
-                {v.serves ? <span className="text-muted-foreground"> · {v.serves}</span> : null}
+              <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-foreground">
+                <span>
+                  {v.name}
+                  {v.serves ? <span className="text-muted-foreground"> · {v.serves}</span> : null}
+                </span>
+                {v.left !== undefined ? <StockBadge left={v.left} /> : null}
               </span>
               <span className="shrink-0 font-semibold text-foreground tabular-nums">{formatRupiah(v.price)}</span>
             </li>

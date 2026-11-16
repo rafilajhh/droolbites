@@ -49,7 +49,14 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   const live = payment?.status === "awaiting" && !storeCancelled ? payment : null;
   const orderExpired = order.paymentStatus === "expired";
   const choosing = !orderExpired && (query.change === "1" || !live);
-  const initialError = query.error === "unavailable" ? "gatewayUnavailable" : query.error === "busy" ? "gatewayBusy" : undefined;
+  const initialError =
+    query.error === "unavailable"
+      ? "gatewayUnavailable"
+      : query.error === "busy"
+        ? "gatewayBusy"
+        : query.error === "stock"
+          ? "stockGone"
+          : undefined;
 
   const status = storeCancelled ? fulfilmentStatusInfo.cancelled : paymentStatusInfo[order.paymentStatus];
   const pay = payable(order, live);

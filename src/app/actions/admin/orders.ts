@@ -11,6 +11,7 @@ import { getOrderByNumber, markOrderPaid, paymentSnapshot, withOrderLock } from 
 import { getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { fulfilmentOptions } from "@/components/admin/rules";
 import { CANCEL_REASONS } from "@/lib/order-status";
+import { restoreOrderStock } from "@/lib/stock";
 
 export type FulfilmentState = { status: "idle" | "saved" | "unchanged" | "invalid" | "busy" };
 
@@ -67,6 +68,8 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
       if (count > 0 && closePayment) {
         await tx.payment.updateMany({ where: { orderId: order.id, status: "awaiting" }, data: { status: "expired" } });
       }
+      // A cancelled order gives back the stock its payment took (nothing when it was never taken).
+      if (count > 0 && parsed.data.status === "cancelled") await restoreOrderStock(tx, order.id);
       return count;
     });
     if (count === 0) return { status: "invalid" };
@@ -91,7 +94,8 @@ export type DecisionState = { status: "idle" | "accepted" | "declined" | "change
 
 /**
  * The store's answer to a new paid order: accept (it goes to Baking) or decline with a reason (it's
- * cancelled; the payment is owed back). Only a paid order still waiting as "new" can be decided.
+ * cancelled; the payment is owed back, and its items go back into stock). Only a paid order still
+ * waiting as "new" can be decided.
  */
 export async function decideOrder(_prev: DecisionState, formData: FormData): Promise<DecisionState> {
   await requireAdmin();
@@ -104,9 +108,17 @@ export async function decideOrder(_prev: DecisionState, formData: FormData): Pro
   if (decision === "decline" && (!reason || reason.length < 3)) return { status: "reason" };
 
   const next: FulfilmentStatus = decision === "accept" ? "baking" : "cancelled";
-  const { count } = await db.order.updateMany({
-    where: { orderNumber: n, paymentStatus: "paid", fulfilmentStatus: "pending" },
-    data: { fulfilmentStatus: next, cancelReason: reason },
+  const count = await db.$transaction(async (tx) => {
+    const { count } = await tx.order.updateMany({
+      where: { orderNumber: n, paymentStatus: "paid", fulfilmentStatus: "pending" },
+      data: { fulfilmentStatus: next, cancelReason: reason },
+    });
+    // Declined: what its payment took goes back on the shelf, once.
+    if (count > 0 && next === "cancelled") {
+      const order = await tx.order.findUnique({ where: { orderNumber: n }, select: { id: true } });
+      if (order) await restoreOrderStock(tx, order.id);
+    }
+    return count;
   });
   revalidateOrder(n);
   if (count === 0) return { status: "changed" };
