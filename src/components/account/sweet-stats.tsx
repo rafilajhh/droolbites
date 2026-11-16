@@ -14,7 +14,7 @@ const getPaidOrderItems = cache((userId: bigint) =>
         select: {
           qty: true,
           variant: {
-            select: { product: { select: { id: true, name: true, slug: true, isAvailable: true } } },
+            select: { product: { select: { id: true, name: true } } },
           },
         },
       },
@@ -27,17 +27,17 @@ const label = "text-sm leading-[21px] text-muted-foreground";
 
 /**
  * The customer's orders so far, beside the greeting: paid orders, desserts in them and the most
- * ordered product with a link to order it again, as three figures split by hairlines (two side by
+ * ordered product, as three figures split by hairlines (two side by
  * side and the favorite under them on phones). Cancelled orders don't count.
  */
 export async function SweetStats({ userId, className }: { userId: bigint; className?: string }) {
   const [orders, t] = await Promise.all([getPaidOrderItems(userId), getMessages(accountMessages)]);
   const s = t.stats;
 
-  const byProduct = new Map<bigint, { name: string; slug: string; isAvailable: boolean; qty: number }>();
+  const byProduct = new Map<bigint, { name: string; qty: number }>();
   for (const item of orders.flatMap((o) => o.items)) {
     const p = item.variant.product;
-    const entry = byProduct.get(p.id) ?? { name: p.name, slug: p.slug, isAvailable: p.isAvailable, qty: 0 };
+    const entry = byProduct.get(p.id) ?? { name: p.name, qty: 0 };
     entry.qty += item.qty;
     byProduct.set(p.id, entry);
   }
@@ -72,11 +72,7 @@ export async function SweetStats({ userId, className }: { userId: bigint; classN
         )}
       >
         <dt className={label}>{s.favorite}</dt>
-        <dd className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-          <span className={value}>{favorite.name}</span>
-          {/* An unavailable product's page 404s, so only link to one still on the menu. */}
-          {favorite.isAvailable ? <ArrowLink href={`/menu/${favorite.slug}`}>{s.again}</ArrowLink> : null}
-        </dd>
+        <dd className={value}>{favorite.name}</dd>
       </div>
     </dl>
   );
