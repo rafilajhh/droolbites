@@ -542,9 +542,16 @@ export async function withOrderLock<T>(orderId: bigint, fn: () => Promise<T>): P
   );
 }
 
-/** What the customer pays for a payment, and the gateway service fee in it (0 when the store bears the fee). */
-export function payable(order: { total: number }, payment?: { chargedAmount: number | null } | null) {
-  const amount = Math.max(payment?.chargedAmount ?? order.total, order.total);
+/**
+ * What the customer pays for a payment, and the gateway service fee in it (0 when the store bears the fee).
+ * A closed (expired or store-cancelled) payment charged nobody, so it counts as the bare order total.
+ */
+export function payable(
+  order: { total: number },
+  payment?: { chargedAmount: number | null; status?: string } | null,
+) {
+  const live = payment && payment.status !== "expired" ? payment : null;
+  const amount = Math.max(live?.chargedAmount ?? order.total, order.total);
   return { amount, serviceFee: amount - order.total };
 }
 

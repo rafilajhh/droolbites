@@ -69,7 +69,8 @@ export interface PaymentProvider {
   readonly feeBearerSetAtGateway?: boolean;
   createPayment(input: CreatePaymentInput): Promise<CreatedPayment>;
   getStatus(payment: PaymentSnapshot, now?: Date): Promise<PaymentStatus>;
-  cancel(payment: PaymentSnapshot): Promise<void>;
+  /** `reason` is shown on the gateway's dashboard; the default suits a customer switching methods. */
+  cancel(payment: PaymentSnapshot, reason?: string): Promise<void>;
   /** Demo/sandbox only: pay it, then report the resulting status. */
   simulatePaid(payment: PaymentSnapshot): Promise<PaymentStatus>;
   channels(): Promise<ChannelList>;

@@ -285,11 +285,11 @@ export const belibayarProvider: PaymentProvider = {
     }
   },
 
-  async cancel(payment) {
+  async cancel(payment, reason = "Customer chose another payment method") {
     if (!payment.reference) return;
     statusCache.delete(payment.reference);
     await request("POST", "/payment/cancel", {
-      body: { reference: payment.reference, reason: "Customer chose another payment method" },
+      body: { reference: payment.reference, reason },
     });
   },
 

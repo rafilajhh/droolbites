@@ -45,7 +45,7 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
         const provider = getPaymentProvider(live.provider);
         const snapshot = paymentSnapshot({ orderNumber: n }, live);
         try {
-          await provider.cancel(snapshot);
+          await provider.cancel(snapshot, "Order cancelled by the store");
         } catch (error) {
           // Not cancellable usually means it was paid meanwhile: then the order is paid, not cancelled.
           if (error instanceof PaymentGatewayError && error.code === "NOT_CANCELLABLE" && (await provider.getStatus(snapshot)) === "paid") {

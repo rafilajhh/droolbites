@@ -178,7 +178,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         <CellLabel until="xl">{c.total}</CellLabel>
                         {formatRupiah(pay.amount)}
                         {pay.serviceFee > 0 ? (
-                          <span className="block text-[13px] leading-5 font-medium text-muted-foreground max-xl:text-xs max-xl:leading-[18px]">
+                          <span className="block text-[13px] leading-5 font-medium text-muted-foreground max-xl:text-xs max-xl:leading-[18px] max-xl:whitespace-normal">
                             {t.orders.inclFee(formatRupiah(pay.serviceFee))}
                           </span>
                         ) : null}
