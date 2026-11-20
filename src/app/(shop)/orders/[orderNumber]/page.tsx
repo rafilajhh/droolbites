@@ -25,6 +25,7 @@ import {
 } from "@/lib/order-status";
 import { cancelledByStore, getOrderForViewer, itemCount, orderAddress, orderDeadline, payable, withOrderToken } from "@/lib/orders";
 import { orderPageMetadata } from "@/lib/order-metadata";
+import { DEMO_PROVIDER } from "@/lib/payments/demo";
 import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata({ params, searchParams }: PageProps<"/orders/[orderNumber]">): Promise<Metadata> {
@@ -59,6 +60,8 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const paid = order.paymentStatus === "paid";
   // Money can arrive after a store cancel; the order stays unpaid but the customer is owed a refund (admin: "Refund needed").
   const paidSomething = paid || Boolean(paidPayment);
+  // A demo payment moved no money, so a declined demo order owes no refund.
+  const refundOwed = order.payments.some((p) => p.status === "paid" && p.provider !== DEMO_PROVIDER);
   // A payment that lapsed while the order is still open no longer says what the customer will pay.
   const pay = payable(order, payment?.status === "expired" ? null : payment);
   const f = order.fulfilmentStatus;
@@ -73,8 +76,10 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const message = closed
     ? f === "cancelled" || cancelledByStore(order)
       ? declinedWhy && paidSomething
-        ? t.declinedBody(declinedWhy)
-        : paidSomething
+        ? refundOwed
+          ? t.declinedBody(declinedWhy)
+          : t.declinedNoRefundBody(declinedWhy)
+        : paidSomething && refundOwed
           ? t.cancelledPaidBody
           : t.cancelledBody
       : order.paymentStatus === "expired"

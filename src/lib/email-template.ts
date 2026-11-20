@@ -79,7 +79,7 @@ export function highlight(label: string, value: string, rows: [string, string][]
   <tr><td bgcolor="${c.mint}" style="background:${c.mint};border-radius:12px;padding:18px 20px;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
       <tr><td colspan="2" style="font-family:${font.mono};font-size:11px;line-height:16px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${c.moss};">${esc(label)}</td></tr>
-      <tr><td colspan="2" class="code" style="padding-top:4px;white-space:nowrap;font-family:${font.mono};font-size:24px;line-height:32px;font-weight:700;letter-spacing:1px;color:${c.ink};">${esc(value)}</td></tr>
+      <tr><td colspan="2" class="code" style="padding-top:4px;font-family:${font.mono};font-size:22px;line-height:30px;font-weight:700;letter-spacing:1px;color:${c.ink};">${esc(value)}</td></tr>
       ${extra}
     </table>
   </td></tr>

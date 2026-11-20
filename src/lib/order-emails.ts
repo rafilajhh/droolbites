@@ -8,6 +8,7 @@ import { button, fallbackLink, highlight, infoBox, itemsTable, paragraph, render
 import { appUrl, sendMail } from "./mail";
 import { cancelReasonText, paymentMethodInfo } from "./order-status";
 import { orderAccessToken, orderAddress, orderDeadline, otherRecipient, payable, type FullOrder } from "./orders";
+import { DEMO_PROVIDER } from "./payments/demo";
 import { getStoreSettings } from "./settings";
 
 /**
@@ -236,7 +237,8 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
   const { lang, t, link, items, footer, itemsText, signature } = await context(order);
   const c = t.cancelled;
   const n = order.orderNumber;
-  const paid = why === "store" && order.payments.some((x) => x.status === "paid");
+  // A demo payment moved no money, so it owes no refund.
+  const paid = why === "store" && order.payments.some((x) => x.status === "paid" && x.provider !== DEMO_PROVIDER);
   // The message adds its own full stop, so one typed at the end of a custom reason is dropped.
   const reason = why === "store" ? cancelReasonText(order.cancelReason, c.reasons)?.replace(/[\s.!?]+$/, "") || null : null;
   const lines =
