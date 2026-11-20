@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ReorderButton } from "@/components/checkout/reorder-button";
 import { StatusBadge } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink } from "@/components/ui/button";
+import { ScrollFade } from "@/components/ui/scroll-fade";
 import { photoFrame } from "@/components/ui/snapshot";
 import { getLocale, getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
@@ -89,11 +90,8 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
     <section id="order-history" aria-labelledby="order-history-title" className="flex w-full scroll-mt-[88px] flex-col gap-5">
       <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         {heading}
-        {/* Below sm the filters scroll sideways in one row instead of wrapping. */}
-        <nav
-          aria-label={o.filter}
-          className="max-sm:-mx-4 max-sm:overflow-x-auto max-sm:px-4 max-sm:py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
+        {/* Below sm the filters scroll sideways in one row instead of wrapping, the edge fading while more is that way. */}
+        <ScrollFade as="nav" aria-label={o.filter} className="max-sm:-mx-4 max-sm:px-4 max-sm:py-1 sm:overflow-x-visible">
           <ul className="flex w-max gap-2 sm:w-auto sm:flex-wrap">
             {ORDER_FILTERS.map((f) => {
               const current = f === filter;
@@ -117,7 +115,7 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
               );
             })}
           </ul>
-        </nav>
+        </ScrollFade>
       </div>
 
       {orders.length === 0 ? (
@@ -179,7 +177,7 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
                   </td>
                   <td className={cn(td, "col-start-3 row-start-1 text-right text-base leading-normal font-bold whitespace-nowrap text-foreground tabular-nums xl:pr-6")}>
                     {cellLabel(o.total)}
-                    {formatRupiah(order.total)}
+                    {formatRupiah(order.amount)}
                   </td>
                   <td className={cn(td, "col-start-3 row-start-3 whitespace-nowrap")}>
                     <span className="flex items-center justify-end gap-5">

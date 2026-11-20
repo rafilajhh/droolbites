@@ -17,7 +17,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/location" } };
 }
 
-const linkClass = "underline underline-offset-2 hover:text-foreground-inverse";
+// Inline in a sentence: the hit-slop takes it to 43px tall without moving the text.
+const linkClass = "relative underline underline-offset-2 after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:text-foreground-inverse";
 const sectionTitle = "type-section font-display text-balance font-bold text-foreground";
 const sectionSub = "max-w-[560px] text-pretty text-base leading-normal text-muted-foreground lg:text-lg";
 const px = "px-4 sm:px-8 lg:px-16";
@@ -138,15 +139,16 @@ export default async function LocationPage() {
                     {route.title}
                   </h3>
                   <p className="max-w-[600px] text-pretty text-base leading-normal text-muted-foreground">{route.body}</p>
-                  {/* The last route lists the driving times its line promises. */}
+                  {/* The last route lists the driving times its line promises: hairline rows below lg, and from lg
+                      three short cells side by side, so this column ends near the other two. */}
                   {i === t.routes.length - 1 ? (
-                    <dl className="flex w-full max-w-[600px] flex-col">
+                    <dl className="flex w-full max-w-[600px] flex-col lg:grid lg:grid-cols-[repeat(3,auto)] lg:justify-start lg:gap-x-4 lg:pt-1">
                       {t.nearbyTimes.map((row) => (
                         <div
                           key={row.place}
-                          className="flex items-baseline justify-between gap-4 py-2.5 shadow-[inset_0_-1px_0_var(--border-subtle)] last:shadow-none"
+                          className="flex items-baseline justify-between gap-4 max-lg:py-2.5 max-lg:shadow-[inset_0_-1px_0_var(--border-subtle)] max-lg:last:shadow-none lg:flex-col lg:justify-start lg:gap-0.5 lg:not-first:pl-4 lg:not-first:shadow-[inset_1px_0_0_var(--border-subtle)]"
                         >
-                          <dt className="text-[15px] leading-[23px] text-foreground">{row.place}</dt>
+                          <dt className="text-[15px] leading-[23px] text-balance text-foreground">{row.place}</dt>
                           <dd className="font-mono text-[13px] leading-5 font-semibold text-foreground tabular-nums">
                             {row.time}
                           </dd>

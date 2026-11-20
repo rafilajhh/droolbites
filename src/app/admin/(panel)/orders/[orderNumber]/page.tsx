@@ -125,13 +125,14 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const paymentRows: { label: string; value: React.ReactNode; mono?: boolean }[] = [
     { label: o.method, value: payment ? paymentMethodShort(payment.method) : o.noPayment },
     { label: o.amount, value: formatRupiah(pay.amount) },
+    // The part of that amount that is the gateway's fee, right under it.
+    ...(pay.serviceFee > 0 ? [{ label: o.serviceFee, value: formatRupiah(pay.serviceFee) }] : []),
     // The payment's times live here, once: when it was paid, or until when it can still be paid.
     ...(order.paymentStatus === "paid" && payment?.paidAt
       ? [{ label: o.paidOn, value: `${formatDateTime(payment.paidAt, locale)} ${t.common.wib}` }]
       : order.paymentStatus === "awaiting" && payment?.expiresAt
         ? [{ label: o.payBefore, value: `${formatDateTime(payment.expiresAt, locale)} ${t.common.wib}` }]
         : []),
-    ...(pay.serviceFee > 0 ? [{ label: o.serviceFee, value: formatRupiah(pay.serviceFee) }] : []),
     ...(gateway && payment?.vaNumber ? [{ label: o.paymentNumber, value: payment.vaNumber, mono: true }] : []),
     ...(gateway && payment?.reference ? [{ label: o.reference, value: payment.reference, mono: true }] : []),
     ...(payment?.transactionId ? [{ label: o.transactionId, value: payment.transactionId, mono: true }] : []),
@@ -194,8 +195,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
       ) : null}
 
       <div className="grid w-full grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-        {/* Stretches to the side card when that one is taller, so both cards end on one line. */}
-        <Card as="div" className="flex min-w-0 flex-col self-stretch">
+        {/* Items, fulfilment and the customer here; status and payment in the sticky side card. Neither
+            stretches to the other, so no card ends in an empty white slab. */}
+        <Card as="div" className="flex min-w-0 flex-col">
           <section aria-labelledby="order-items-title" className={sectionClasses}>
             <SectionTitle id="order-items-title">{o.items}</SectionTitle>
             <ul className="flex w-full flex-col">
@@ -285,12 +287,39 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               ) : null}
             </dl>
           </section>
-
+          <section aria-labelledby="order-customer-title" className={sectionClasses}>
+            <SectionTitle id="order-customer-title">{o.customer}</SectionTitle>
+            <dl className="flex w-full flex-col">
+              <div className={rowClasses}>
+                <dt className={dtClasses}>{o.contactName}</dt>
+                <dd className="flex min-w-0 items-center gap-2 font-bold break-words">
+                  <User className="size-[18px] shrink-0 text-primary" aria-hidden />
+                  {order.customerName}
+                </dd>
+              </div>
+              <div className={rowClasses}>
+                <dt className={dtClasses}>{o.contactEmail}</dt>
+                <dd className="min-w-0 [overflow-wrap:anywhere]">
+                  <a href={`mailto:${order.email}`} className={linkClasses}>
+                    {order.email}
+                  </a>
+                </dd>
+              </div>
+              <div className={rowClasses}>
+                <dt className={dtClasses}>{o.contactPhone}</dt>
+                <dd>
+                  <a href={`tel:${order.phone.replace(/\s/g, "")}`} className={linkClasses}>
+                    {order.phone}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </section>
         </Card>
 
-        {/* From md to xl the side card spans the page: status on top, payment and customer side by side under it. */}
+        {/* From md to xl the side card spans the page with status and payment side by side. */}
         <Card as="div" className="flex w-full flex-col max-xl:order-first md:max-xl:grid md:max-xl:grid-cols-2 xl:sticky xl:top-6">
-          <section aria-labelledby="order-status-title" className={cn(sectionClasses, "md:max-xl:col-span-2")}>
+          <section aria-labelledby="order-status-title" className={sectionClasses}>
             <SectionTitle id="order-status-title">{o.status}</SectionTitle>
             {closed ? (
               // The status badge is in the page header. No "closed on" date: updatedAt also moves on later
@@ -322,7 +351,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               />
             )}
           </section>
-          <section aria-labelledby="order-payment-title" className={sectionClasses}>
+          <section aria-labelledby="order-payment-title" className={cn(sectionClasses, "md:max-xl:shadow-[inset_1px_0_0_var(--border-subtle)]")}>
             <div className="flex w-full items-center justify-between gap-3">
               <SectionTitle id="order-payment-title">{o.payment}</SectionTitle>
               <StatusBadge tone={ps.tone}>{ps[locale]}</StatusBadge>
@@ -334,34 +363,6 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                   <dd className={cn("font-bold", row.mono && "font-mono text-sm font-semibold break-all")}>{row.value}</dd>
                 </div>
               ))}
-            </dl>
-          </section>
-          <section aria-labelledby="order-customer-title" className={cn(sectionClasses, "md:max-xl:shadow-[inset_1px_1px_0_var(--border-subtle)]")}>
-            <SectionTitle id="order-customer-title">{o.customer}</SectionTitle>
-            <dl className="flex w-full flex-col gap-3 text-[15px] leading-[23px]">
-              <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
-                <dt className="text-muted-foreground">{o.contactName}</dt>
-                <dd className="flex min-w-0 items-center gap-2 font-bold break-words">
-                  <User className="size-[18px] shrink-0 text-primary" aria-hidden />
-                  {order.customerName}
-                </dd>
-              </div>
-              <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
-                <dt className="text-muted-foreground">{o.contactEmail}</dt>
-                <dd className="min-w-0 [overflow-wrap:anywhere]">
-                  <a href={`mailto:${order.email}`} className={linkClasses}>
-                    {order.email}
-                  </a>
-                </dd>
-              </div>
-              <div className="flex w-full flex-wrap items-center justify-between gap-x-3">
-                <dt className="text-muted-foreground">{o.contactPhone}</dt>
-                <dd>
-                  <a href={`tel:${order.phone.replace(/\s/g, "")}`} className={linkClasses}>
-                    {order.phone}
-                  </a>
-                </dd>
-              </div>
             </dl>
           </section>
         </Card>

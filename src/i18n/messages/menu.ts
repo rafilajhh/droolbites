@@ -47,7 +47,7 @@ export const menuMessages = defineMessages({
     title: "Choose your dessert.",
     sub: "Mix anything into one order.",
     search: {
-      placeholder: "Search cookies, brownies, tiramisu…",
+      placeholder: "Search the menu",
       open: "Search the menu",
       label: "Search desserts",
       clear: "Clear search",
@@ -114,7 +114,7 @@ export const menuMessages = defineMessages({
     title: "Pilih dessert-mu.",
     sub: "Campur apa saja dalam satu pesanan.",
     search: {
-      placeholder: "Cari cookies, brownies, tiramisu…",
+      placeholder: "Cari di menu",
       open: "Cari di menu",
       label: "Cari dessert",
       clear: "Hapus pencarian",

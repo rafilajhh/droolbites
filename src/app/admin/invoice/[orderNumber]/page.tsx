@@ -93,7 +93,7 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
         <div className="flex w-full flex-wrap items-center justify-between gap-3 print:hidden">
           <Link
             href={`/admin/orders/${order.orderNumber}`}
-            className="inline-flex w-fit items-center gap-1.5 text-sm leading-[21px] font-bold text-primary underline-offset-2 hover:underline"
+            className="relative inline-flex w-fit items-center gap-1.5 text-sm leading-[21px] font-bold text-primary underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-[''] hover:underline"
           >
             <ArrowLeft className="size-4" aria-hidden />
             {t.back}

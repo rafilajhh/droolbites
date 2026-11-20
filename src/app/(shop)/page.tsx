@@ -92,19 +92,22 @@ export default async function HomePage() {
             className="absolute inset-0 bg-radial-[ellipse_55%_60%_at_50%_50%] from-ink/70 to-ink/15 max-lg:from-ink/75 max-lg:to-ink/45"
             aria-hidden
           />
-          <Chip className="relative bg-highlight! text-ink">{t.hero.chip}</Chip>
+          {/* One line in both languages from 320px; nowrap so the wider fallback font can't wrap it while the web
+              font loads (that would move everything under it). */}
+          <Chip className="relative bg-highlight! whitespace-nowrap text-ink">{t.hero.chip}</Chip>
           <h1 className="relative w-full font-display type-hero font-bold text-balance text-white">{t.hero.title}</h1>
           <p className="relative max-w-[600px] text-pretty text-[17px] leading-[26px] text-white lg:text-xl lg:leading-[30px]">
             {t.hero.sub}
           </p>
-          {/* On phones both buttons grow to fill the row, so a pair that wraps (the longer ID labels) stacks at one width. */}
-          <div className="relative flex flex-wrap items-center justify-center gap-4 pt-2 max-sm:w-full max-sm:max-w-[400px] max-sm:gap-3">
-            <Link href="/menu" className={buttonClasses("inverse", "text-moss-deep! max-sm:flex-auto")}>
+          {/* On phones the buttons stack at one full width (max 400px). A row that wraps only when the labels
+              don't fit would wrap or not depending on the font, so the copy jumped when the web font arrived. */}
+          <div className="relative flex items-center justify-center gap-4 pt-2 max-sm:w-full max-sm:max-w-[400px] max-sm:flex-col max-sm:items-stretch max-sm:gap-3">
+            <Link href="/menu" className={buttonClasses("inverse", "text-moss-deep!")}>
               {t.hero.order}
             </Link>
             <Link
               href="/location"
-              className={buttonClasses("secondary", "text-white! inset-ring-white! hover:bg-white/10! max-sm:flex-auto")}
+              className={buttonClasses("secondary", "text-white! inset-ring-white! hover:bg-white/10!")}
             >
               {t.hero.visit}
             </Link>

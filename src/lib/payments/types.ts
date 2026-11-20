@@ -57,6 +57,16 @@ export interface PaymentProvider {
   readonly id: string;
   /** True when the UI may offer a "simulate payment" button (mock, gateway sandbox). */
   readonly canSimulate: boolean;
+  /**
+   * False when this provider never adds a service fee for the customer (the mock without
+   * MOCK_SERVICE_FEE). A real gateway may: it names the fee only in its answer to a charge.
+   */
+  readonly mayChargeFee: boolean;
+  /**
+   * Whether the customer or the store bears that fee is a setting at the gateway that the API doesn't
+   * expose before a charge; each charge's answer says it (payments.feeBearer).
+   */
+  readonly feeBearerSetAtGateway?: boolean;
   createPayment(input: CreatePaymentInput): Promise<CreatedPayment>;
   getStatus(payment: PaymentSnapshot, now?: Date): Promise<PaymentStatus>;
   cancel(payment: PaymentSnapshot): Promise<void>;

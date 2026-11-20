@@ -22,7 +22,7 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { formatDateTime, formatRupiah } from "@/lib/format";
 import { fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { cancelledByStore, getOrderForViewer, itemCount, orderDeadline, payable, withOrderToken } from "@/lib/orders";
-import { canSimulatePayment, getPaymentOptions, getPaymentProvider } from "@/lib/payments";
+import { canSimulatePayment, getPaymentOptions, getPaymentProvider, serviceFeeMayApply } from "@/lib/payments";
 import { orderPageMetadata } from "@/lib/order-metadata";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -44,7 +44,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   if (order.paymentStatus === "paid") redirect(withOrderToken(`/checkout/success/${orderNumber}`, token));
 
   const [t, locale, settings] = await Promise.all([getMessages(checkoutMessages), getLocale(), getStoreSettings()]);
-  const { methods, logos, belowMinimum } = await getPaymentOptions(settings, order.total);
+  const [{ methods, logos, belowMinimum }, feeMayApply] = await Promise.all([getPaymentOptions(settings, order.total), serviceFeeMayApply()]);
   const p = t.pay;
   const payment = order.payments[0] ?? null;
   // Cancelled by the store: closed, even if a payment still looks open.
@@ -168,6 +168,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         belowMinimum={belowMinimum}
         cancelHref={live ? payHref : null}
         initialError={initialError}
+        feeMayApply={feeMayApply}
       />,
     );
   }
@@ -243,7 +244,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         {live.vaNumber ? (
           // The number is sized to the card, not the screen (the card is narrow beside the summary at
           // 1024 and wide on a tablet): 18px, 24px from a 384px row, 32px from 672px. Copy sits on the
-          // right while the whole number fits beside it and moves under it otherwise; a number too long
+          // right while the whole number fits beside it and moves under it (still on the right) otherwise; a number too long
           // for one line wraps between its 4-digit groups, never inside one.
           <div className="@container flex w-full flex-wrap items-center gap-x-4 gap-y-3 px-5 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:px-6">
             <div className="flex min-w-0 flex-[1_1_auto] flex-col gap-1">
@@ -270,6 +271,8 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
               failedLabel={p.copyFailed}
               ariaLabel={info.kind === "retail" ? p.copyCode : p.copyVa}
               selectId="pay-va-number"
+              // Right-aligned when it wraps under the number, like the amount's Copy below.
+              className="ml-auto"
             />
           </div>
         ) : info.kind === "qris" && (qrSvg || live.payUrl) ? (

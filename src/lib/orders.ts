@@ -11,6 +11,7 @@ import { sendOrderCancelledEmail, sendOrderPaidEmail, sendStoreNewOrderEmail } f
 import { getPaymentProvider, PAYMENT_WINDOW_MS, PaymentGatewayError } from "./payments";
 import { signToken, verifyToken } from "./session";
 import { deductOrderStock, findShortLines } from "./stock";
+import { notPaidInfo, paymentStatusInfo } from "./order-status";
 
 export const ORDER_NUMBER_RE = /^DB-\d{4,9}$/;
 
@@ -342,6 +343,29 @@ export function cancelledByStore(order: {
   if (order.fulfilmentStatus !== "cancelled") return false;
   if (order.paymentStatus !== "expired") return true;
   return !order.updatedAt || order.updatedAt < orderDeadline(order);
+}
+
+/**
+ * The payment badge for an order in the admin lists and the CSV: an unpaid order the store cancelled
+ * reads "Not paid" (nothing failed), the same as on its order page and in the sales report.
+ */
+export function orderPaymentInfo(order: Parameters<typeof cancelledByStore>[0]) {
+  return order.paymentStatus !== "paid" && cancelledByStore(order) ? notPaidInfo : paymentStatusInfo[order.paymentStatus];
+}
+
+/**
+ * The payment filter of the admin orders list and its CSV, matching the badge above: "Awaiting
+ * payment" and "Payment failed" leave out the unpaid orders the store cancelled (cancelledByStore,
+ * in SQL), which show as "Not paid".
+ */
+export async function paymentStatusWhere(status: PaymentStatus): Promise<Prisma.OrderWhereInput> {
+  if (status === "paid") return { paymentStatus: "paid" };
+  const rows = await db.$queryRaw<{ id: bigint }[]>`
+    SELECT id FROM orders
+    WHERE fulfilment_status = 'cancelled' AND payment_status = ${status}
+      AND (payment_status <> 'expired' OR updated_at IS NULL
+           OR updated_at < created_at + INTERVAL ${Math.round(PAYMENT_WINDOW_MS / 1000)} SECOND)`;
+  return { paymentStatus: status, ...(rows.length ? { id: { notIn: rows.map((r) => r.id) } } : {}) };
 }
 
 /**

@@ -11,7 +11,8 @@ import { AdminMain, Card, CellLabel, listCardClasses, listScrollClasses, listThC
 import { requireAdmin } from "@/lib/auth";
 import { containsText, db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { fulfilmentBadgeInfo, needsActionWhere, paymentStatusInfo } from "@/lib/order-status";
+import { fulfilmentBadgeInfo, needsActionWhere } from "@/lib/order-status";
+import { orderPaymentInfo, payable, paymentStatusWhere } from "@/lib/orders";
 import { cn } from "@/lib/cn";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -41,7 +42,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   const [t, locale] = await Promise.all([getMessages(adminMessages), getLocale()]);
 
   const where: Prisma.OrderWhereInput = {
-    ...(needsAction ? needsActionWhere : status ? { paymentStatus: status } : {}),
+    ...(needsAction ? needsActionWhere : status ? await paymentStatusWhere(status) : {}),
     ...(q
       ? { OR: [{ orderNumber: containsText(q) }, { customerName: containsText(q) }, { email: containsText(q) }] }
       : {}),
@@ -66,12 +67,14 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
     take: ORDER_PAGE_SIZE,
     select: {
       orderNumber: true,
-      createdAt: true,
       customerName: true,
       fulfilmentMethod: true,
       fulfilmentStatus: true,
       paymentStatus: true,
+      createdAt: true,
+      updatedAt: true,
       total: true,
+      payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true } },
     },
   });
 
@@ -131,7 +134,9 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
               ) : (
                 orders.map((order) => {
                   const fs = fulfilmentBadgeInfo(order);
-                  const ps = paymentStatusInfo[order.paymentStatus];
+                  const ps = orderPaymentInfo(order);
+                  // What the customer pays or paid (the same attempt as the order page), with the gateway's fee in it.
+                  const pay = payable(order, order.payments.find((p) => p.status === "paid") ?? order.payments[0]);
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
                     <tr key={order.orderNumber} className={row}>
@@ -171,7 +176,12 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                       </td>
                       <td className={cn(cell, "pr-6 text-right whitespace-nowrap tabular-nums max-xl:order-2 max-xl:grow max-xl:basis-[calc(45%-0.5rem)] max-xl:text-base max-xl:font-bold md:max-xl:col-start-4 md:max-xl:row-start-1")}>
                         <CellLabel until="xl">{c.total}</CellLabel>
-                        {formatRupiah(order.total)}
+                        {formatRupiah(pay.amount)}
+                        {pay.serviceFee > 0 ? (
+                          <span className="block text-[13px] leading-5 font-medium text-muted-foreground max-xl:text-xs max-xl:leading-[18px]">
+                            {t.orders.inclFee(formatRupiah(pay.serviceFee))}
+                          </span>
+                        ) : null}
                       </td>
                       <td className="py-3 pr-4 text-right max-xl:order-8 max-xl:ml-auto max-xl:p-0 md:max-xl:col-start-4 md:max-xl:row-start-2">
                         <ArrowLink

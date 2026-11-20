@@ -1,6 +1,7 @@
 import "server-only";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { PAYMENT_GROUPS, paymentKindEnabled } from "@/lib/order-status";
+import { db } from "@/lib/db";
 import type { StoreSettings } from "@/lib/settings";
 import { belibayarProvider } from "./belibayar";
 import { mockProvider } from "./mock";
@@ -68,4 +69,22 @@ export async function getPaymentOptions(settings: StoreSettings, amount?: number
     }
   }
   return { methods, logos: list?.logos ?? {}, belowMinimum };
+}
+
+/**
+ * Whether a payment service fee may be added to the order total for the customer. The gateway names
+ * the fee (flat per channel, or a percentage) only in its answer to a charge, so before that we can
+ * only say whether one may apply: never with a provider that charges none, and, where who bears it
+ * is a gateway account setting, not while its latest charge came back with the store bearing it.
+ */
+export async function serviceFeeMayApply(): Promise<boolean> {
+  const provider = getPaymentProvider();
+  if (!provider.mayChargeFee) return false;
+  if (!provider.feeBearerSetAtGateway) return true;
+  const last = await db.payment.findFirst({
+    where: { provider: provider.id, feeBearer: { not: null } },
+    orderBy: { id: "desc" },
+    select: { feeBearer: true },
+  });
+  return last?.feeBearer !== "merchant";
 }

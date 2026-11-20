@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ScrollFade } from "@/components/ui/scroll-fade";
 import { cn } from "@/lib/cn";
 
 export type SegmentedOption = { value: string; label: string; href: string; count?: number };
@@ -6,7 +7,7 @@ export type SegmentedOption = { value: string; label: string; href: string; coun
 /**
  * Segmented links in one white capsule (the menu's category control, admin-sized): the report
  * period and the Customers / Newsletter switch. Plain links, so the choice lives in the URL and
- * works before JS. Scrolls sideways if the labels don't fit a phone.
+ * works before JS. Scrolls sideways if the labels don't fit a phone, the cut edge fading out.
  */
 export function SegmentedLinks({
   label,
@@ -23,7 +24,7 @@ export function SegmentedLinks({
   className?: string;
 }) {
   return (
-    <nav aria-label={label} className={cn("max-w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}>
+    <ScrollFade as="nav" aria-label={label} className={cn("max-w-full", className)}>
       <ul className="flex w-max items-center gap-1 rounded-pill bg-white p-0.5 inset-ring-[1.25px] inset-ring-border-input lg:p-1">
         {options.map((o) => {
           const active = o.value === value;
@@ -54,6 +55,6 @@ export function SegmentedLinks({
           );
         })}
       </ul>
-    </nav>
+    </ScrollFade>
   );
 }

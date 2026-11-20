@@ -127,7 +127,7 @@ function withContactLinks(text: string, contact: PolicyContact) {
       <a
         key={i}
         href={link.href}
-        className="font-semibold whitespace-nowrap text-foreground underline underline-offset-4 hover:no-underline"
+        className="relative font-semibold whitespace-nowrap text-foreground underline underline-offset-4 after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:no-underline"
       >
         {part}
       </a>

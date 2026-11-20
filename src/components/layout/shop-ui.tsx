@@ -65,10 +65,14 @@ function inertOutside(panel: HTMLElement) {
 
 /** Last focused element, for modals opened by a route change that replaced their trigger. */
 let lastFocused: HTMLElement | null = null;
+/** How the latest interaction came: a key, or a pointer (null: none yet, e.g. a drawer opened by the URL). */
+let lastInput: "key" | "pointer" | null = null;
 if (typeof document !== "undefined") {
   document.addEventListener("focusin", (e) => {
     if (e.target instanceof HTMLElement) lastFocused = e.target;
   });
+  document.addEventListener("keydown", () => (lastInput = "key"), true);
+  document.addEventListener("pointerdown", () => (lastInput = "pointer"), true);
 }
 
 const isShown = (el: Element) => el.isConnected && el.getClientRects().length > 0;
@@ -99,7 +103,8 @@ function restoreFocus(el: HTMLElement | null) {
 /**
  * Shared modal behavior for drawers and dialogs: Escape closes, the page
  * behind does not scroll and is inert, Tab stays inside the panel, focus moves
- * into the panel (a `[data-autofocus]` element first) and returns afterwards.
+ * into the panel (a `[data-autofocus]` element; else the first control when opened
+ * from the keyboard, the panel itself when opened with a pointer) and returns afterwards.
  * Modals stack (a confirm dialog over a drawer): the covered one pauses, and
  * gets focus back when the top one closes.
  *
@@ -130,11 +135,21 @@ export function useModal(isOpen: boolean, onClose: () => void) {
     modalStack.push(id);
     const inerted = panelRef.current ? inertOutside(panelRef.current) : [];
 
+    // A [data-autofocus] field takes focus. Otherwise a keyboard user lands on the first control (with its
+    // ring); a modal opened with a pointer or by the page focuses the dialog itself, so no ring appears on a
+    // control nobody tabbed to (the cart's close button), and Tab then starts at the first control.
     const focusFirst = () => {
       const panel = panelRef.current;
       if (!panel) return;
       const items = tabbables(panel);
-      (items.find((el) => el.hasAttribute("data-autofocus")) ?? items[0])?.focus();
+      const auto = items.find((el) => el.hasAttribute("data-autofocus"));
+      if (auto || (lastInput === "key" && items[0])) {
+        (auto ?? items[0]).focus();
+        return;
+      }
+      if (!panel.hasAttribute("tabindex")) panel.tabIndex = -1;
+      panel.classList.add("outline-hidden");
+      panel.focus({ preventScroll: true });
     };
     const raf = requestAnimationFrame(focusFirst);
 
@@ -151,7 +166,7 @@ export function useModal(isOpen: boolean, onClose: () => void) {
       const first = items[0];
       const last = items[items.length - 1];
       const active = document.activeElement;
-      if (!panel.contains(active)) {
+      if (!panel.contains(active) || active === panel) {
         e.preventDefault();
         (e.shiftKey ? last : first).focus();
       } else if (e.shiftKey && active === first) {

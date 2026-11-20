@@ -20,8 +20,10 @@ export type BelowMinimum = Partial<Record<PaymentMethod, number | null>>;
  * channels); a group without any of them is left out. Banks past the pen's four
  * stay folded until asked for, or while one of them is selected. The group
  * holding `leadMethod` (the preselected one) comes first at every width, so the
- * method the pinned PAY bar names is on screen, not three cards down. An odd
- * last tile spans both columns so no cell is left empty.
+ * method the pinned PAY bar names is on screen, not three cards down. Every tile
+ * is one column wide, an odd last one included, and the fold toggle sits on the
+ * left edge like the rest of the column. From lg to xl, where a tile is about 240px,
+ * a bank tile says "Mandiri VA" so the name stays on two lines at most.
  */
 export function PaymentMethodGroups({
   t,
@@ -68,7 +70,7 @@ export function PaymentMethodGroups({
             <h2 id={titleId} className="font-display text-xl leading-7 font-bold text-foreground sm:text-[22px]">
               {t.groups[group.key].title}
             </h2>
-            <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
+            <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2">
               {shown.map((method) => {
                 const info = paymentMethodInfo[method];
                 const tooSmall = method in belowMinimum;
@@ -84,7 +86,16 @@ export function PaymentMethodGroups({
                     markLabel={info.mark}
                     markClassName={info.markClass}
                     logoUrl={logos[method]}
-                    title={<span className="block leading-5">{info.name}</span>}
+                    title={
+                      info.kind === "va" ? (
+                        <span className="block leading-5">
+                          <span className="lg:max-xl:hidden">{info.name}</span>
+                          <span className="hidden lg:max-xl:inline">{info.name.replace(" Virtual Account", " VA")}</span>
+                        </span>
+                      ) : (
+                        <span className="block leading-5">{info.name}</span>
+                      )
+                    }
                     sub={
                       <span className="block leading-[18px]">
                         {tooSmall ? (typeof min === "number" ? t.minimum(formatRupiah(min)) : t.belowMinimum) : t.hints[method]}
@@ -100,7 +111,7 @@ export function PaymentMethodGroups({
                 onClick={() => setShowMore((v) => !v)}
                 aria-expanded={showMore}
                 aria-controls={`${titleId}-options`}
-                className="flex min-h-11 w-fit items-center gap-1.5 self-center rounded-pill px-4 text-sm leading-[21px] font-semibold text-primary transition-colors hover:bg-card"
+                className="-ml-4 flex min-h-11 w-fit items-center gap-1.5 self-start rounded-pill px-4 text-sm leading-[21px] font-semibold text-primary transition-colors hover:bg-card"
               >
                 {showMore ? t.fewerBanks : t.moreBanks(extraBanks.length)}
                 <ChevronDown

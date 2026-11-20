@@ -3,7 +3,7 @@ import { cache } from "react";
 import { productImageUrl } from "@/content/products";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import { orderDeadline } from "@/lib/orders";
+import { orderDeadline, payable } from "@/lib/orders";
 import { PAYMENT_WINDOW_MS } from "@/lib/payments";
 
 /** Which history filter an order falls under. */
@@ -60,7 +60,7 @@ export const getAccountOrders = cache(async (userId: bigint, filter: OrderFilter
           variant: { select: { name: true, product: { select: { name: true, slug: true, imageUrl: true } } } },
         },
       },
-      payments: { where: { status: "awaiting" }, orderBy: { id: "desc" }, take: 1, select: { expiresAt: true } },
+      payments: { orderBy: { id: "desc" }, select: { status: true, expiresAt: true, chargedAmount: true } },
     },
   });
   return rows.map((order) => {
@@ -68,7 +68,7 @@ export const getAccountOrders = cache(async (userId: bigint, filter: OrderFilter
     // An attempt can lapse before the order (e-wallet requests are short): the order stays payable with
     // another method until its own window closes, so only that window fails it. "Pay before" shows the
     // attempt's time while it still runs.
-    const attemptEnds = order.payments[0]?.expiresAt;
+    const attemptEnds = order.payments.find((p) => p.status === "awaiting")?.expiresAt;
     const payBy = attemptEnds && attemptEnds.getTime() > now && attemptEnds < deadline ? attemptEnds : deadline;
     const lapsed = order.paymentStatus === "awaiting" && deadline.getTime() <= now;
     const paymentStatus = lapsed ? ("expired" as const) : order.paymentStatus;
@@ -79,7 +79,10 @@ export const getAccountOrders = cache(async (userId: bigint, filter: OrderFilter
         : order.fulfilmentStatus === "cancelled" || paymentStatus === "expired"
           ? "cancelled"
           : "active";
-    return { ...order, paymentStatus, payBy, bucket, imageUrl: first ? productImageUrl(first.slug, first.imageUrl) : null };
+    // What the customer pays or paid, service fee included: the same figure as the order page.
+    const payment = order.payments.find((p) => p.status === "paid") ?? order.payments[0];
+    const { amount } = payable(order, payment?.status === "expired" ? null : payment);
+    return { ...order, amount, paymentStatus, payBy, bucket, imageUrl: first ? productImageUrl(first.slug, first.imageUrl) : null };
   });
 });
 

@@ -10,7 +10,7 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { paymentMethodInfo } from "@/lib/order-status";
-import { CheckoutColumns, CheckoutHeading, ReviewRows } from "./checkout-section";
+import { CheckoutColumns, CheckoutHeading, CheckoutSection, ReviewRows } from "./checkout-section";
 import { OrderSummary, type SummaryLine } from "./order-summary";
 import { PaymentMethodGroups, type BelowMinimum, type PaymentLogos } from "./payment-methods";
 import { SummaryToggle } from "./summary-toggle";
@@ -24,6 +24,7 @@ export function PaymentForm({
   logos,
   belowMinimum,
   defaultMethod,
+  feeMayApply,
   summary,
 }: {
   review: { email: string; fulfilment: "delivery" | "pickup"; address: string; distance: string | null; fee: number };
@@ -31,6 +32,11 @@ export function PaymentForm({
   logos: PaymentLogos;
   belowMinimum: BelowMinimum;
   defaultMethod: PaymentMethod | null;
+  /**
+   * The gateway may add a service fee that it names only once the order is charged: the button then
+   * doesn't promise a total, and a line beside it says the exact amount comes before paying.
+   */
+  feeMayApply: boolean;
   summary: { lines: SummaryLine[]; itemCount: number; subtotal: number; total: number };
 }) {
   const t = useMessages(checkoutMessages);
@@ -102,7 +108,12 @@ export function PaymentForm({
     <CheckoutColumns
       summaryFirst
       // Below lg the PAY bar is pinned to the bottom of the screen (with a failed attempt's error above it).
-      className={cn("pb-[calc(9rem+env(safe-area-inset-bottom))] lg:pb-24", error && "pb-[calc(16rem+env(safe-area-inset-bottom))]")}
+      // Room for it, plus the fee line when there is one.
+      className={cn(
+        feeMayApply ? "pb-[calc(11rem+env(safe-area-inset-bottom))]" : "pb-[calc(9rem+env(safe-area-inset-bottom))]",
+        error && (feeMayApply ? "pb-[calc(18rem+env(safe-area-inset-bottom))]" : "pb-[calc(16rem+env(safe-area-inset-bottom))]"),
+        "lg:pb-24",
+      )}
       summary={
         <SummaryToggle id="payment-summary" labels={t.summary} total={formatRupiah(summary.total)}>
           <OrderSummary
@@ -122,18 +133,22 @@ export function PaymentForm({
         <input type="hidden" name="fee" value={review.fee} />
         <CheckoutHeading title={p.title} sub={p.sub} />
 
-        {/* One way back to the details step: every row here comes from it. */}
-        <div className="flex w-full flex-col">
-          <ReviewRows rows={rows} />
-          <div className="flex justify-end pt-3.5">
+        {/* What the details step saved, with the one way back to it in the heading row. */}
+        <CheckoutSection
+          id="payment-review-title"
+          title={p.review}
+          className="gap-1"
+          meta={
             <Link
               href="/checkout"
               className="relative text-sm leading-[21px] font-bold text-primary after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] hover:underline"
             >
               {p.editDetails}
             </Link>
-          </div>
-        </div>
+          }
+        >
+          <ReviewRows rows={rows} className="shadow-none" />
+        </CheckoutSection>
 
         {defaultMethod ? (
           <PaymentMethodGroups
@@ -171,10 +186,17 @@ export function PaymentForm({
                   {method ? paymentMethodInfo[method].name : "—"}
                 </span>
               </p>
-              <Button type="submit" className="shrink-0 px-5 sm:px-7" disabled={pending || !method}>
-                {pending ? p.placing : p.pay(formatRupiah(summary.total))}
+              <Button type="submit" className="shrink-0 px-5 sm:px-7" disabled={pending || !method} aria-describedby={feeMayApply ? "payment-fee-note" : undefined}>
+                {pending ? p.placing : feeMayApply ? p.placeOrder : p.pay(formatRupiah(summary.total))}
               </Button>
             </div>
+            {feeMayApply ? (
+              <p id="payment-fee-note" className="text-[13px] leading-5 text-pretty text-muted-foreground lg:max-w-[600px] lg:text-sm lg:leading-[21px]">
+                {/* Below lg the bar is pinned over the page, so it carries the one-line version. */}
+                <span className="lg:hidden">{p.feeNoteShort}</span>
+                <span className="max-lg:hidden">{p.feeNote}</span>
+              </p>
+            ) : null}
           </div>
         </div>
       </form>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { cn } from "@/lib/cn";
 
 /** Select the text of the element with this id so the shopper can copy it by hand. */
 function selectText(id?: string) {
@@ -28,6 +29,7 @@ export function CopyButton({
   failedLabel,
   ariaLabel,
   selectId,
+  className,
 }: {
   value: string;
   label: string;
@@ -35,6 +37,7 @@ export function CopyButton({
   failedLabel: string;
   ariaLabel: string;
   selectId?: string;
+  className?: string;
 }) {
   const [state, setState] = useState<"idle" | "copied" | "failed">("idle");
 
@@ -64,7 +67,10 @@ export function CopyButton({
         type="button"
         onClick={copy}
         aria-label={ariaLabel}
-        className="relative flex shrink-0 items-center gap-2 rounded-sm px-3.5 py-2.5 text-sm leading-[21px] font-bold text-foreground inset-ring-[1.25px] inset-ring-border transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-card"
+        className={cn(
+          "relative flex shrink-0 items-center gap-2 rounded-sm px-3.5 py-2.5 text-sm leading-[21px] font-bold text-foreground inset-ring-[1.25px] inset-ring-border transition-colors after:absolute after:-inset-1 after:content-[''] hover:bg-card",
+          className,
+        )}
       >
         {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
         <span aria-live="polite">

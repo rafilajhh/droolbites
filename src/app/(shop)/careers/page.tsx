@@ -186,8 +186,8 @@ export default async function CareersPage() {
         </div>
       </section>
 
-      {/* Closing panel: the page ends on the action. How to apply sits beside it as three short steps,
-          so the address and the button each appear once here (the hero has the only other button). */}
+      {/* Closing panel: the page ends on the action. How to apply sits beside it as three short steps;
+          the address there is plain text, so the hero and this button are the only two ways to write. */}
       <section className="w-full px-3 pb-12 md:px-6 lg:pb-20" aria-labelledby="careers-cta">
         <div className="panel-y grid w-full grid-cols-1 gap-10 rounded-m bg-tint-salmon px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-16">
           <div className="flex flex-col items-start gap-6">
@@ -217,7 +217,7 @@ export default async function CareersPage() {
                   <div className="flex min-w-0 flex-col gap-1">
                     <p className="font-display text-lg leading-6 font-bold text-foreground">{step.title}</p>
                     <p className="text-pretty text-base leading-6 text-foreground">
-                      {i === 0 ? <WriteToUs text={step.body(CAREERS_EMAIL)} mailto={mailto} /> : step.body(CAREERS_EMAIL)}
+                      {i === 0 ? <WithAddress text={step.body(CAREERS_EMAIL)} /> : step.body(CAREERS_EMAIL)}
                     </p>
                   </div>
                 </li>
@@ -230,15 +230,16 @@ export default async function CareersPage() {
   );
 }
 
-/** Turns the careers address inside the first step into a mailto link. */
-function WriteToUs({ text, mailto }: { text: string; mailto: string }) {
+/**
+ * The careers address inside the first step, in bold and selectable in one tap, for copying into a mail
+ * app. Plain text, not a third link: the hero and the panel's button are the two ways to write.
+ */
+function WithAddress({ text }: { text: string }) {
   const [before, after] = text.split(CAREERS_EMAIL);
   return (
     <>
       {before}
-      <a href={mailto} className="font-semibold break-all underline underline-offset-2 hover:no-underline">
-        {CAREERS_EMAIL}
-      </a>
+      <span className="font-semibold break-all select-all">{CAREERS_EMAIL}</span>
       {after}
     </>
   );

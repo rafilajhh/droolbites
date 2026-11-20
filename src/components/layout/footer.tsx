@@ -98,17 +98,18 @@ export async function Footer() {
           <div className="col-span-2 flex flex-col gap-4 sm:col-span-3 lg:w-[360px] lg:shrink-0">
             <p className="max-w-[360px] text-base leading-normal text-foreground-inverse">{f.tagline}</p>
             {/* pen rounds text boxes up to whole pixels: 15px × 1.5 → 23px. */}
-            <div className="flex flex-col gap-1 text-[15px] leading-[23px] text-mint">
-              {/* Hit-slop toward 44px; the two lines split the 4px gap between them so the areas never overlap. */}
+            <div className="flex flex-col gap-5 text-[15px] leading-[23px] text-mint lg:gap-1">
+              {/* Hit-slop toward 44px (43px: 10px above and below). Below lg the lines sit 20px apart so the areas
+                  never overlap, like the footer columns; from lg (the pen's 4px gap) they split the gap. */}
               <a
                 href={`mailto:${settings.email}`}
-                className="relative w-fit after:absolute after:-inset-x-2 after:-top-[11px] after:-bottom-0.5 after:content-[''] hover:text-white"
+                className="relative w-fit after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-[''] hover:text-white lg:after:-top-[11px] lg:after:-bottom-0.5"
               >
                 {settings.email}
               </a>
               <a
                 href={`tel:${settings.phone.replace(/\s/g, "")}`}
-                className="relative w-fit after:absolute after:-inset-x-2 after:-top-0.5 after:-bottom-[11px] after:content-[''] hover:text-white"
+                className="relative w-fit after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-[''] hover:text-white lg:after:-top-0.5 lg:after:-bottom-[11px]"
               >
                 {settings.phone}
               </a>

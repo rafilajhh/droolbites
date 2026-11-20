@@ -328,7 +328,11 @@ try {
   await check("US-005.6", "Orders list status filter (?status=) works", async () => {
     const out = [];
     for (const s of ["paid", "awaiting", "expired"]) {
-      const exp = (await q("SELECT order_number FROM orders WHERE payment_status=? ORDER BY created_at DESC, id DESC LIMIT 20", [s])).map((r) => r.order_number);
+      // Unpaid orders the store cancelled read "Not paid" and stay out of "Awaiting payment" / "Payment failed"
+      // (cancelledByStore: still awaiting, or closed before the 24 h payment window ended).
+      const storeCancelled =
+        s === "paid" ? "" : " AND NOT (fulfilment_status='cancelled' AND (payment_status<>'expired' OR updated_at IS NULL OR updated_at < created_at + INTERVAL 86400 SECOND))";
+      const exp = (await q(`SELECT order_number FROM orders WHERE payment_status=?${storeCancelled} ORDER BY created_at DESC, id DESC LIMIT 20`, [s])).map((r) => r.order_number);
       const rows = await rowsOf(`/admin/orders?status=${s}`);
       assert(JSON.stringify(rows.map((r) => r.th)) === JSON.stringify(exp), `status=${s}: UI ${rows.map((r) => r.th)} vs DB ${exp}`);
       out.push(`${s}:${rows.length}`);

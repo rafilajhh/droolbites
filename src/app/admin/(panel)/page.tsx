@@ -9,7 +9,8 @@ import { categoryName } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatRupiah, formatTime } from "@/lib/format";
-import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere, paymentStatusInfo } from "@/lib/order-status";
+import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere } from "@/lib/order-status";
+import { orderPaymentInfo, payable } from "@/lib/orders";
 import { cn } from "@/lib/cn";
 import { LOW_STOCK } from "@/lib/stock";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -68,7 +69,16 @@ export default async function AdminOverviewPage() {
     db.order.findMany({
       orderBy: { createdAt: "desc" },
       take: 5,
-      select: { orderNumber: true, fulfilmentMethod: true, fulfilmentStatus: true, paymentStatus: true, total: true },
+      select: {
+        orderNumber: true,
+        fulfilmentMethod: true,
+        fulfilmentStatus: true,
+        paymentStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        total: true,
+        payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true } },
+      },
     }),
     db.category.findMany({
       orderBy: { id: "asc" },
@@ -250,7 +260,9 @@ export default async function AdminOverviewPage() {
               <tbody className="max-md:flex max-md:flex-col">
                 {recent.map((order) => {
                   const status = fulfilmentBadgeInfo(order);
-                  const payment = paymentStatusInfo[order.paymentStatus];
+                  const payment = orderPaymentInfo(order);
+                  // What the customer pays or paid, as on the orders list (the fee line is left to it).
+                  const amount = payable(order, order.payments.find((p) => p.status === "paid") ?? order.payments[0]).amount;
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
                     <tr
@@ -289,7 +301,7 @@ export default async function AdminOverviewPage() {
                       </td>
                       <td className="py-3.5 pr-4 text-right text-base leading-6 font-bold whitespace-nowrap tabular-nums max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:p-0">
                         <CellLabel>{t.orders.col.total}</CellLabel>
-                        {formatRupiah(order.total)}
+                        {formatRupiah(amount)}
                       </td>
                       <td className="py-3.5 text-right max-md:order-6 max-md:ml-auto max-md:p-0">
                         <ArrowLink
@@ -352,8 +364,8 @@ export default async function AdminOverviewPage() {
               ) : null}
             </div>
           ) : null}
-          {/* From 1440px the pane is as tall as Recent orders: the button closes it at the bottom, level with the last order row. */}
-          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full min-[1440px]:mt-auto")}>
+          {/* The button follows the list at every width: pinned to the pane's bottom beside a long Recent orders it left a gap. */}
+          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full")}>
             {o.manage}
           </Link>
         </section>

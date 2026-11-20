@@ -67,7 +67,11 @@ export function MenuItemCard({
     <>
       <div className="flex w-full flex-col gap-1.5">
         <h3 className={cn("font-display font-semibold text-foreground", s.name)}>
-          <Link href={href} className="hover:underline hover:decoration-1 hover:underline-offset-4">
+          <Link
+            href={href}
+            // Hit-slop toward 44px: above it is the photo (the same link), below it plain text.
+            className="relative after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:underline hover:decoration-1 hover:underline-offset-4"
+          >
             {product.name}
             {/* The visual sticker is aria-hidden, so screen readers get the badge here. */}
             {badge ? <span className="sr-only">, {badge.label}</span> : null}

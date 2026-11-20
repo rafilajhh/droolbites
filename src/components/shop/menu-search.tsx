@@ -74,7 +74,7 @@ export function MenuSearch({ query, onCommit }: { query: string; onCommit: (q: s
               inputRef.current?.focus();
             }}
             aria-label={t.clear}
-            className="mr-1.5 flex size-9 shrink-0 items-center justify-center rounded-pill hover:bg-card"
+            className="relative mr-1.5 flex size-9 shrink-0 items-center justify-center rounded-pill after:absolute after:-inset-0.5 after:content-[''] hover:bg-card"
           >
             <X className="size-4" aria-hidden />
           </button>

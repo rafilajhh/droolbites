@@ -22,6 +22,7 @@ export function ChangeMethodForm({
   belowMinimum,
   cancelHref,
   initialError,
+  feeMayApply = false,
 }: {
   orderNumber: string;
   token: string;
@@ -32,6 +33,8 @@ export function ChangeMethodForm({
   /** Null when there is no live payment to go back to. */
   cancelHref: string | null;
   initialError?: ChangeMethodState["error"];
+  /** The gateway may add a service fee that differs per method (see serviceFeeMayApply). */
+  feeMayApply?: boolean;
 }) {
   const t = useMessages(checkoutMessages);
   const c = t.pay.change;
@@ -78,6 +81,7 @@ export function ChangeMethodForm({
           </ButtonLink>
         ) : null}
       </div>
+      {feeMayApply ? <p className="text-sm leading-[21px] text-pretty text-muted-foreground">{c.feeNote}</p> : null}
     </form>
   );
 }

@@ -309,7 +309,7 @@ export function AddressForm({
             })}
           </Field>
           <Field label={a.city} htmlFor="city" error={err("city")}>
-            {input("city", { autoComplete: "address-level2", required: true, maxLength: 100 })}
+            {input("city", { autoComplete: "address-level2", required: true, maxLength: 100, placeholder: a.cityPlaceholder })}
           </Field>
           <Field label={a.postalCode} htmlFor="postalCode" error={err("postalCode")}>
             {input("postalCode", {

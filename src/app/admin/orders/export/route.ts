@@ -4,7 +4,8 @@ import type { PaymentStatus } from "@/generated/prisma/enums";
 import { requireAdmin } from "@/lib/auth";
 import { containsText, db } from "@/lib/db";
 import { roundedKm } from "@/lib/format";
-import { fulfilmentBadgeInfo, needsActionWhere, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { fulfilmentBadgeInfo, needsActionWhere, paymentMethodInfo } from "@/lib/order-status";
+import { orderPaymentInfo, payable, paymentStatusWhere } from "@/lib/orders";
 import { rangeWhere, resolveReportRange } from "@/lib/reports";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
@@ -77,7 +78,7 @@ export async function GET(request: NextRequest) {
 
   const where: Prisma.OrderWhereInput = {
     ...(dated ? rangeWhere(dated) : {}),
-    ...(needsAction ? needsActionWhere : status ? { paymentStatus: status } : {}),
+    ...(needsAction ? needsActionWhere : status ? await paymentStatusWhere(status) : {}),
     ...(q
       ? { OR: [{ orderNumber: containsText(q) }, { customerName: containsText(q) }, { email: containsText(q) }] }
       : {}),
@@ -90,6 +91,7 @@ export async function GET(request: NextRequest) {
       select: {
         orderNumber: true,
         createdAt: true,
+        updatedAt: true,
         customerName: true,
         email: true,
         phone: true,
@@ -101,7 +103,7 @@ export async function GET(request: NextRequest) {
         deliveryDistanceM: true,
         total: true,
         items: { select: { qty: true } },
-        payments: { select: { method: true, status: true }, orderBy: { id: "desc" } },
+        payments: { select: { method: true, status: true, chargedAmount: true }, orderBy: { id: "desc" } },
       },
     }),
     getMessages(adminExtraMessages),
@@ -125,10 +127,14 @@ export async function GET(request: NextRequest) {
     c.distanceKm,
     c.deliveryFee,
     c.total,
+    c.serviceFee,
+    c.charged,
   ];
   const rows = orders.map((o) => {
     // Same attempt the order page shows: the paid one if any, else the latest.
     const payment = o.payments.find((p) => p.status === "paid") ?? o.payments[0];
+    // The order total is the store's; the gateway's service fee (when the customer bears it) comes on top.
+    const pay = payable(o, payment);
     return [
       o.orderNumber,
       jakarta(o.createdAt).stamp,
@@ -137,7 +143,7 @@ export async function GET(request: NextRequest) {
       { text: o.phone },
       o.fulfilmentMethod === "delivery" ? t.delivery : t.pickup,
       payment ? paymentMethodInfo[payment.method].name : "",
-      paymentStatusInfo[o.paymentStatus][locale],
+      orderPaymentInfo(o)[locale],
       fulfilmentBadgeInfo(o)[locale],
       o.items.reduce((sum, item) => sum + item.qty, 0),
       o.subtotal,
@@ -145,6 +151,8 @@ export async function GET(request: NextRequest) {
       o.deliveryDistanceM === null ? "" : roundedKm(o.deliveryDistanceM).toFixed(roundedKm(o.deliveryDistanceM) >= 100 ? 0 : 1).replace(".", locale === "id" ? "," : "."),
       o.deliveryFee,
       o.total,
+      pay.serviceFee,
+      pay.amount,
     ];
   });
 

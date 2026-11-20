@@ -38,6 +38,15 @@ export function mockVaNumber(reference: string, method: PaymentMethod): string |
 }
 
 /**
+ * A flat service fee the mock charges the customer, from MOCK_SERVICE_FEE (rupiah; unset or 0: none),
+ * so the fee lines can be tried without a gateway. The live gateway decides its fee per method.
+ */
+function mockServiceFee() {
+  const fee = Number(process.env.MOCK_SERVICE_FEE ?? 0);
+  return Number.isInteger(fee) && fee > 0 ? fee : 0;
+}
+
+/**
  * No gateway: VA numbers are derived from the reference, nothing is ever paid
  * unless the demo "simulate payment" action marks it so.
  */
@@ -46,16 +55,21 @@ export const mockProvider: PaymentProvider = {
   /** Only together with the configured provider: see canSimulatePayment. */
   canSimulate: true,
 
+  get mayChargeFee() {
+    return mockServiceFee() > 0;
+  },
+
   async createPayment({ orderNumber, reference, method, amount, expiresAt }) {
+    const fee = mockServiceFee();
     return {
       vaNumber: mockVaNumber(reference, method),
-      qrContent: method === "qris" ? `DROOLBITES-MOCK|${reference}|IDR${amount}` : null,
+      qrContent: method === "qris" ? `DROOLBITES-MOCK|${reference}|IDR${amount + fee}` : null,
       // DANA / ShopeePay open the "app"; in the demo that jumps to the simulate box.
       payUrl: method === "dana" || method === "shopeepay" ? `/checkout/pay/${orderNumber}#simulate` : null,
       transactionId: null,
-      chargedAmount: amount,
-      fee: 0,
-      feeBearer: "merchant",
+      chargedAmount: amount + fee,
+      fee,
+      feeBearer: fee > 0 ? "customer" : "merchant",
       expiresAt,
     };
   },

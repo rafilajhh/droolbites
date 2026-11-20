@@ -8,7 +8,7 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCart } from "@/lib/cart";
 import { formatDistance } from "@/lib/format";
 import { checkoutDeliveryFee, formatAddress, joinStreet, readCheckoutDetails } from "@/lib/orders";
-import { getPaymentOptions } from "@/lib/payments";
+import { getPaymentOptions, serviceFeeMayApply } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -32,7 +32,7 @@ export default async function CheckoutPaymentPage() {
   // No distance on file, or the store's range shrank since: pin the address again.
   if (fee === null) redirect("/checkout");
   const total = cart.subtotal + fee;
-  const { methods, logos, belowMinimum } = await getPaymentOptions(settings, total);
+  const [{ methods, logos, belowMinimum }, feeMayApply] = await Promise.all([getPaymentOptions(settings, total), serviceFeeMayApply()]);
   // BCA VA first, unless the gateway refuses it for this total: then the first method it takes.
   const usable = methods.filter((m) => !(m in belowMinimum));
   const defaultMethod = usable.includes("bca_va") ? "bca_va" : (usable[0] ?? null);
@@ -60,6 +60,7 @@ export default async function CheckoutPaymentPage() {
           logos={logos}
           belowMinimum={belowMinimum}
           defaultMethod={defaultMethod}
+          feeMayApply={feeMayApply}
           summary={{
             lines: cartSummaryLines(cart, locale),
             itemCount: cart.count,

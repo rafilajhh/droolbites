@@ -21,7 +21,7 @@ export const adminMessages = defineMessages({
       title: "Admin sign in",
       sub: "Sign in to manage orders, products and store settings.",
       email: "Email address",
-      emailPlaceholder: "Enter your email address",
+      emailPlaceholder: "Enter your email",
       password: "Password",
       passwordPlaceholder: "Enter your password",
       showPassword: "Show password",
@@ -138,6 +138,8 @@ export const adminMessages = defineMessages({
       count: (n: number) => `${n} ${n === 1 ? "order" : "orders"}`,
       empty: "No orders match these filters.",
       emptyAll: "No orders yet.",
+      /** Under an amount the customer pays with the gateway's service fee in it. */
+      inclFee: (fee: string) => `incl. ${fee} fee`,
       col: {
         order: "Order",
         placed: "Placed",
@@ -426,7 +428,7 @@ export const adminMessages = defineMessages({
       title: "Masuk admin",
       sub: "Masuk untuk mengelola pesanan, produk dan pengaturan toko.",
       email: "Alamat email",
-      emailPlaceholder: "Masukkan alamat emailmu",
+      emailPlaceholder: "Masukkan emailmu",
       password: "Kata sandi",
       passwordPlaceholder: "Masukkan kata sandimu",
       showPassword: "Tampilkan kata sandi",
@@ -544,6 +546,7 @@ export const adminMessages = defineMessages({
       count: (n: number) => `${n} pesanan`,
       empty: "Tidak ada pesanan yang cocok dengan filter ini.",
       emptyAll: "Belum ada pesanan.",
+      inclFee: (fee: string) => `termasuk biaya ${fee}`,
       col: {
         order: "Pesanan",
         placed: "Dibuat",

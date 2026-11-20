@@ -22,7 +22,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/faq" } };
 }
 
-const contactLink = "flex w-fit items-center gap-2.5 text-[15px] leading-[23px] font-semibold text-foreground-inverse hover:underline";
+/** 23px tall with 9px of hit-slop above and below (41px); the links sit 18px apart so those areas never overlap. */
+const contactLink =
+  "relative flex w-fit items-center gap-2.5 text-[15px] leading-[23px] font-semibold text-foreground-inverse after:absolute after:-inset-x-2 after:-inset-y-[9px] after:content-[''] hover:underline";
 
 /** "Not sure where to start?" row: three cookie favorites, on the our-story tile tints. */
 const picks = [
@@ -100,23 +102,25 @@ export default async function FaqPage() {
           </div>
           <div className="order-3 flex flex-col gap-3.5 rounded-m bg-surface-inverse [--focus-ring:var(--white)] p-6 lg:p-7">
             <h2 className="font-display text-2xl leading-[26px] font-bold text-foreground-inverse">{t.contactTitle}</h2>
-            <a href={`mailto:${settings.email}`} className={contactLink}>
-              <Mail className="size-[18px] shrink-0 text-highlight" aria-hidden />
-              <span className="break-all">{settings.email}</span>
-            </a>
-            <a href={`tel:${settings.phone.replace(/\s/g, "")}`} className={contactLink}>
-              <Phone className="size-[18px] shrink-0 text-highlight" aria-hidden />
-              {settings.phone}
-            </a>
-            <a
-              href={`https://wa.me/${settings.phone.replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={contactLink}
-            >
-              <MessageCircle className="size-[18px] shrink-0 text-highlight" aria-hidden />
-              {t.whatsapp}
-            </a>
+            <div className="flex flex-col gap-[18px]">
+              <a href={`mailto:${settings.email}`} className={contactLink}>
+                <Mail className="size-[18px] shrink-0 text-highlight" aria-hidden />
+                <span className="break-all">{settings.email}</span>
+              </a>
+              <a href={`tel:${settings.phone.replace(/\s/g, "")}`} className={contactLink}>
+                <Phone className="size-[18px] shrink-0 text-highlight" aria-hidden />
+                {settings.phone}
+              </a>
+              <a
+                href={`https://wa.me/${settings.phone.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={contactLink}
+              >
+                <MessageCircle className="size-[18px] shrink-0 text-highlight" aria-hidden />
+                {t.whatsapp}
+              </a>
+            </div>
           </div>
         </div>
 

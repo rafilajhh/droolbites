@@ -157,18 +157,34 @@ export function minimumFrom(data: unknown): number | null {
     : null;
 }
 
-/** Minimums learned from refused charges, per method; forgotten after FLOOR_TTL_MS in case the gateway changes them. */
+/**
+ * Minimums learned from refused charges, per method; forgotten after FLOOR_TTL_MS in case the gateway
+ * changes them. Kept in memory (a restart forgets them; the next refusal teaches them again).
+ */
 const FLOOR_TTL_MS = 6 * 60 * 60 * 1000;
 const floors = new Map<PaymentMethod, AmountFloor & { at: number }>();
 
+/**
+ * The methods a refusal for `method` says something about. Virtual-account banks are taken as one
+ * (the minimum seen is per payment type), so a customer refused by one bank isn't sent to try the
+ * next for the same error; e-wallets, QRIS and retail stay per method. A later accepted charge
+ * clears its own method (learnAccepted).
+ */
+function sharingFloor(method: PaymentMethod): PaymentMethod[] {
+  if (paymentMethodInfo[method].kind !== "va") return [method];
+  return (Object.keys(paymentMethodInfo) as PaymentMethod[]).filter((m) => paymentMethodInfo[m].kind === "va");
+}
+
 function learnRefused(method: PaymentMethod, amount: number, min: number | null) {
-  const known = floors.get(method);
-  const fresh = known && Date.now() - known.at < FLOOR_TTL_MS ? known : null;
-  floors.set(method, {
-    min: min ?? fresh?.min ?? null,
-    refusedAt: Math.max(amount, fresh?.refusedAt ?? 0),
-    at: Date.now(),
-  });
+  for (const m of sharingFloor(method)) {
+    const known = floors.get(m);
+    const fresh = known && Date.now() - known.at < FLOOR_TTL_MS ? known : null;
+    floors.set(m, {
+      min: min ?? fresh?.min ?? null,
+      refusedAt: Math.max(amount, fresh?.refusedAt ?? 0),
+      at: Date.now(),
+    });
+  }
 }
 
 /** A charge went through: anything learned that says this amount is too small is out of date. */
@@ -207,6 +223,10 @@ export const belibayarProvider: PaymentProvider = {
   get canSimulate() {
     return (process.env.BELIBAYAR_API_KEY ?? "").startsWith("byr_test_");
   },
+
+  /** Who bears the fee is an account setting, and the amount depends on the channel (flat or a percentage). */
+  mayChargeFee: true,
+  feeBearerSetAtGateway: true,
 
   async createPayment(input) {
     const info = paymentMethodInfo[input.method];
