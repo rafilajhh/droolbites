@@ -69,6 +69,8 @@ export const adminMessages = defineMessages({
       clearSearch: "Clear search",
       skipToContent: "Skip to content",
       loading: "Loading…",
+      demo: "Demo",
+      demoLabel: "Demo payment: marked paid by the store, no money moved",
     },
     errorPage: {
       eyebrow: "SOMETHING WENT WRONG",
@@ -109,6 +111,7 @@ export const adminMessages = defineMessages({
       awaitingSub: "Orders with unconfirmed payment",
       received: "Payments received",
       receivedSub: (n: number) => `From ${n} paid ${n === 1 ? "order" : "orders"}`,
+      demoIncluded: (amount: string, n: number) => `Incl. ${amount} in demo payments (${n} ${n === 1 ? "order" : "orders"})`,
       allTime: "All time",
       onMenu: "Products on the menu",
       onMenuSub: (n: number) => `${n} ${n === 1 ? "variant" : "variants"} and size options`,
@@ -233,6 +236,22 @@ export const adminMessages = defineMessages({
       shortBody:
         "A size had fewer left than this order asked for, so its stock stopped at 0. Bake what you can, or decline the order and refund the customer.",
       shortItem: (taken: number, qty: number) => `only ${taken} of ${qty} were in stock`,
+      demo: {
+        button: "MARK PAID (DEMO)",
+        marking: "MARKING PAID…",
+        confirmTitle: (n: string) => `Mark ${n} paid (demo)?`,
+        confirmBody: "No money moves. If the customer has a payment request open, it is closed at the payment gateway first.",
+        confirmEffect:
+          "Then this order behaves exactly like a paid one: the paid emails go out to the customer and the store, its items leave stock and it waits for you to accept it.",
+        confirm: "MARK PAID",
+        paid: "Marked paid in demo mode. Accept or decline it as usual.",
+        real: "The customer had already paid for real at the gateway, so the order is paid with that payment, not a demo one.",
+        off: "Demo payments are switched off on this server.",
+        invalid: "This order can no longer be marked paid: it's paid, cancelled or past its payment window.",
+        gateway: "The payment gateway couldn't close the customer's open payment, so nothing changed. Try again in a moment.",
+        noRefund: "Paid in demo mode, so there's nothing to refund.",
+        declineBody: "The order is cancelled and the customer is emailed with your reason. It was paid in demo mode, so there's nothing to refund.",
+      },
     },
     products: {
       title: "Products",
@@ -476,6 +495,8 @@ export const adminMessages = defineMessages({
       clearSearch: "Hapus pencarian",
       skipToContent: "Langsung ke konten",
       loading: "Memuat…",
+      demo: "Demo",
+      demoLabel: "Pembayaran demo: ditandai lunas oleh toko, tanpa uang masuk",
     },
     errorPage: {
       eyebrow: "ADA KENDALA",
@@ -517,6 +538,7 @@ export const adminMessages = defineMessages({
       awaitingSub: "Pesanan yang belum dibayar",
       received: "Pembayaran diterima",
       receivedSub: (n: number) => `Dari ${n} pesanan lunas`,
+      demoIncluded: (amount: string, n: number) => `Termasuk ${amount} pembayaran demo (${n} pesanan)`,
       allTime: "Sepanjang waktu",
       onMenu: "Produk di menu",
       onMenuSub: (n: number) => `${n} varian dan pilihan ukuran`,
@@ -640,6 +662,22 @@ export const adminMessages = defineMessages({
       shortBody:
         "Ada ukuran yang sisanya kurang dari pesanan ini, jadi stoknya berhenti di 0. Siapkan yang bisa, atau tolak pesanannya dan kembalikan dana pelanggan.",
       shortItem: (taken: number, qty: number) => `stok cuma ada ${taken} dari ${qty}`,
+      demo: {
+        button: "TANDAI LUNAS (DEMO)",
+        marking: "MENANDAI LUNAS…",
+        confirmTitle: (n: string) => `Tandai ${n} lunas (demo)?`,
+        confirmBody: "Tidak ada uang yang berpindah. Kalau pelanggan masih punya permintaan pembayaran yang terbuka, permintaan itu ditutup dulu di payment gateway.",
+        confirmEffect:
+          "Setelah itu pesanan ini jalan persis seperti pesanan lunas: email lunas terkirim ke pelanggan dan toko, stoknya berkurang, dan pesanan menunggu kamu terima.",
+        confirm: "TANDAI LUNAS",
+        paid: "Pesanan ditandai lunas (demo). Terima atau tolak seperti biasa.",
+        real: "Ternyata pelanggan sudah bayar sungguhan di gateway, jadi pesanan lunas pakai pembayaran itu, bukan demo.",
+        off: "Pembayaran demo sedang nonaktif di server ini.",
+        invalid: "Pesanan ini sudah tidak bisa ditandai lunas: sudah lunas, dibatalkan, atau lewat batas waktu bayar.",
+        gateway: "Payment gateway belum bisa menutup pembayaran pelanggan yang masih terbuka, jadi belum ada yang berubah. Coba lagi sebentar lagi.",
+        noRefund: "Dilunasi lewat mode demo, jadi tidak ada dana yang perlu dikembalikan.",
+        declineBody: "Pesanan dibatalkan dan pelanggan menerima email beserta alasanmu. Pesanan ini dilunasi lewat mode demo, jadi tidak ada dana yang perlu dikembalikan.",
+      },
     },
     products: {
       title: "Produk",

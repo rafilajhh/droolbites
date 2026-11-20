@@ -6,6 +6,7 @@ import { containsText, db } from "@/lib/db";
 import { roundedKm } from "@/lib/format";
 import { fulfilmentBadgeInfo, needsActionWhere, paymentMethodInfo } from "@/lib/order-status";
 import { orderPaymentInfo, payable, paymentStatusWhere } from "@/lib/orders";
+import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { rangeWhere, resolveReportRange } from "@/lib/reports";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
         deliveryDistanceM: true,
         total: true,
         items: { select: { qty: true } },
-        payments: { select: { method: true, status: true, chargedAmount: true }, orderBy: { id: "desc" } },
+        payments: { select: { method: true, status: true, chargedAmount: true, provider: true }, orderBy: { id: "desc" } },
       },
     }),
     getMessages(adminExtraMessages),
@@ -132,7 +133,7 @@ export async function GET(request: NextRequest) {
   ];
   const rows = orders.map((o) => {
     // Same attempt the order page shows: the paid one if any, else the latest.
-    const payment = o.payments.find((p) => p.status === "paid") ?? o.payments[0];
+    const payment = shownPayment(o.payments);
     // The order total is the store's; the gateway's service fee (when the customer bears it) comes on top.
     const pay = payable(o, payment);
     return [
@@ -142,7 +143,8 @@ export async function GET(request: NextRequest) {
       o.email,
       { text: o.phone },
       o.fulfilmentMethod === "delivery" ? t.delivery : t.pickup,
-      payment ? paymentMethodInfo[payment.method].name : "",
+      // A payment the store marked paid in demo mode (no money) says so: "QRIS (demo)".
+      payment ? `${paymentMethodInfo[payment.method].name}${payment.provider === DEMO_PROVIDER ? " (demo)" : ""}` : "",
       orderPaymentInfo(o)[locale],
       fulfilmentBadgeInfo(o)[locale],
       o.items.reduce((sum, item) => sum + item.qty, 0),

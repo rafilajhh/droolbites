@@ -223,6 +223,15 @@ Kalau dua-duanya kosong, tombol "Continue with Google" otomatis disembunyikan.
 4. Ganti `PAYMENT_PROVIDER="belibayar"` di `.env`, lalu `docker compose -f compose.yml -f compose.prod.yml up -d` (membuat ulang container supaya `.env` baru terbaca; `restart` saja tidak cukup). Cek: `curl -X POST https://droolbites.biz.id/api/payments/belibayar/webhook` harus 401, bukan 503.
 5. Coba satu pesanan dengan key sandbox dulu sebelum pakai `byr_live_`.
 
+**Pembayaran demo** (untuk menguji alur setelah bayar tanpa uang sungguhan):
+
+1. Tambahkan `DEMO_PAYMENTS="on"` di `.env`, lalu `docker compose -f compose.yml -f compose.prod.yml up -d` (tanpa `--build`; `restart` saja tidak membaca `.env` baru).
+2. Di admin, buka pesanan yang belum dibayar: di bawah **CANCEL ORDER** muncul **MARK PAID (DEMO)** / **TANDAI LUNAS (DEMO)**. Setelah dikonfirmasi, permintaan pembayaran yang masih terbuka ditutup di Belibayar (alasan: "Marked paid in demo mode by the store"), lalu pesanan jalan persis seperti pesanan lunas: email lunas ke pelanggan dan toko, stok berkurang, menunggu diterima. Halaman bayar pelanggan yang masih terbuka pindah sendiri ke halaman sukses.
+3. Kalau ternyata pelanggan sudah bayar sungguhan di Belibayar, pesanan dilunasi dengan pembayaran itu (bukan demo) dan admin diberi tahu. Kalau Belibayar tidak bisa dihubungi atau menolak menutup pembayarannya, tidak ada yang berubah (pembayaran pelanggan tetap aktif) dan admin diminta mencoba lagi.
+4. Pesanan demo yang kemudian ditolak atau dibatalkan tidak memunculkan peringatan "refund needed" di admin (tidak ada uang yang masuk). Pelanggan tetap melihat dan menerima email seperti pesanan lunas biasa, termasuk kalimat soal pengembalian dana, jadi uji alur tolak/batal dengan akun pelanggan sendiri.
+5. Pembayaran demo tercatat dengan provider `demo` (referensi `DB-0042-demo-2`), tanpa biaya layanan. Admin melihat badge **Demo** di halaman pesanan, daftar pesanan dan invoice; CSV menulis metodenya sebagai `QRIS (demo)`; laporan penjualan tetap menghitungnya, dengan baris "Termasuk Rp… pembayaran demo (N pesanan)" di bawah Pendapatan. Pelanggan dan email melihatnya sebagai pesanan lunas biasa.
+6. Matikan lagi dengan mengosongkan `DEMO_PAYMENTS` lalu `up -d` yang sama. Pesanan demo yang sudah ada tetap tercatat lunas (badge Demo tetap tampil); tombolnya saja yang hilang dan aksinya ditolak server.
+
 ## 11. Update ke versi terbaru
 
 ```bash

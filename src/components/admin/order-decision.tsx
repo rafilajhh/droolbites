@@ -18,7 +18,14 @@ type Reason = (typeof CANCEL_REASONS)[number] | "other";
  * reason the customer sees (it's cancelled and the payment is owed back). Replaces the status
  * dropdown until the store decides.
  */
-export function OrderDecision({ orderNumber, paidAmount }: { orderNumber: string; paidAmount: string }) {
+export function OrderDecision({
+  orderNumber,
+  paidAmount,
+}: {
+  orderNumber: string;
+  /** What the customer paid, owed back on a decline; null for a demo payment (nothing to refund). */
+  paidAmount: string | null;
+}) {
   const t = useMessages(adminMessages).order;
   const d = t.decision;
   const [state, action, pending] = useActionState<DecisionState, FormData>(decideOrder, { status: "idle" });
@@ -77,7 +84,7 @@ export function OrderDecision({ orderNumber, paidAmount }: { orderNumber: string
         title={d.declineTitle(orderNumber)}
         body={
           <div className="flex flex-col gap-4 text-left">
-            <p>{d.declineBody(paidAmount)}</p>
+            <p>{paidAmount === null ? t.demo.declineBody : d.declineBody(paidAmount)}</p>
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-1 text-sm leading-[18px] font-semibold text-foreground">{d.reasonLabel}</legend>
               {[...CANCEL_REASONS, "other" as const].map((key) => (

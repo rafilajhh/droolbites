@@ -11,6 +11,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatRupiah, formatTime } from "@/lib/format";
 import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere } from "@/lib/order-status";
 import { orderPaymentInfo, payable } from "@/lib/orders";
+import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { cn } from "@/lib/cn";
 import { LOW_STOCK } from "@/lib/stock";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -52,11 +53,24 @@ export default async function AdminOverviewPage() {
     createdAt: true,
     payments: { where: { status: "paid" }, orderBy: { paidAt: "desc" }, take: 1, select: { paidAt: true } },
   } as const;
-  const [awaiting, paid, productsOnMenu, variantsOnMenu, newOrders, inProgress, recent, categories, lowStock, shortOrders] = await Promise.all([
+  const [awaiting, paid, demoPaid, productsOnMenu, variantsOnMenu, newOrders, inProgress, recent, categories, lowStock, shortOrders] = await Promise.all([
     db.order.count({ where: { paymentStatus: "awaiting", fulfilmentStatus: { not: "cancelled" } } }),
     // Paid but later cancelled by the store (a refund) is not money kept.
     db.order.aggregate({
       where: { paymentStatus: "paid", fulfilmentStatus: { not: "cancelled" } },
+      _sum: { total: true },
+      _count: true,
+    }),
+    // The part of it paid in demo mode (DEMO_PAYMENTS: no money moved), named under the figure.
+    db.order.aggregate({
+      where: {
+        paymentStatus: "paid",
+        fulfilmentStatus: { not: "cancelled" },
+        payments: {
+          some: { status: "paid", provider: DEMO_PROVIDER },
+          none: { status: "paid", OR: [{ provider: null }, { provider: { not: DEMO_PROVIDER } }] },
+        },
+      },
       _sum: { total: true },
       _count: true,
     }),
@@ -77,7 +91,7 @@ export default async function AdminOverviewPage() {
         createdAt: true,
         updatedAt: true,
         total: true,
-        payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true } },
+        payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true, provider: true } },
       },
     }),
     db.category.findMany({
@@ -213,7 +227,16 @@ export default async function AdminOverviewPage() {
           icon={Wallet}
           iconBg="bg-mint"
           value={formatRupiah(paid._sum.total ?? 0)}
-          sub={`${o.receivedSub(paid._count)} · ${o.allTime}`}
+          sub={
+            <>
+              {`${o.receivedSub(paid._count)} · ${o.allTime}`}
+              {demoPaid._count > 0 ? (
+                <span className="mt-0.5 block font-semibold text-foreground">
+                  {o.demoIncluded(formatRupiah(demoPaid._sum.total ?? 0), demoPaid._count)}
+                </span>
+              ) : null}
+            </>
+          }
           href="/admin/reports?range=all"
         />
         <StatPane
@@ -262,7 +285,7 @@ export default async function AdminOverviewPage() {
                   const status = fulfilmentBadgeInfo(order);
                   const payment = orderPaymentInfo(order);
                   // What the customer pays or paid, as on the orders list (the fee line is left to it).
-                  const amount = payable(order, order.payments.find((p) => p.status === "paid") ?? order.payments[0]).amount;
+                  const amount = payable(order, shownPayment(order.payments)).amount;
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
                     <tr

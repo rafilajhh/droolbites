@@ -219,7 +219,7 @@ model Payment {
   expiresAt     DateTime?     @map("expires_at")
   paidAt        DateTime?     @map("paid_at")
   createdAt     DateTime      @default(now()) @map("created_at")
-  /// Gateway that issued it: mock | belibayar.
+  /// Gateway that issued it: mock | belibayar, or demo (marked paid by the store in demo mode, no money moved).
   provider      String?       @db.VarChar(20)
   /// Our reference sent to the gateway, e.g. DB-0007-2 (order number + attempt).
   reference     String?       @unique @db.VarChar(64)

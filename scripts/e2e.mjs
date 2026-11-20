@@ -1,4 +1,5 @@
-// Acceptance check for PRD US-002 (storefront), US-005 (admin), US-007 (integration).
+// Acceptance check for PRD US-002 (storefront), US-005 (admin), US-007 (integration), US-008 (Google)
+// and US-009 (demo payments, adaptive to the server's DEMO_PAYMENTS).
 //
 //   node scripts/e2e.mjs            (E2E_BASE defaults to http://localhost:3000)
 //
@@ -594,6 +595,233 @@ try {
     }
     throw new Error(`missing; saw ${JSON.stringify(subjects)}`);
   });
+
+  // ============================================================ US-009 demo payments (DEMO_PAYMENTS)
+  // Adaptive like US-008: the dev server's env decides. On: the whole flow; off: no button and the
+  // action refused even for the admin. Orders are inserted directly (Red Velvet, its stock tracked
+  // for the run) and deleted afterwards with their emails.
+  const DEMO_VARIANT = 3;
+  const demoStock = await one("SELECT stock FROM product_variants WHERE id = ?", [DEMO_VARIANT]);
+  await q("UPDATE product_variants SET stock = 40 WHERE id = ?", [DEMO_VARIANT]);
+  undo.push(async () => {
+    await q("UPDATE product_variants SET stock = ? WHERE id = ?", [demoStock.stock, DEMO_VARIANT]);
+    cleanupLog.push(`variant ${DEMO_VARIANT} stock restored to ${demoStock.stock}`);
+  });
+  const variantStock = async () => (await one("SELECT stock FROM product_variants WHERE id = ?", [DEMO_VARIANT])).stock;
+  const cookieOf = async (ctx) => (await ctx.cookies()).filter((c) => c.name === "db_session").map((c) => `${c.name}=${c.value}`).join("; ");
+  /** An unpaid pickup order of 2 Red Velvet for Alya, with a live mock BCA VA payment unless `live` is false. */
+  async function demoOrder({ live = true } = {}) {
+    const max = (await one("SELECT MAX(CAST(SUBSTRING(order_number, 4) AS UNSIGNED)) n FROM orders WHERE order_number LIKE 'DB-%'")).n ?? 0;
+    const number = `DB-${String(Number(max) + 1).padStart(4, "0")}`;
+    const r = await q(
+      `INSERT INTO orders (order_number, user_id, customer_name, email, phone, fulfilment_method, subtotal, delivery_fee, total, created_at)
+       VALUES (?, 2, 'Alya Rahmawati', 'alya@email.com', '0812-3456-7890', 'pickup', 10000, 0, 10000, UTC_TIMESTAMP(3))`,
+      [number],
+    );
+    const id = r.insertId;
+    undo.push(async () => {
+      await q("DELETE FROM orders WHERE id=?", [id]);
+      cleanupLog.push(`demo order ${number} deleted`);
+      try {
+        const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
+        const ids = msgs.filter((m) => m.Subject.includes(number)).map((m) => m.ID);
+        if (ids.length) await fetch(`${MAILPIT}/api/v1/messages`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ IDs: ids }) });
+      } catch {}
+    });
+    await q("INSERT INTO order_items (order_id, variant_id, qty, unit_price) VALUES (?, ?, 2, 5000)", [id, DEMO_VARIANT]);
+    if (live) {
+      await q(
+        `INSERT INTO payments (order_id, method, amount, status, provider, reference, va_number, charged_amount, fee, fee_bearer, expires_at, created_at)
+         VALUES (?, 'bca_va', 10000, 'awaiting', 'mock', ?, '8077 1234 5678 9012', 10000, 0, 'merchant', DATE_ADD(UTC_TIMESTAMP(3), INTERVAL 23 HOUR), UTC_TIMESTAMP(3))`,
+        [id, `${number}-1`],
+      );
+    }
+    return { id, number };
+  }
+  const paymentsOf = (id) => q("SELECT provider, status, method, reference, amount, charged_amount, fee FROM payments WHERE order_id=? ORDER BY id", [id]);
+  const orderOf = (id) => one("SELECT payment_status, fulfilment_status, stock_deducted FROM orders WHERE id=?", [id]);
+  /** The demo action's id, from the client chunk of the admin order page (the dev build names its actions). */
+  async function demoActionFromChunks(page) {
+    const srcs = await page.locator("script[src]").evaluateAll((s) => s.map((x) => x.src));
+    for (const src of srcs) {
+      const m = (await (await fetch(src)).text()).match(/"([0-9a-f]{40,})":\{"name":"markPaidDemo"\}/);
+      if (m) return m[1];
+    }
+    return null;
+  }
+  /** Call the action as a browser would (multipart body, Next-Action header), for another order or session. */
+  async function callDemoAction(action, number, cookie) {
+    const body = action.body.split(action.number).join(number);
+    const res = await fetch(BASE + action.path, {
+      method: "POST",
+      redirect: "manual",
+      headers: { "next-action": action.id, "content-type": action.contentType, accept: "text/x-component", origin: BASE, ...(cookie ? { cookie } : {}) },
+      body,
+    });
+    return { status: res.status, text: await res.text() };
+  }
+  const demoButton = (page) => page.getByRole("button", { name: "MARK PAID (DEMO)", exact: true });
+
+  const demoA = await demoOrder();
+  const probe = await open(admin, `/admin/orders/${demoA.number}`);
+  await settle(probe);
+  const demoOn = (await demoButton(probe).count()) > 0;
+  await probe.close();
+
+  await check("US-009.1", `Demo payments ${demoOn ? "on" : "off"}: MARK PAID (DEMO) ${demoOn ? "shown" : "hidden"} on an unpaid order's admin page, next to CANCEL ORDER`, async () => {
+    const page = await open(admin, `/admin/orders/${demoA.number}`);
+    await settle(page);
+    const cancel = await page.getByRole("button", { name: "CANCEL ORDER", exact: true }).count();
+    const demo = await demoButton(page).count();
+    await page.close();
+    assert(cancel === 1, `CANCEL ORDER x${cancel}`);
+    assert(demo === (demoOn ? 1 : 0), `MARK PAID (DEMO) x${demo}`);
+    return `CANCEL ORDER x1, MARK PAID (DEMO) x${demo}`;
+  });
+
+  if (!demoOn) {
+    await check("US-009.2", "Demo payments off: the action is refused even with the admin session; the order stays unpaid", async () => {
+      const page = await open(admin, `/admin/orders/${demoA.number}`);
+      await settle(page);
+      const id = await demoActionFromChunks(page);
+      await page.close();
+      assert(id, "action id not found in the page's chunks (not a dev build?)");
+      // The body a click sends: [state, FormData{orderNumber}] as React's multipart reply.
+      const boundary = "----e2edemo";
+      const body = [
+        `--${boundary}\r\nContent-Disposition: form-data; name="1_orderNumber"\r\n\r\n${demoA.number}\r\n`,
+        `--${boundary}\r\nContent-Disposition: form-data; name="0"\r\n\r\n[{"status":"idle"},"$K1"]\r\n`,
+        `--${boundary}--\r\n`,
+      ].join("");
+      const action = { id, path: `/admin/orders/${demoA.number}`, contentType: `multipart/form-data; boundary=${boundary}`, body, number: demoA.number };
+      const r = await callDemoAction(action, demoA.number, await cookieOf(admin));
+      assert(r.text.includes('"status":"off"'), `answer ${r.status}: ${r.text.slice(0, 160)}`);
+      const o = await orderOf(demoA.id);
+      const p = await paymentsOf(demoA.id);
+      assert(o.payment_status === "awaiting" && p.length === 1 && p[0].status === "awaiting", `${o.payment_status}, ${p.length} payment(s)`);
+      return `answer {"status":"off"}; ${demoA.number} still awaiting`;
+    });
+  } else {
+    let action = null;
+    await check("US-009.2", "Admin marks an unpaid order paid (demo) after the confirm; live payment expired, demo payment paid, stock taken; the customer's open pay page moves to success by polling", async () => {
+      const stockBefore = await variantStock();
+      const pay = await open(alya, `/checkout/pay/${demoA.number}`);
+      await pay.locator("#pay-va-number").waitFor({ state: "visible" });
+      const page = await open(admin, `/admin/orders/${demoA.number}`);
+      await settle(page);
+      await demoButton(page).click();
+      const dialog = page.getByRole("alertdialog");
+      await dialog.waitFor({ state: "visible" });
+      const dialogText = await dialog.innerText();
+      assert(/No money moves/.test(dialogText) && /closed at the payment gateway/.test(dialogText) && /exactly like a paid one/.test(dialogText), `dialog: ${dialogText.slice(0, 200)}`);
+      const [request] = await Promise.all([
+        page.waitForRequest((r) => r.method() === "POST" && Boolean(r.headers()["next-action"])),
+        dialog.getByRole("button", { name: "MARK PAID", exact: true }).click(),
+      ]);
+      action = {
+        id: request.headers()["next-action"],
+        path: new URL(request.url()).pathname,
+        contentType: request.headers()["content-type"],
+        body: request.postData() ?? "",
+        number: demoA.number,
+      };
+      await page.locator("[role=status]").filter({ hasText: "Marked paid in demo mode" }).waitFor({ timeout: 30_000 });
+      const t0 = Date.now();
+      await pay.waitForURL(new RegExp(`/checkout/success/${demoA.number}`), { timeout: 30_000 });
+      const moved = Date.now() - t0;
+      await pay.close();
+      await page.close();
+      const o = await orderOf(demoA.id);
+      assert(o.payment_status === "paid" && o.fulfilment_status === "pending" && o.stock_deducted === 1, JSON.stringify(o));
+      const p = await paymentsOf(demoA.id);
+      assert(p.length === 2 && p[0].provider === "mock" && p[0].status === "expired", `old payment ${JSON.stringify(p[0])}`);
+      assert(p[1].provider === "demo" && p[1].status === "paid" && p[1].method === "bca_va" && p[1].charged_amount === 10000 && p[1].fee === 0, `demo payment ${JSON.stringify(p[1])}`);
+      const stockAfter = await variantStock();
+      assert(stockAfter === stockBefore - 2, `stock ${stockBefore} -> ${stockAfter}`);
+      return `${p[0].reference} expired, ${p[1].reference} paid; stock ${stockBefore} -> ${stockAfter}; pay page on success ${moved} ms after the admin saw the result`;
+    });
+
+    await check("US-009.3", "Demo badge beside the method on the order page, in the orders list and on the invoice; CSV says (demo)", async () => {
+      const page = await open(admin, `/admin/orders/${demoA.number}`);
+      await settle(page);
+      const method = await page.locator("dt", { hasText: /^Method$/ }).last().locator("xpath=following-sibling::dd[1]").innerText();
+      assert(/BCA VA/.test(method) && /Demo/.test(method), `order page method "${method}"`);
+      assert((await page.getByRole("button", { name: /accept/i }).count()) > 0, "no accept / decline step after the demo payment");
+      await page.close();
+      const list = await open(admin, `/admin/orders?q=${demoA.number}`);
+      await settle(list);
+      const row = await list.locator("tbody tr", { hasText: demoA.number }).innerText();
+      await list.close();
+      assert(/Paid/.test(row) && /Demo/.test(row), `list row "${row.replace(/\s+/g, " ")}"`);
+      const invoice = await open(admin, `/admin/invoice/${demoA.number}`);
+      const inv = await invoice.locator("article").innerText();
+      await invoice.close();
+      assert(/BCA Virtual Account\s*Demo/.test(inv), "invoice lacks the Demo badge beside the method");
+      const csv = await (await admin.request.get(`/admin/orders/export?q=${demoA.number}`)).text();
+      assert(csv.includes("BCA Virtual Account (demo)"), `CSV: ${csv.split("\r\n")[1]}`);
+      return `order page "${method.replace(/\s+/g, " ")}", list row, invoice, CSV "BCA Virtual Account (demo)"`;
+    });
+
+    await check("US-009.4", "Customer order page and the paid email show an ordinary paid order (no demo wording)", async () => {
+      const page = await open(alya, `/orders/${demoA.number}`);
+      const txt = await page.locator("main").innerText();
+      await page.close();
+      assert(/BCA Virtual Account/.test(txt) && /Paid/.test(txt), "order page lacks the paid method");
+      assert(!/demo/i.test(txt), "order page says demo");
+      let mail = null;
+      for (let i = 0; i < 20 && !mail; i++) {
+        const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
+        mail = msgs.find((m) => m.Subject === `Payment received for ${demoA.number}`) ?? null;
+        if (!mail) await sleep(500);
+      }
+      assert(mail, "no 'Payment received' email");
+      const body = await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
+      assert(/BCA Virtual Account/.test(body.Text) && !/demo/i.test(body.Text + body.HTML), "email names no method or says demo");
+      return `page and "${mail.Subject}" email: BCA Virtual Account, no demo`;
+    });
+
+    await check("US-009.5", "Second click (same request again) is refused: still one demo payment, stock taken once", async () => {
+      assert(action, "no captured action from US-009.2");
+      const stockBefore = await variantStock();
+      const r = await callDemoAction(action, demoA.number, await cookieOf(admin));
+      assert(r.text.includes('"status":"invalid"'), `answer ${r.status}: ${r.text.slice(0, 160)}`);
+      const p = await paymentsOf(demoA.id);
+      assert(p.length === 2 && p.filter((x) => x.provider === "demo").length === 1, `${p.length} payments`);
+      assert((await variantStock()) === stockBefore, "stock moved");
+      return `answer {"status":"invalid"}; 2 payments; stock ${stockBefore}`;
+    });
+
+    await check("US-009.6", "No session and a customer session can't call the action (order stays unpaid); the admin session can", async () => {
+      assert(action, "no captured action from US-009.2");
+      const b = await demoOrder();
+      const anon = await callDemoAction(action, b.number, "");
+      const customer = await callDemoAction(action, b.number, await cookieOf(alya));
+      let o = await orderOf(b.id);
+      let p = await paymentsOf(b.id);
+      assert(o.payment_status === "awaiting" && p.length === 1 && p[0].status === "awaiting", `after non-admin calls: ${o.payment_status}, ${p.length} payment(s)`);
+      assert(!anon.text.includes('"status":"paid"') && !customer.text.includes('"status":"paid"'), "a non-admin call answered paid");
+      const ok = await callDemoAction(action, b.number, await cookieOf(admin));
+      o = await orderOf(b.id);
+      p = await paymentsOf(b.id);
+      assert(ok.text.includes('"status":"paid"') && o.payment_status === "paid" && p[1]?.provider === "demo", `admin call: ${ok.text.slice(0, 120)}`);
+      return `no session -> ${anon.status}, customer -> ${customer.status}: unpaid; admin -> paid`;
+    });
+
+    await check("US-009.7", "Cancelled order: no MARK PAID (DEMO) button and the action is refused", async () => {
+      assert(action, "no captured action from US-009.2");
+      const c = await demoOrder({ live: false });
+      await q("UPDATE orders SET payment_status='expired', fulfilment_status='cancelled' WHERE id=?", [c.id]);
+      const page = await open(admin, `/admin/orders/${c.number}`);
+      await settle(page);
+      const shown = await demoButton(page).count();
+      await page.close();
+      assert(shown === 0, "button shown on a cancelled order");
+      const r = await callDemoAction(action, c.number, await cookieOf(admin));
+      const o = await orderOf(c.id);
+      assert(r.text.includes('"status":"invalid"') && o.payment_status === "expired" && (await paymentsOf(c.id)).length === 0, `answer ${r.text.slice(0, 120)}; ${o.payment_status}`);
+      return `hidden; answer {"status":"invalid"}; still cancelled, no payment`;
+    });
+  }
 
   await check("US-007.4", "Internal links on /, /menu, /our-story (header, nav menu, footer, CTAs) return non-404", async () => {
     const links = new Map(); // path -> first seen on

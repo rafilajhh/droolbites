@@ -186,6 +186,8 @@ export const checkoutMessages = defineMessages({
     pay: {
       title: "Complete your payment",
       order: (n: string) => `Order ${n}`,
+      confirmingTitle: "Confirming your payment",
+      confirmingSub: "This takes a few seconds. This page moves on by itself.",
       subVa: (name: string) => `Transfer the exact amount to your ${name}. We'll confirm it automatically.`,
       subRetail: (store: string) => `Pay at any ${store} cashier with the payment code below. We'll confirm it automatically.`,
       subQris: "Scan the QR code with any bank or e-wallet app and pay the exact amount. We'll confirm it automatically.",
@@ -644,6 +646,8 @@ export const checkoutMessages = defineMessages({
     pay: {
       title: "Selesaikan pembayaran",
       order: (n: string) => `Pesanan ${n}`,
+      confirmingTitle: "Mengonfirmasi pembayaranmu",
+      confirmingSub: "Cuma beberapa detik. Halaman ini lanjut sendiri.",
       subVa: (name: string) => `Transfer sesuai nominal ke ${name} kamu. Kami konfirmasi otomatis.`,
       subRetail: (store: string) => `Bayar di kasir ${store} mana saja pakai kode bayar di bawah. Kami konfirmasi otomatis.`,
       subQris: "Scan kode QR dengan aplikasi bank atau e-wallet apa saja dan bayar sesuai nominal. Kami konfirmasi otomatis.",

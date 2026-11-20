@@ -39,6 +39,7 @@ export const adminReportsMessages = defineMessages({
     kpi: {
       revenue: "Revenue",
       revenueSub: (items: string, delivery: string) => `${items} items + ${delivery} delivery`,
+      demoIncluded: (amount: string, n: number) => `Incl. ${amount} in demo payments (${n} ${n === 1 ? "order" : "orders"})`,
       paidOrders: "Paid orders",
       paidOrdersSub: "Orders the store cancelled aren't counted",
       average: "Average order",
@@ -135,6 +136,7 @@ export const adminReportsMessages = defineMessages({
     kpi: {
       revenue: "Pendapatan",
       revenueSub: (items: string, delivery: string) => `${items} produk + ${delivery} ongkir`,
+      demoIncluded: (amount: string, n: number) => `Termasuk ${amount} pembayaran demo (${n} pesanan)`,
       paidOrders: "Pesanan lunas",
       paidOrdersSub: "Pesanan yang dibatalkan toko tidak dihitung",
       average: "Rata-rata pesanan",

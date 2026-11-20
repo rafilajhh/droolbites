@@ -228,6 +228,7 @@ const server = http.createServer(async (req, res) => {
 
   // ---- cancel
   if (req.method === "POST" && route === "/payment/cancel") {
+    entry.reason = body.reason;
     const t = txs.get(body.reference);
     if (!t) return (entry.code = "NOT_FOUND"), fail(res, 404, "NOT_FOUND");
     if (t.tx.status !== "pending") return (entry.code = "NOT_CANCELLABLE"), fail(res, 409, "NOT_CANCELLABLE");

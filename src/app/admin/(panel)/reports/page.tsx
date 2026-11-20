@@ -231,7 +231,16 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           icon={Wallet}
           iconBg="bg-mint"
           value={formatRupiah(report.revenue)}
-          sub={t.kpi.revenueSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
+          sub={
+            <>
+              {t.kpi.revenueSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
+              {report.demoOrders > 0 ? (
+                <span className="mt-0.5 block font-semibold text-foreground">
+                  {t.kpi.demoIncluded(formatRupiah(report.demoRevenue), report.demoOrders)}
+                </span>
+              ) : null}
+            </>
+          }
         />
         <StatPane
           label={t.kpi.paidOrders}

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { PrintButton } from "@/components/admin/print-button";
-import { thClasses } from "@/components/admin/ui";
+import { DemoBadge, thClasses } from "@/components/admin/ui";
 import { variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
@@ -12,9 +12,11 @@ import { db } from "@/lib/db";
 import { formatDateTime, formatDistance, formatRupiah } from "@/lib/format";
 import { paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { orderAddress, otherRecipient, payable } from "@/lib/orders";
+import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
+import { adminMessages } from "@/i18n/messages/admin";
 
 /** The order number from the URL, or null for a malformed %-sequence (a 404, not a crash). */
 function decodeNumber(raw: string) {
@@ -58,10 +60,16 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
   });
   if (!order) notFound();
 
-  const [m, locale, settings] = await Promise.all([getMessages(adminExtraMessages), getLocale(), getStoreSettings()]);
+  const [m, locale, settings, admin] = await Promise.all([
+    getMessages(adminExtraMessages),
+    getLocale(),
+    getStoreSettings(),
+    getMessages(adminMessages),
+  ]);
   const t = m.invoice;
   // Same attempt the order page shows: the paid one if any, else the latest.
-  const payment = order.payments.find((p) => p.status === "paid") ?? order.payments[0];
+  const payment = shownPayment(order.payments);
+  const demoPaid = payment?.provider === DEMO_PROVIDER;
   const pay = payable(order, payment);
   const isDelivery = order.fulfilmentMethod === "delivery";
   // Only when someone other than the billed customer receives it (Bill to already has their name and phone).
@@ -72,7 +80,7 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
   // Cancelled by the store: the invoice says so, and a paid one is owed back.
   const cancelled = order.fulfilmentStatus === "cancelled";
   const status = cancelled
-    ? order.paymentStatus === "paid"
+    ? order.paymentStatus === "paid" && !demoPaid
       ? t.cancelledRefund
       : t.cancelled
     : paymentStatusInfo[order.paymentStatus][locale];
@@ -230,7 +238,13 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
             <h2 className={cn(thClasses, "print:text-neutral-700")}>{t.payment}</h2>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm leading-[21px]">
               <dt className={muted}>{t.method}</dt>
-              <dd className="font-semibold">{payment ? paymentMethodInfo[payment.method].name : t.noPayment}</dd>
+              <dd className="flex flex-wrap items-center gap-2 font-semibold">
+                {payment ? paymentMethodInfo[payment.method].name : t.noPayment}
+                {/* Kept on paper too (outlined there), so a printed demo invoice never passes for a real payment. */}
+                {demoPaid ? (
+                  <DemoBadge label={admin.common.demo} title={admin.common.demoLabel} className="print:bg-white print:inset-ring-1 print:inset-ring-neutral-500" />
+                ) : null}
+              </dd>
               <dt className={muted}>{t.status}</dt>
               <dd className={cn("font-semibold", cancelled && "text-error print:text-black")}>{status}</dd>
             </dl>

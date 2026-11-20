@@ -4,14 +4,17 @@ import { PAYMENT_GROUPS, paymentKindEnabled } from "@/lib/order-status";
 import { db } from "@/lib/db";
 import type { StoreSettings } from "@/lib/settings";
 import { belibayarProvider } from "./belibayar";
+import { DEMO_PROVIDER, demoProvider } from "./demo";
 import { mockProvider } from "./mock";
 import type { PaymentProvider } from "./types";
 
 export type { AmountFloor, PaymentProvider, PaymentSnapshot, CreatedPayment } from "./types";
 export { PaymentGatewayError } from "./types";
 export { PAYMENT_WINDOW_MS, formatVaNumber } from "./mock";
+export { DEMO_PROVIDER, demoPaymentsEnabled, shownPayment } from "./demo";
 
-const providers: Record<string, PaymentProvider> = {
+/** The gateways PAYMENT_PROVIDER can name. */
+const gateways: Record<string, PaymentProvider> = {
   mock: mockProvider,
   belibayar: belibayarProvider,
 };
@@ -19,13 +22,15 @@ const providers: Record<string, PaymentProvider> = {
 /**
  * The gateway chosen by PAYMENT_PROVIDER (default: mock), or the one that
  * issued a stored payment (`payments.provider`) so old payments keep being
- * checked where they were created.
+ * checked where they were created. "demo" (payments the store marked paid in
+ * demo mode) is only ever a stored payment's provider, never the configured one.
  */
 export function getPaymentProvider(id?: string | null): PaymentProvider {
+  if (id === DEMO_PROVIDER) return demoProvider;
   const key = id || process.env.PAYMENT_PROVIDER || "mock";
-  const provider = providers[key];
+  const provider = gateways[key];
   if (!provider) {
-    throw new Error(`PAYMENT_PROVIDER="${key}" is not available. Supported: ${Object.keys(providers).join(", ")}.`);
+    throw new Error(`PAYMENT_PROVIDER="${key}" is not available. Supported: ${Object.keys(gateways).join(", ")}.`);
   }
   return provider;
 }

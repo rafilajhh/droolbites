@@ -7,12 +7,13 @@ import { StatusBadge } from "@/components/ui/badges";
 import { Pagination } from "@/components/admin/pagination";
 import { ORDER_PAGE_SIZE } from "@/components/admin/rules";
 import { OrdersToolbar } from "@/components/admin/toolbars";
-import { AdminMain, Card, CellLabel, listCardClasses, listScrollClasses, listThClasses, PageHead } from "@/components/admin/ui";
+import { AdminMain, Card, CellLabel, DemoBadge, listCardClasses, listScrollClasses, listThClasses, PageHead } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
 import { containsText, db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { fulfilmentBadgeInfo, needsActionWhere } from "@/lib/order-status";
 import { orderPaymentInfo, payable, paymentStatusWhere } from "@/lib/orders";
+import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { cn } from "@/lib/cn";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -74,7 +75,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
       createdAt: true,
       updatedAt: true,
       total: true,
-      payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true } },
+      payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true, provider: true } },
     },
   });
 
@@ -136,7 +137,8 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                   const fs = fulfilmentBadgeInfo(order);
                   const ps = orderPaymentInfo(order);
                   // What the customer pays or paid (the same attempt as the order page), with the gateway's fee in it.
-                  const pay = payable(order, order.payments.find((p) => p.status === "paid") ?? order.payments[0]);
+                  const payment = shownPayment(order.payments);
+                  const pay = payable(order, payment);
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
                     <tr key={order.orderNumber} className={row}>
@@ -164,7 +166,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                       </td>
                       <td className="py-3 pr-3 max-xl:order-3 max-xl:p-0 md:max-xl:col-start-2 md:max-xl:row-start-1">
                         <CellLabel until="xl">{c.payment}</CellLabel>
-                        <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
+                        <span className="inline-flex flex-wrap items-center gap-1.5">
+                          <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
+                          {payment?.provider === DEMO_PROVIDER ? <DemoBadge label={t.common.demo} title={t.common.demoLabel} /> : null}
+                        </span>
                       </td>
                       <td className={cn("py-3 pr-3 max-xl:order-4 max-xl:p-0 md:max-xl:col-start-3 md:max-xl:row-start-1", unpaid && "max-md:hidden")}>
                         <CellLabel until="xl">{c.status}</CellLabel>

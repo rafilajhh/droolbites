@@ -22,7 +22,7 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { formatDateTime, formatRupiah } from "@/lib/format";
 import { fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { cancelledByStore, getOrderForViewer, itemCount, orderDeadline, payable, withOrderToken } from "@/lib/orders";
-import { canSimulatePayment, getPaymentOptions, getPaymentProvider, serviceFeeMayApply } from "@/lib/payments";
+import { canSimulatePayment, DEMO_PROVIDER, getPaymentOptions, getPaymentProvider, serviceFeeMayApply } from "@/lib/payments";
 import { orderPageMetadata } from "@/lib/order-metadata";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -170,6 +170,18 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         initialError={initialError}
         feeMayApply={feeMayApply}
       />,
+    );
+  }
+
+  // The store is marking it paid in demo mode (a few seconds): nothing to pay here, the poll moves on.
+  if (live.provider === DEMO_PROVIDER) {
+    return layout(
+      p.confirmingTitle,
+      p.confirmingSub,
+      <>
+        <PaymentWatcher statusUrl={statusUrl} successHref={successHref} />
+        <PayActions orderNumber={orderNumber} token={token} orderHref={orderHref} />
+      </>,
     );
   }
 
