@@ -12,10 +12,12 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
 import { getOrderForViewer, itemCount, orderAddress, payable, withOrderToken } from "@/lib/orders";
 import { paymentMethodInfo } from "@/lib/order-status";
+import { orderPageMetadata } from "@/lib/order-metadata";
 import { getStoreSettings } from "@/lib/settings";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return { title: (await getMessages(checkoutMessages)).meta.success, robots: { index: false } };
+export async function generateMetadata({ params, searchParams }: PageProps<"/checkout/success/[orderNumber]">): Promise<Metadata> {
+  const { orderNumber } = await params;
+  return orderPageMetadata(orderNumber, (await searchParams).t, async () => (await getMessages(checkoutMessages)).meta.success);
 }
 
 /**

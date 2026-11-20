@@ -36,13 +36,32 @@ export function isIdMobile(phone: string) {
   return ID_MOBILE_RE.test(phone.replace(/[\s().-]/g, ""));
 }
 
+/** Phone columns are VARCHAR(20); the field (and the phone inputs' maxLength) takes 24 for "(0)" and spacing. */
+export const PHONE_MAX = 20;
+export const PHONE_INPUT_MAX = 24;
+
+/**
+ * A phone number as it is saved: trimmed, single spaces, and without the "(0)" some people write after
+ * the country code ("+62 (0)812-…" becomes "+62 812-…"), which would otherwise read as +620812….
+ */
+export function normalizePhone(phone: string) {
+  return phone.trim().replace(/\s+/g, " ").replace(/^(\+?62)\s*\(0\)\s*/, "$1 ");
+}
+
+/** A normalized phone that fits the column and is an Indonesian mobile number. */
+export function isValidMobile(phone: string) {
+  return phone.length <= PHONE_MAX && isIdMobile(phone);
+}
+
+const phoneField = () => z.string().max(PHONE_INPUT_MAX).transform(normalizePhone);
+
 /** Field names double as message keys in checkoutMessages.errors. */
 export const checkoutDetailsSchema = z
   .object({
     email: z.string().trim().toLowerCase().max(150).pipe(z.email()),
     fulfilment: z.enum(["delivery", "pickup"]),
     fullName: text(100).min(2),
-    phone: z.string().trim().max(20).refine(isIdMobile),
+    phone: phoneField().refine(isValidMobile),
     street: text(180),
     apartment: text(70),
     /** Kecamatan, filled from the pin (read-only in the form). */
@@ -53,9 +72,9 @@ export const checkoutDetailsSchema = z
     recipientName: text(100)
       .default("")
       .refine((v) => v === "" || v.length >= 2),
-    recipientPhone: text(20)
+    recipientPhone: phoneField()
       .default("")
-      .refine((v) => v === "" || isIdMobile(v)),
+      .refine((v) => v === "" || isValidMobile(v)),
     /** Landmark or note for the courier. */
     note: text(200).default(""),
     /** The delivery pin on the map. */
@@ -124,6 +143,24 @@ export function orderAddress(order: {
   shippingPostal: string | null;
 }) {
   return formatAddress({ address: order.shippingAddress, district: order.shippingDistrict, city: order.shippingCity, postal: order.shippingPostal });
+}
+
+/**
+ * The delivery recipient when it isn't the customer. Checkout stores the contact's own name and phone
+ * when nobody else was named, so a recipient equal to the customer is no extra fact and returns null.
+ */
+export function otherRecipient(order: {
+  customerName: string;
+  phone: string;
+  recipientName: string | null;
+  recipientPhone: string | null;
+}) {
+  if (!order.recipientName) return null;
+  const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+  const digits = (v: string) => v.replace(/\D/g, "").replace(/^62/, "0");
+  const phone = order.recipientPhone ?? order.phone;
+  if (same(order.recipientName, order.customerName) && digits(phone) === digits(order.phone)) return null;
+  return { name: order.recipientName, phone };
 }
 
 /** Street + apartment as stored in orders.shipping_address. */
@@ -199,6 +236,16 @@ export type FullOrder = Prisma.OrderGetPayload<{ include: typeof orderInclude }>
 /** No access check: for emails and internal use. */
 export async function getOrderByNumber(orderNumber: string) {
   return db.order.findUnique({ where: { orderNumber }, include: orderInclude });
+}
+
+/**
+ * Whether the visitor may see this order, for page metadata: an order page that is going to be a 404
+ * gets the 404's title, not "Order DB-9999". Reads only the owner, so it neither loads nor syncs the order.
+ */
+export async function canViewOrder(orderNumber: string, token?: string | null) {
+  if (!ORDER_NUMBER_RE.test(orderNumber)) return false;
+  const order = await db.order.findUnique({ where: { orderNumber }, select: { orderNumber: true, userId: true } });
+  return order !== null && (await canAccessOrder(order, token));
 }
 
 /**
@@ -362,7 +409,7 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
   return changed;
 }
 
-export type ChargeResult = { ok: true } | { ok: false; error: "unavailable" | "busy" | "stock" };
+export type ChargeResult = { ok: true } | { ok: false; error: "unavailable" | "busy" | "stock" | "minimum" };
 
 /**
  * Ask the gateway for a new payment on an unpaid order (a new reference per
@@ -433,6 +480,8 @@ export async function chargeOrder(
       return { ok: false, error: "busy" };
     }
     console.warn(`[orders] ${reference} (${method}) not created: ${error.code}`);
+    // Too small for this method: the customer is told so (the pay page then shows its minimum).
+    if (error.code === "AMOUNT_BELOW_MINIMUM") return { ok: false, error: "minimum" };
     return { ok: false, error: error.unavailable ? "unavailable" : "busy" };
   }
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AccountAvatar } from "@/components/account/account-avatar";
 import { ACCOUNT_TABS, AccountNav, type AccountTab } from "@/components/account/account-nav";
-import { ORDER_FILTERS, type OrderFilter } from "@/components/account/account-orders";
+import { getOrderCounts, ORDER_FILTERS, ORDERS_PER_PAGE, type OrderFilter } from "@/components/account/account-orders";
 import { AddressSection, ProfileSection } from "@/components/account/account-sections";
 import { ActiveOrder } from "@/components/account/active-order";
 import { OrderHistory } from "@/components/account/order-history";
@@ -39,6 +39,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const user = await requireUser(`/account${back.size ? `?${back}` : ""}`);
   const t = await getMessages(accountMessages);
   const firstName = user.fullName.trim().split(/\s+/)[0] || user.fullName;
+  // The history shows its last page for a ?page= past the end, so the order in progress goes by that page.
+  const pages = Math.max(1, Math.ceil((await getOrderCounts(user.id))[filter] / ORDERS_PER_PAGE));
+  const firstPage = Math.min(page, pages) === 1;
 
   return (
     <>
@@ -65,7 +68,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div className="flex w-full min-w-0 flex-col gap-12">
           {tab === "orders" ? (
             <>
-              {filter === "all" && page === 1 ? <ActiveOrder userId={user.id} /> : null}
+              {filter === "all" && firstPage ? <ActiveOrder userId={user.id} /> : null}
               <OrderHistory userId={user.id} filter={filter} page={page} />
             </>
           ) : tab === "profile" ? (

@@ -70,12 +70,13 @@ async function main() {
     productId = product.id;
     const [tracked, untracked] = product.variants;
 
-    await check("stockStatus / stockLeft: low at 5 or fewer, sold out when every tracked size is 0, nothing untracked", async () => {
+    await check("stockStatus / stockLeft: low at 5 or fewer, sold out when every size is tracked and 0, nothing untracked", async () => {
       assert(stockStatus([null, null]) === null, "untracked");
       assert(stockStatus([6, null]) === null, "plenty");
       assert(stockStatus([5, 20]) === "low", "low");
       assert(stockStatus([0, 20]) === "low", "one out");
-      assert(stockStatus([0, 0, null]) === "soldOut", "all out");
+      assert(stockStatus([0, 0]) === "soldOut", "all out");
+      assert(stockStatus([0, null]) === "low", "one out, an untracked size still orderable");
       assert(stockLeft(null) === undefined && stockLeft(6) === undefined && stockLeft(5) === 5 && stockLeft(0) === 0, "stockLeft");
     });
 

@@ -6,7 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
-import { PaymentMethodGroups, type PaymentLogos } from "./payment-methods";
+import { PaymentMethodGroups, type BelowMinimum, type PaymentLogos } from "./payment-methods";
 
 /**
  * Pay page with ?change=1, or an order without a live payment (the gateway
@@ -19,6 +19,7 @@ export function ChangeMethodForm({
   current,
   methods,
   logos,
+  belowMinimum,
   cancelHref,
   initialError,
 }: {
@@ -27,6 +28,7 @@ export function ChangeMethodForm({
   current: PaymentMethod | null;
   methods: PaymentMethod[];
   logos: PaymentLogos;
+  belowMinimum: BelowMinimum;
   /** Null when there is no live payment to go back to. */
   cancelHref: string | null;
   initialError?: ChangeMethodState["error"];
@@ -34,7 +36,9 @@ export function ChangeMethodForm({
   const t = useMessages(checkoutMessages);
   const c = t.pay.change;
   const [state, formAction, pending] = useActionState(changePaymentMethod, { attempt: 0, error: initialError });
-  const [method, setMethod] = useState<PaymentMethod | null>(current && methods.includes(current) ? current : null);
+  const [method, setMethod] = useState<PaymentMethod | null>(
+    current && methods.includes(current) && !(current in belowMinimum) ? current : null,
+  );
   const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
@@ -62,7 +66,8 @@ export function ChangeMethodForm({
           {t.errors[state.error]}
         </p>
       ) : null}
-      <PaymentMethodGroups t={t.payment} methods={methods} logos={logos} selected={method} onSelect={setMethod} />
+      {/* The group holding the current method first, as on the Payment step. */}
+      <PaymentMethodGroups t={t.payment} methods={methods} logos={logos} selected={method} onSelect={setMethod} leadMethod={current} belowMinimum={belowMinimum} />
       <div className="grid w-full gap-4 sm:grid-cols-2">
         <Button type="submit" disabled={pending || !method}>
           {pending ? c.saving : c.confirm}

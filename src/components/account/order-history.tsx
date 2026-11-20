@@ -62,16 +62,25 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
   // Stacked rows (below xl) have no visible header row, so each cell carries its label for screen readers.
   const cellLabel = (label: string) => <span className="sr-only xl:hidden">{label}: </span>;
 
+  // No orders at all: the cart's empty state (centred cookie, title, one line, one primary button).
   if (counts.all === 0) {
     return (
-      <section id="order-history" aria-labelledby="order-history-title" className="flex w-full scroll-mt-[88px] flex-col gap-4">
-        {heading}
-        <div className="flex flex-col items-start gap-4">
-          <p className="text-[15px] leading-[23px] text-foreground">{o.empty}</p>
-          <ButtonLink href="/menu" variant="secondary">
-            {o.emptyCta}
-          </ButtonLink>
-        </div>
+      <section
+        id="order-history"
+        aria-labelledby="order-history-title"
+        className="flex w-full scroll-mt-[88px] flex-col items-center gap-3 py-12 text-center lg:py-16"
+      >
+        <h2 id="order-history-title" className="sr-only">
+          {o.title}
+        </h2>
+        <span className={cn(photoFrame, "mb-3 size-24 shrink-0 rounded-pill bg-oat")} aria-hidden>
+          <Image src="/images/products/chocolate-chunk.png" alt="" fill sizes="96px" className="object-cover" />
+        </span>
+        <p className="font-display text-2xl leading-[29px] font-semibold text-foreground">{o.emptyTitle}</p>
+        <p className="max-w-[360px] text-[15px] leading-[23px] text-pretty text-muted-foreground">{o.empty}</p>
+        <ButtonLink href="/menu" className="mt-3">
+          {o.emptyCta}
+        </ButtonLink>
       </section>
     );
   }

@@ -7,7 +7,6 @@ import { accountMessages } from "@/i18n/messages/account";
 import { savedPin } from "@/lib/delivery";
 import { formatDate } from "@/lib/format";
 import { getStoreSettings } from "@/lib/settings";
-import { AccountAvatar } from "./account-avatar";
 import { AccountGroup, AccountSection } from "./account-card";
 import { AddressForm, PasswordForm, ProfileForm, SetPasswordLink } from "./account-forms";
 
@@ -28,28 +27,19 @@ function MethodRow({ icon, title, sub, badge }: { icon: React.ReactNode; title: 
 }
 
 /**
- * Account information ("Profil + keamanan"): the photo (Google) or initials with the name and the
- * member-since date, the editable name, phone and email, then how the customer signs in: Google
- * (connected; without a password, an emailed link sets one) and/or email and password (with the
- * change-password form). One surface, the groups split by hairlines.
+ * Account information ("Profil + keamanan"): the editable name, phone and email, then how the customer
+ * signs in: Google (connected; without a password, an emailed link sets one) and/or email and password
+ * (with the change-password form). One surface, the groups split by hairlines, each with its heading.
+ * The avatar and greeting are already in the page header, so the member-since date joins the note.
  */
 export async function ProfileSection({ user }: { user: CurrentUser }) {
   const [t, locale] = await Promise.all([getMessages(accountMessages), getLocale()]);
   const s = t.signIn;
   const since = t.info.memberSince(formatDate(user.createdAt, locale));
   return (
-    <AccountSection id="account-information" title={t.info.title} sub={t.info.sub}>
+    <AccountSection id="account-information" title={t.info.title} sub={`${t.info.sub} ${since}.`}>
       <div className="flex w-full flex-col">
-        <AccountGroup id="account-profile">
-          <div className="flex min-w-0 items-center gap-4">
-            <AccountAvatar name={user.fullName} photo={user.avatarUrl} size={56} className="size-14 text-xl" />
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <p className="text-base leading-6 font-bold break-words text-foreground">{user.fullName}</p>
-              <p className="text-sm leading-[21px] text-muted-foreground">
-                {user.google && user.avatarUrl ? `${since} · ${t.info.photoGoogle}` : since}
-              </p>
-            </div>
-          </div>
+        <AccountGroup id="account-profile" title={t.info.details}>
           <ProfileForm fullName={user.fullName} phone={user.phone ?? ""} email={user.email} />
         </AccountGroup>
 

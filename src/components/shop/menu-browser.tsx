@@ -81,6 +81,9 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
     .map((c) => ({ key: c.slug, name: c.name, products: c.products.filter((p) => matching.has(p.id)) }))
     .filter((g) => g.products.length > 0);
   const shown = groups.reduce((n, g) => n + g.products.length, 0);
+  // A search inside one category can still match elsewhere: say so, and offer those results.
+  const activeName = categories.find((c) => c.slug === active)?.name;
+  const elsewhere = activeName && query && shown === 0 ? matching.size : 0;
 
   return (
     <>
@@ -97,11 +100,25 @@ export function MenuBrowser({ categories }: { categories: ShopCategory[] }) {
       <div className="flex w-full flex-col px-4 pt-10 pb-12 sm:px-8 lg:px-16 lg:pt-12 lg:pb-20">
         {groups.length === 0 ? (
           <div className="flex w-full flex-col items-start gap-4 rounded-m bg-card p-8 lg:p-12" role="status">
-            <p className="font-display text-[28px] leading-[31px] font-semibold">{t.empty.title(query)}</p>
-            <p className="text-base leading-[24px] text-muted-foreground">{t.empty.body}</p>
-            <Link href="/menu" className={buttonClasses("primary", "mt-2")}>
-              {t.empty.reset}
-            </Link>
+            {elsewhere && activeName ? (
+              <>
+                <p className="font-display text-[28px] leading-[31px] font-semibold text-balance">
+                  {t.empty.inCategory(activeName, query)}
+                </p>
+                <p className="text-base leading-[24px] text-muted-foreground">{t.empty.elsewhere(elsewhere)}</p>
+                <button type="button" onClick={() => selectCategory(null)} className={buttonClasses("primary", "mt-2")}>
+                  {t.empty.showResults(elsewhere)}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="font-display text-[28px] leading-[31px] font-semibold text-balance">{t.empty.title(query)}</p>
+                <p className="text-base leading-[24px] text-muted-foreground">{t.empty.body}</p>
+                <Link href="/menu" className={buttonClasses("primary", "mt-2")}>
+                  {t.empty.reset}
+                </Link>
+              </>
+            )}
           </div>
         ) : (
           // One grid for the whole menu: 2 columns, 4 from lg. Each category is a subgrid on those same

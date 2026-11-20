@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-/** Main column of every admin page (pen: Main, 40/48 padding). */
+/**
+ * Main column of every admin page (pen: Main, 40/48 padding). Capped at 1280px and centred beside the
+ * sidebar, so on wide screens a row's label and its figure don't drift a screen apart.
+ */
 export function AdminMain({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div className={cn("flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-12 lg:py-10", className)}>{children}</div>
+    <div className={cn("mx-auto flex w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-12 lg:py-10", className)}>
+      {children}
+    </div>
   );
 }
 
@@ -125,13 +130,14 @@ export function StatPane({
         </span>
         <span className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</span>
       </span>
-      <span data-stat-value className="font-display text-[26px] leading-8 font-bold tabular-nums max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 max-md:self-center md:text-[32px] md:leading-[38px]">
+      <span data-stat-value className="font-display text-[26px] leading-8 font-bold tabular-nums max-md:col-start-2 max-md:row-start-1 max-md:self-center md:text-[32px] md:leading-[38px]">
         {value}
       </span>
-      <span className="text-[13px] leading-5 text-muted-foreground max-md:col-start-1 max-md:row-start-2 max-md:pl-[38px]">{sub}</span>
+      <span className="text-[13px] leading-5 text-muted-foreground max-md:col-span-2 max-md:col-start-1 max-md:row-start-2 max-md:pl-[38px]">{sub}</span>
     </>
   );
-  // Below md a compact row: label and sub line on the left, the figure on the right.
+  // Below md a compact row: the label on the left and the figure on the right, the sub line under both
+  // (beside the figure it got one or two words per line on a phone).
   const classes = cn(
     paneClasses,
     "px-5 py-4 max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-x-4 max-md:gap-y-0.5 md:gap-3 md:px-6 md:py-5",
@@ -218,6 +224,13 @@ export const listThClasses = `${thClasses} py-3 shadow-[inset_0_-1px_0_var(--bor
  * stack and sit 16px in from the card edge.
  */
 export const listCardClasses = "w-full p-2 max-xl:px-4 max-xl:py-0";
+
+/**
+ * The box around a list table inside that card. Only the xl table can be wider than the card, so only it
+ * scrolls, and only sideways: the hit-slop of a row's last button or link (`after:-inset-*`) reaches past
+ * the box and would otherwise add a stray scrollbar. Below xl the rows wrap, so nothing is scrolled.
+ */
+export const listScrollClasses = "relative w-full xl:overflow-x-auto xl:overflow-y-hidden";
 
 /**
  * Admin list tables below xl: each row becomes a stacked block of wrapped cells (placed with

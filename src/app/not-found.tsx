@@ -19,7 +19,7 @@ export default function NotFound() {
   return (
     <ShopUIProvider>
       <SiteHeader />
-      <main className="flex w-full flex-1 flex-col">
+      <main className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col">
         <NotFoundBody />
       </main>
       <Footer />

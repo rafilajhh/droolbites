@@ -102,8 +102,9 @@ export function DetailsForm({
   const autoFilled = useRef<Partial<Record<AddressKey, string>>>({});
 
   /**
-   * Fill the address from the pin. A chosen search result replaces the address (the customer picked
-   * that place); a tap, drag or GPS fix only fills fields that are empty or still hold what the map
+   * Fill the address from the pin. A chosen search result replaces the whole address (the customer
+   * picked that place), so a field the result has no value for is cleared rather than left from the
+   * old address; a tap, drag or GPS fix only fills fields that are empty or still hold what the map
    * filled before, and clears those when the new spot has no value for them.
    */
   const fillAddress = (place: Pick<Place, AddressKey | "district">, replace = false) =>
@@ -114,7 +115,6 @@ export function DetailsForm({
         const value = place[key];
         const ours = v[key].trim() === "" || v[key] === autoFilled.current[key];
         if (!replace && !ours) continue;
-        if (!value && !ours) continue;
         next[key] = value;
         autoFilled.current[key] = value;
       }
@@ -269,7 +269,7 @@ export function DetailsForm({
                 autoComplete: "tel",
                 placeholder: d.phonePlaceholder,
                 required: true,
-                maxLength: 20,
+                maxLength: 24,
               })}
             </Field>
           </div>
@@ -369,29 +369,33 @@ export function DetailsForm({
                       maxLength: 70,
                     })}
                   </Field>
-                  <div className="grid w-full gap-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,11.5rem)] sm:gap-4">
-                    {/* The kecamatan comes from the pin, so it reads but can't be typed. */}
-                    <Field label={d.district} htmlFor="checkout-district" helper={d.districtHelp}>
-                      {input("district", {
-                        readOnly: true,
-                        // OpenStreetMap doesn't know every kecamatan; the field then stays empty, which is fine.
-                        placeholder: pin && quote.status !== "loading" ? d.districtUnknown : d.districtEmpty,
-                        className: "bg-card text-ellipsis",
-                        "aria-describedby": "checkout-district-helper",
-                      })}
-                    </Field>
-                    <Field label={d.city} htmlFor="checkout-city" error={err("city")}>
-                      {input("city", { autoComplete: "address-level2", placeholder: d.cityPlaceholder, required: true, maxLength: 100 })}
-                    </Field>
-                    <Field label={d.postal} htmlFor="checkout-postal" error={err("postal")}>
-                      {input("postal", {
-                        inputMode: "numeric",
-                        autoComplete: "postal-code",
-                        placeholder: d.postalPlaceholder,
-                        required: true,
-                        maxLength: 5,
-                      })}
-                    </Field>
+                  {/* Sized to the column, not the screen: one row of three from 544px, else the kecamatan
+                      on its own row over City and Postal code (the column is ~500px beside the summary at lg). */}
+                  <div className="@container w-full">
+                    <div className="grid w-full gap-5 @md:grid-cols-2 @md:gap-4 @[34rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,11.5rem)]">
+                      {/* The kecamatan comes from the pin, so it reads but can't be typed. */}
+                      <Field label={d.district} htmlFor="checkout-district" helper={d.districtHelp} className="@md:col-span-2 @[34rem]:col-span-1">
+                        {input("district", {
+                          readOnly: true,
+                          // OpenStreetMap doesn't know every kecamatan; the field then stays empty, which is fine.
+                          placeholder: pin && quote.status !== "loading" ? d.districtUnknown : d.districtEmpty,
+                          className: "bg-card text-ellipsis",
+                          "aria-describedby": "checkout-district-helper",
+                        })}
+                      </Field>
+                      <Field label={d.city} htmlFor="checkout-city" error={err("city")}>
+                        {input("city", { autoComplete: "address-level2", placeholder: d.cityPlaceholder, required: true, maxLength: 100 })}
+                      </Field>
+                      <Field label={d.postal} htmlFor="checkout-postal" error={err("postal")}>
+                        {input("postal", {
+                          inputMode: "numeric",
+                          autoComplete: "postal-code",
+                          placeholder: d.postalPlaceholder,
+                          required: true,
+                          maxLength: 5,
+                        })}
+                      </Field>
+                    </div>
                   </div>
                   <Field label={d.note} htmlFor="checkout-note" error={err("note")}>
                     <TextArea
@@ -423,7 +427,7 @@ export function DetailsForm({
                           inputMode: "tel",
                           autoComplete: "shipping tel",
                           placeholder: values.phone.trim() || d.phonePlaceholder,
-                          maxLength: 20,
+                          maxLength: 24,
                           "aria-describedby": "checkout-recipient-help",
                         })}
                       </Field>
@@ -454,8 +458,16 @@ export function DetailsForm({
               note={fee === null ? `${t.summary.delivery}: ${t.summary.pinFirst}` : undefined}
               amount={formatRupiah(total)}
             />
+            {/* Under 360px the full label leaves the total no room, so the button says just "Continue". */}
             <Button type="submit" className="shrink-0 px-5 sm:px-7" disabled={pending || closed}>
-              {pending ? d.saving : d.continue}
+              {pending ? (
+                d.saving
+              ) : (
+                <>
+                  <span className="max-[359px]:hidden">{d.continue}</span>
+                  <span className="min-[360px]:hidden">{d.continueShort}</span>
+                </>
+              )}
             </Button>
           </div>
           <div className="flex items-center justify-center gap-6 lg:justify-end">

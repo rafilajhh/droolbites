@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import type { PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 import { paymentMethodInfo } from "@/lib/order-status";
 import { formatVaNumber } from "./mock";
-import { PaymentGatewayError, type ChannelList, type CreatePaymentInput, type CreatedPayment, type PaymentProvider } from "./types";
+import { PaymentGatewayError, type AmountFloor, type ChannelList, type CreatePaymentInput, type CreatedPayment, type PaymentProvider } from "./types";
 
 /**
  * Belibayar Direct API (https://docs.belibayar.id/docs).
@@ -85,7 +85,7 @@ async function request<T>(method: "GET" | "POST", path: string, opts: { body?: o
     const code = (json.data as { code?: unknown } | undefined)?.code;
     const errorCode = typeof code === "string" ? code : `HTTP_${res.status}`;
     console.warn(`[belibayar] ${method} ${fullPath} -> ${res.status} ${errorCode}`);
-    throw new PaymentGatewayError(errorCode, res.status, typeof json.messages === "string" ? json.messages : undefined);
+    throw new PaymentGatewayError(errorCode, res.status, typeof json.messages === "string" ? json.messages : undefined, json.data);
   }
   return json.data as T;
 }
@@ -132,6 +132,49 @@ function inquiry(reference: string) {
 /** Outcome unknown: the payment may exist at the gateway. */
 function uncertain(error: PaymentGatewayError) {
   return ["PAYMENT_CREATION_FAILED", "TIMEOUT", "NETWORK", "INTERNAL_ERROR"].includes(error.code);
+}
+
+/**
+ * The minimum in an AMOUNT_BELOW_MINIMUM answer, if it names one. The docs don't fix its shape (for
+ * payment links `data.channels` lists the methods with their minimums), so this looks for a positive
+ * number under a min-like key in `data` or in its single `channels` entry. Null when there is none.
+ */
+export function minimumFrom(data: unknown): number | null {
+  if (!data || typeof data !== "object") return null;
+  const read = (obj: Record<string, unknown>) => {
+    for (const key of ["min_amount", "minimum_amount", "minimum", "min"]) {
+      const v = obj[key];
+      const n = typeof v === "number" ? v : typeof v === "string" && /^\d+$/.test(v) ? Number(v) : NaN;
+      if (Number.isInteger(n) && n > 0) return n;
+    }
+    return null;
+  };
+  const top = read(data as Record<string, unknown>);
+  if (top !== null) return top;
+  const channels = (data as { channels?: unknown }).channels;
+  return Array.isArray(channels) && channels.length === 1 && channels[0] && typeof channels[0] === "object"
+    ? read(channels[0] as Record<string, unknown>)
+    : null;
+}
+
+/** Minimums learned from refused charges, per method; forgotten after FLOOR_TTL_MS in case the gateway changes them. */
+const FLOOR_TTL_MS = 6 * 60 * 60 * 1000;
+const floors = new Map<PaymentMethod, AmountFloor & { at: number }>();
+
+function learnRefused(method: PaymentMethod, amount: number, min: number | null) {
+  const known = floors.get(method);
+  const fresh = known && Date.now() - known.at < FLOOR_TTL_MS ? known : null;
+  floors.set(method, {
+    min: min ?? fresh?.min ?? null,
+    refusedAt: Math.max(amount, fresh?.refusedAt ?? 0),
+    at: Date.now(),
+  });
+}
+
+/** A charge went through: anything learned that says this amount is too small is out of date. */
+function learnAccepted(method: PaymentMethod, amount: number) {
+  const known = floors.get(method);
+  if (known && (known.refusedAt >= amount || (known.min !== null && known.min > amount))) floors.delete(method);
 }
 
 const statusCache = new Map<string, { at: number; status: PaymentStatus }>();
@@ -186,6 +229,12 @@ export const belibayarProvider: PaymentProvider = {
     try {
       tx = await request<GatewayTx>("POST", "/payment/charge", { body });
     } catch (error) {
+      if (error instanceof PaymentGatewayError && error.code === "AMOUNT_BELOW_MINIMUM") {
+        const min = minimumFrom(error.data);
+        learnRefused(input.method, input.amount, min);
+        // Keep the data on the error so the caller can name the minimum.
+        throw new PaymentGatewayError(error.code, error.httpStatus, error.message, { min_amount: min ?? undefined });
+      }
       if (!(error instanceof PaymentGatewayError) || !uncertain(error)) throw error;
       // 502/timeout: the payment may already exist. Look before charging again.
       let existing: GatewayTx | null = null;
@@ -198,6 +247,7 @@ export const belibayarProvider: PaymentProvider = {
       tx = existing ?? (await request<GatewayTx>("POST", "/payment/charge", { body }));
     }
     if (toStatus(tx.status) === "expired") throw new PaymentGatewayError("NOT_PENDING", 409);
+    learnAccepted(input.method, input.amount);
     return toCreated(tx, input);
   },
 
@@ -228,6 +278,16 @@ export const belibayarProvider: PaymentProvider = {
     await request("POST", "/payment/simulate", { body: { reference: payment.reference, action: "success" } });
     statusCache.delete(payment.reference);
     return this.getStatus(payment);
+  },
+
+  amountFloors() {
+    const now = Date.now();
+    const out: Partial<Record<PaymentMethod, AmountFloor>> = {};
+    for (const [method, floor] of floors) {
+      if (now - floor.at < FLOOR_TTL_MS) out[method] = { min: floor.min, refusedAt: floor.refusedAt };
+      else floors.delete(method);
+    }
+    return out;
   },
 
   channels() {

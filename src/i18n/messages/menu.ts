@@ -67,6 +67,10 @@ export const menuMessages = defineMessages({
       title: (q: string) => `No desserts match “${q}”.`,
       body: "Try another flavor, or browse the whole menu.",
       reset: "SHOW ALL DESSERTS",
+      /** A search inside one category that only matches in others. */
+      inCategory: (category: string, q: string) => `Nothing in ${category} matches “${q}”.`,
+      elsewhere: (n: number) => `${n} ${n === 1 ? "dessert matches" : "desserts match"} in other categories.`,
+      showResults: (n: number) => `SHOW ${n === 1 ? "THE RESULT" : `ALL ${n} RESULTS`}`,
     },
     card: {
       add: (name: string) => `Add ${name} to cart`,
@@ -98,6 +102,9 @@ export const menuMessages = defineMessages({
       soldOutNow: "Sorry, that just sold out.",
       allInCart: (n: number) => (n === 1 ? "The last one is already in your cart." : `All ${n} left are already in your cart.`),
       allInCartShort: (n: number) => (n === 1 ? "Last one's in your cart" : `All ${n} are in your cart`),
+      /** The line already holds the most one order takes. */
+      atMax: (n: number) => `Your cart already has ${n} of these, the most per order.`,
+      atMaxShort: (n: number) => `${n} in cart, the max`,
     },
   },
   id: {
@@ -127,6 +134,9 @@ export const menuMessages = defineMessages({
       title: (q: string) => `Tidak ada dessert yang cocok dengan “${q}”.`,
       body: "Coba rasa lain, atau lihat seluruh menu.",
       reset: "LIHAT SEMUA DESSERT",
+      inCategory: (category: string, q: string) => `Tidak ada yang cocok dengan “${q}” di ${category}.`,
+      elsewhere: (n: number) => `Ada ${n} dessert yang cocok di kategori lain.`,
+      showResults: (n: number) => (n === 1 ? "LIHAT HASILNYA" : `LIHAT ${n} HASIL`),
     },
     card: {
       add: (name: string) => `Tambahkan ${name} ke keranjang`,
@@ -155,6 +165,8 @@ export const menuMessages = defineMessages({
       soldOutNow: "Yah, barusan habis.",
       allInCart: (n: number) => (n === 1 ? "Yang terakhir sudah ada di keranjangmu." : `Semua sisa ${n} sudah ada di keranjangmu.`),
       allInCartShort: (n: number) => (n === 1 ? "Yang terakhir sudah di keranjang" : `Sisa ${n} sudah di keranjang semua`),
+      atMax: (n: number) => `Keranjangmu sudah berisi ${n}, jumlah maksimal per pesanan.`,
+      atMaxShort: (n: number) => `Sudah ${n}, maksimal`,
     },
   },
 });

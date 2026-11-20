@@ -31,8 +31,8 @@ function SizeModalPanel({ product, onClose }: { product: ShopProduct; onClose: (
   const panelRef = useModal(true, onClose);
   const titleId = useId();
   const { variant, setVariantId, qty, setQty, max, soldOut } = useSizeChoice(product);
-  const { add, pending, failed, left } = useAddToCart();
-  const errorText = useAddError(left, m.card.error);
+  const { add, pending, failed, left, max: cap } = useAddToCart();
+  const errorText = useAddError(left, m.card.error, cap);
 
   const isTray = isTrayCategory(product.categorySlug);
 

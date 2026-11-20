@@ -3,6 +3,7 @@
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { adminNext } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { clientIp, isSignInLocked, recordSignInFailure, resetSignInFailures } from "@/lib/rate-limit";
 import { createSession, deleteSession } from "@/lib/session";
@@ -39,7 +40,8 @@ export async function adminSignIn(_prev: AdminSignInState, formData: FormData): 
   resetSignInFailures(ip, parsed.data.email);
 
   await createSession({ userId: user.id.toString(), role: "admin" });
-  redirect("/admin");
+  // Back to the page that sent them here (an order link from the store's email), else the dashboard.
+  redirect(adminNext(formData.get("next")));
 }
 
 export async function adminSignOut() {

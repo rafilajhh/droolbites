@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Plus } from "lucide-react";
 import type { Prisma } from "@/generated/prisma/client";
 import { ButtonLink } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badges";
 import { categoryName, productImageUrl } from "@/content/products";
-import { db } from "@/lib/db";
+import { containsText, db } from "@/lib/db";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { LOW_STOCK, stockStatus } from "@/lib/stock";
@@ -12,7 +13,7 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
 import { categoryStyle } from "./rules";
 import { ProductsToolbar } from "./toolbars";
-import { AdminMain, Card, CellLabel, listCardClasses, listThClasses, mobileCardRowClasses, PageHead, smallButtonClasses } from "./ui";
+import { AdminMain, Card, CellLabel, listCardClasses, listScrollClasses, listThClasses, mobileCardRowClasses, PageHead, smallButtonClasses } from "./ui";
 
 export type ProductsQuery = { q: string; category: string };
 
@@ -43,7 +44,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
 
   const where: Prisma.ProductWhereInput = {
     ...(category ? { category: { slug: category } } : {}),
-    ...(query.q ? { name: { contains: query.q } } : {}),
+    ...(query.q ? { name: containsText(query.q) } : {}),
   };
   const products = await db.product.findMany({
     where,
@@ -71,7 +72,8 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
           title={t.products.title}
           sub={t.products.sub}
           action={
-            <ButtonLink href={`/admin/products/new${qs}`} scroll={false}>
+            <ButtonLink href={`/admin/products/new${qs}`} scroll={false} className="min-h-11 px-5 py-3">
+              <Plus className="size-[18px]" aria-hidden />
               {t.products.add}
             </ButtonLink>
           }
@@ -79,10 +81,10 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
         <ProductsToolbar q={query.q} category={category} count={products.length} categories={categories} />
 
         <Card className={listCardClasses}>
-          <div className="relative w-full overflow-x-auto">
+          <div className={listScrollClasses}>
             <table
               aria-label={t.products.title}
-              className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[900px]"
+              className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[860px]"
             >
               <thead className="max-xl:hidden">
                 <tr>
@@ -92,19 +94,19 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                   <th scope="col" className={cn(listThClasses, "w-[150px]")}>
                     {c.category}
                   </th>
-                  <th scope="col" className={cn(listThClasses, "w-[90px]")}>
+                  <th scope="col" className={cn(listThClasses, "w-[90px] xl:max-[1400px]:hidden")}>
                     {c.options}
                   </th>
-                  <th scope="col" className={cn(listThClasses, "w-[150px]")}>
+                  <th scope="col" className={cn(listThClasses, "w-[150px] pr-6 text-right")}>
                     {c.price}
                   </th>
-                  <th scope="col" className={cn(listThClasses, "w-[170px]")}>
+                  <th scope="col" className={cn(listThClasses, "w-[160px]")}>
                     {c.stock}
                   </th>
                   <th scope="col" className={cn(listThClasses, "w-[120px]")}>
                     {c.availability}
                   </th>
-                  <th scope="col" className={cn(listThClasses, "w-[96px] pr-4")}>
+                  <th scope="col" className={cn(listThClasses, "w-[88px] pr-4")}>
                     <span className="sr-only">{c.action}</span>
                   </th>
                 </tr>
@@ -169,8 +171,8 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                             {categoryName(p.category.slug, p.category.name, locale)}
                           </span>
                         </td>
-                        <td className="py-3 text-[15px] leading-[23px] font-medium max-xl:hidden">{p.variants.length}</td>
-                        <td className="py-3 text-[15px] leading-[23px] font-medium max-xl:order-5 max-xl:basis-full max-xl:p-0 max-xl:text-sm max-xl:leading-[21px] max-xl:text-muted-foreground">
+                        <td className="py-3 text-[15px] leading-[23px] font-medium max-xl:hidden xl:max-[1400px]:hidden">{p.variants.length}</td>
+                        <td className="py-3 pr-6 text-[15px] leading-[23px] font-medium tabular-nums xl:text-right max-xl:order-5 max-xl:basis-full max-xl:p-0 max-xl:text-sm max-xl:leading-[21px] max-xl:text-muted-foreground">
                           <CellLabel until="xl">{c.price}</CellLabel>
                           {from === undefined
                             ? "–"
@@ -178,6 +180,10 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                               ? t.products.from(formatRupiah(from))
                               : formatRupiah(from)}
                           <span className="xl:hidden"> · {t.products.optionsCount(p.variants.length)}</span>
+                          {/* From xl to 1400px the Options column doesn't fit: the count sits under the price. */}
+                          <span className="hidden text-sm leading-[21px] text-muted-foreground xl:max-[1400px]:block">
+                            {t.products.optionsCount(p.variants.length)}
+                          </span>
                         </td>
                         <td className={cn("py-3 pr-4 max-xl:order-4 max-xl:p-0", !stock && "max-xl:hidden")}>
                           <CellLabel until="xl">{c.stock}</CellLabel>

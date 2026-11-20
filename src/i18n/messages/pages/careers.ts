@@ -67,8 +67,8 @@ export const careersMessages = defineMessages({
     quoteName: "Putri",
     quoteRole: "Morning baker",
     ctaTitle: "Sounds like your kind of kitchen?",
-    ctaBody: "Send a short hello and the role you’re after. We read every email and reply within a week.",
-    howTitle: "How to get in touch",
+    ctaBody: "No forms and no cover-letter essays. One email is enough, and we read every one and reply within a week.",
+    howTitle: "How to apply",
     steps: [
       {
         title: "Write to us",
@@ -150,8 +150,8 @@ export const careersMessages = defineMessages({
     quoteName: "Putri",
     quoteRole: "Baker pagi",
     ctaTitle: "Kedengarannya cocok buatmu?",
-    ctaBody: "Kirim sapaan singkat dan posisi yang kamu minati. Setiap email kami baca dan balas dalam seminggu.",
-    howTitle: "Cara menghubungi kami",
+    ctaBody: "Tanpa formulir dan tanpa surat lamaran panjang. Cukup satu email, semuanya kami baca dan balas dalam seminggu.",
+    howTitle: "Cara melamar",
     steps: [
       {
         title: "Kirim email",

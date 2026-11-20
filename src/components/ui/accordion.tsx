@@ -27,7 +27,8 @@ export function AccordionItem({
       open={defaultOpen}
       className={cn("group w-full py-6 shadow-[inset_0_-1px_0_var(--border-subtle)]", className)}
     >
-      <summary className="flex w-full cursor-pointer list-none items-center gap-6 [&::-webkit-details-marker]:hidden">
+      {/* The 36px +/− sets the row height; the hit-slop takes the tap area to 52px inside the row's padding. */}
+      <summary className="relative flex w-full cursor-pointer list-none items-center gap-6 after:absolute after:inset-x-0 after:-inset-y-2 after:content-[''] [&::-webkit-details-marker]:hidden">
         <span
           className={cn(
             "flex-1 font-display text-[22px] font-semibold leading-[1.25] text-foreground",

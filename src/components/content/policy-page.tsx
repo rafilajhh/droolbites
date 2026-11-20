@@ -7,7 +7,7 @@ import { formatDate, formatRupiah } from "@/lib/format";
 import { getStoreSettings } from "@/lib/settings";
 import { Eyebrow } from "./eyebrow";
 import { formatOpeningHours, halfHourBefore } from "./hours";
-import { PolicyHelp } from "./policy-help";
+import { PolicyHelp, PolicyHelpRail } from "./policy-help";
 import { PolicyToc } from "./policy-toc";
 
 const px = "px-4 sm:px-8 lg:px-16";
@@ -15,9 +15,15 @@ const px = "px-4 sm:px-8 lg:px-16";
 /** When the policy text last changed: the <time> value and, formatted per language, the visible date. */
 const UPDATED_ISO = "2026-10-29";
 
+const POLICY_PATHS: Record<PolicyKey, string> = {
+  shipping: "/shipping-policy",
+  returns: "/returns-refunds",
+  privacy: "/privacy-policy",
+};
+
 export async function policyMetadata(key: PolicyKey) {
   const t = await getMessages(policyMessages);
-  return { title: t[key].title, description: t[key].metaDescription };
+  return { title: t[key].title, description: t[key].metaDescription, alternates: { canonical: POLICY_PATHS[key] } };
 }
 
 /** Shared layout of the three policy frames (MInKs, T4tsh, C9zhg6). */
@@ -37,6 +43,7 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
     opensAt: settings.opensAt,
     pickupCutoff: halfHourBefore(settings),
   };
+  const help = policy === "privacy" ? { ...messages.help, ...messages.privacyHelp } : messages.help;
 
   return (
     <>
@@ -58,10 +65,12 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
         </Chip>
       </header>
 
-      <div className={cn("section-y flex w-full flex-col gap-8 lg:flex-row lg:gap-20", px)}>
+      {/* From xl three columns: contents, the text at its reading measure, and the help note; the contents
+          and the note stay in view beside the text, and the spare width is shared out between the columns. */}
+      <div className={cn("section-y flex w-full flex-col gap-8 lg:flex-row lg:gap-20 xl:justify-between xl:gap-16", px)}>
         <PolicyToc heading={messages.contents} items={t.sections.map(({ id, title }) => ({ id, title }))} />
 
-        <div className="flex min-w-0 flex-1 flex-col gap-8 lg:gap-10">
+        <div className="flex min-w-0 flex-1 flex-col gap-8 lg:gap-10 xl:max-w-[560px]">
           {t.sections.map((section, i) => (
             <section
               key={section.id}
@@ -96,9 +105,10 @@ export async function PolicyPage({ policy }: { policy: PolicyKey }) {
             </ButtonLink>
           ) : null}
         </div>
+        <PolicyHelpRail copy={help} email={settings.email} phone={settings.phone} />
       </div>
 
-      <PolicyHelp copy={policy === "privacy" ? { ...messages.help, ...messages.privacyHelp } : messages.help} email={settings.email} phone={settings.phone} />
+      <PolicyHelp copy={help} email={settings.email} phone={settings.phone} />
     </>
   );
 }

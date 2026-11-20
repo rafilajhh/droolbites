@@ -17,7 +17,7 @@ import { useAddToCart } from "./use-add-to-cart";
 export function AddButton({ product, className }: { product: ShopProduct; className?: string }) {
   const m = useMessages(menuMessages);
   const t = m.card;
-  const { add, pending, failed, left } = useAddToCart();
+  const { add, pending, failed, left, max } = useAddToCart();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const multi = product.variants.length > 1;
@@ -67,7 +67,13 @@ export function AddButton({ product, className }: { product: ShopProduct; classN
         <span role="status" className="pointer-events-none absolute right-0 bottom-full z-10 mb-2">
           {failed ? (
             <span className="block rounded-pill bg-error px-3 py-1.5 text-xs leading-[16px] font-semibold whitespace-nowrap text-white shadow-[0_4px_12px_color-mix(in_srgb,var(--ink)_15%,transparent)]">
-              {left === null ? t.errorShort : left === 0 ? m.stock.soldOut : m.stock.allInCartShort(left)}
+              {max !== null
+                ? m.stock.atMaxShort(max)
+                : left === null
+                  ? t.errorShort
+                  : left === 0
+                    ? m.stock.soldOut
+                    : m.stock.allInCartShort(left)}
             </span>
           ) : null}
         </span>

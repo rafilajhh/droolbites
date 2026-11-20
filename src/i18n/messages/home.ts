@@ -38,9 +38,10 @@ export const homeMessages = defineMessages({
       eyebrow: "TIRAMISU",
       title: "Keep a spoon ready.",
       sub: "Coffee or matcha, layered with mascarpone cream and chilled overnight.",
+      link: "Shop all tiramisu",
     },
     story: {
-      title: "One oven in Sememi, since 2021.",
+      title: "One oven in Sememi, since 2024.",
       link: "More about us",
       alt: "A stack of five assorted Droolbites cookies: chocolate chunk, double chocolate, red velvet and white chocolate almond",
     },
@@ -69,6 +70,8 @@ export const homeMessages = defineMessages({
     reviews: {
       title: "One try, and they're back for more.",
       rating: "4.8 on Google Maps · 300+ reviews",
+      /** Phones: the same facts, short enough for a one-line sticker at 320px. */
+      ratingShort: "4.8 · 300+ Google reviews",
       more: "More reviews",
       try: (name: string) => `Try the ${name}`,
       // Illustrative quotes, in the order of the band: featured first.
@@ -132,9 +135,10 @@ export const homeMessages = defineMessages({
       eyebrow: "TIRAMISU",
       title: "Siapkan sendokmu.",
       sub: "Kopi atau matcha, berlapis krim mascarpone dan didinginkan semalaman.",
+      link: "Lihat semua tiramisu",
     },
     story: {
-      title: "Satu oven di Sememi, sejak 2021.",
+      title: "Satu oven di Sememi, sejak 2024.",
       link: "Kenalan lebih dekat",
       alt: "Tumpukan lima cookies Droolbites aneka rasa: chocolate chunk, double chocolate, red velvet dan white chocolate almond",
     },
@@ -163,6 +167,7 @@ export const homeMessages = defineMessages({
     reviews: {
       title: "Sekali coba, pasti balik lagi.",
       rating: "4,8 di Google Maps · 300+ ulasan",
+      ratingShort: "4,8 · 300+ ulasan Google",
       more: "Ulasan lainnya",
       try: (name: string) => `Coba ${name}`,
       items: [

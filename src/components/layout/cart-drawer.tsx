@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { ArrowRight, Trash2, X } from "lucide-react";
 import { setCartQty, removeFromCart } from "@/app/actions/cart";
-import { useLocale, useMessages } from "@/i18n/client";
+import { useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
-import { variantLabel } from "@/content/products";
+import { isTrayCategory } from "@/content/products";
 import { buttonClasses } from "@/components/ui/button";
 import { SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -30,7 +30,6 @@ const singleUnit = /^1 (piece|portion)$/;
 /** pen: Cart drawer (wSMRO) → Cart Drawer (My6z7), 480px from the right. */
 export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: number }) {
   const t = useMessages(commonMessages).cart;
-  const locale = useLocale();
   const { panel, open, close } = useShopUI();
   const isOpen = panel === "cart";
 
@@ -97,6 +96,9 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
         aria-labelledby="cart-title"
         className={cn(
           "absolute inset-y-0 right-0 flex w-full max-w-[480px] flex-col bg-background transition-transform duration-300 ease-out",
+          // On a short screen (a phone on its side, 200% zoom) the fixed header and footer would leave the
+          // list less than one row, so the whole panel scrolls instead: the list first, then the footer.
+          "[@media(max-height:500px)]:overflow-y-auto",
           "motion-reduce:translate-x-0 motion-reduce:transition-opacity motion-reduce:duration-150",
           isOpen ? "translate-x-0 opacity-100" : "translate-x-full motion-reduce:opacity-0",
         )}
@@ -135,12 +137,18 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
           </div>
         ) : (
           <>
-            <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-1 sm:px-7">
+            <ul className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-1 sm:px-7 [@media(max-height:500px)]:flex-none [@media(max-height:500px)]:overflow-visible">
               {lines.map((line) => {
                 // One-size products (cookies, tiramisu) need no size line; the unit price shows once there are several.
+                // Just the size ("15 × 15 cm"): the "1 tray" of the order label would contradict a quantity of 2.
                 const meta = [
-                  singleUnit.test(line.variantName) ? null : variantLabel(line.variantName, line.categorySlug, locale),
-                  line.qty > 1 ? t.each(formatRupiah(line.unitPrice)) : null,
+                  singleUnit.test(line.variantName) ? null : line.variantName,
+                  line.qty > 1
+                    ? t.each(
+                        formatRupiah(line.unitPrice),
+                        isTrayCategory(line.categorySlug) ? "tray" : line.variantName === "1 portion" ? "portion" : "piece",
+                      )
+                    : null,
                 ]
                   .filter(Boolean)
                   .join(" · ");

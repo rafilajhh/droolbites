@@ -34,7 +34,7 @@ export async function NotFoundBody({ title, sub, menuLabel }: { title?: string; 
               src="/images/products/chocolate-chunk.png"
               alt=""
               fill
-              priority
+              loading="eager"
               quality={100}
               sizes="(min-width: 1024px) 140px, 84px"
               className="object-cover"
@@ -80,7 +80,7 @@ export async function NotFoundBody({ title, sub, menuLabel }: { title?: string; 
                       fill
                       quality={100}
                       sizes="(min-width: 768px) 340px, 96px"
-                      className="object-cover transition-[scale] duration-500 ease-out group-hover/pick:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100"
+                      className="object-cover transition-[scale] duration-300 ease-out group-hover/pick:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100"
                     />
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col gap-1 md:px-2 md:pb-2">

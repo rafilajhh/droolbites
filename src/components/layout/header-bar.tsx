@@ -16,8 +16,11 @@ export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accou
   const { open } = useShopUI();
 
   return (
-    // Sticky and always compact (56 / 64px with a hairline): it never changes size on scroll.
-    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between bg-background px-4 shadow-[inset_0_-1px_0_var(--border-subtle)] md:h-16 md:px-8">
+    // Sticky and always compact (56 / 64px with a hairline): it never changes size on scroll. The hairline
+    // runs full width; past 1440px the padding grows so the icons line up with the 1440px content column.
+    // On a screen under 480px tall (a phone on its side) it scrolls away with the page instead of sticking,
+    // so it and the product page's pinned buy bar don't take 40% of the height between them.
+    <header className="sticky top-0 z-30 flex h-14 w-full items-center justify-between bg-background px-4 shadow-[inset_0_-1px_0_var(--border-subtle)] md:h-16 md:px-[max(2rem,calc(50%-688px))] [@media(max-height:480px)]:relative">
       <div className="flex flex-1 items-center">
         <button
           type="button"
@@ -37,7 +40,7 @@ export function HeaderBar({ cartCount, accountHref }: { cartCount: number; accou
           width={48}
           height={48}
           quality={100}
-          priority
+          loading="eager"
           className="size-11 rounded-pill object-cover md:size-12"
         />
       </Link>

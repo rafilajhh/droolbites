@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 const linkClasses =
-  "inline-flex items-center gap-1.5 rounded-sm px-3.5 py-2.5 text-sm leading-[21px] font-bold text-foreground inset-ring-[1.25px] inset-ring-border-subtle transition-colors hover:bg-card";
+  "inline-flex items-center gap-1.5 rounded-sm px-3.5 py-2.5 font-display text-sm leading-[21px] font-semibold tracking-[0.5px] text-foreground inset-ring-[1.25px] inset-ring-border-subtle transition-colors hover:bg-card";
 
 /** Previous / page x of y / next, below an admin table. Not in the pen file; only shown past one page. */
 export function Pagination({

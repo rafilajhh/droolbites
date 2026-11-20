@@ -14,11 +14,14 @@ export const MAX_STOCK = 9999;
 
 type Tx = Prisma.TransactionClient;
 
-/** "low" when any tracked size has LOW_STOCK or fewer left, "soldOut" when every tracked size is at 0. */
+/**
+ * "soldOut" when every size is tracked and at 0, "low" when any tracked size has LOW_STOCK or fewer left
+ * (a size at 0 beside an untracked one is "low": the untracked size can still be ordered).
+ */
 export function stockStatus(stocks: (number | null)[]): "low" | "soldOut" | null {
   const tracked = stocks.filter((s): s is number => s !== null);
   if (tracked.length === 0) return null;
-  if (tracked.every((s) => s <= 0)) return "soldOut";
+  if (tracked.length === stocks.length && tracked.every((s) => s <= 0)) return "soldOut";
   return tracked.some((s) => s <= LOW_STOCK) ? "low" : null;
 }
 

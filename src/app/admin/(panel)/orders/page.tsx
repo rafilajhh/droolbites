@@ -7,9 +7,9 @@ import { StatusBadge } from "@/components/ui/badges";
 import { Pagination } from "@/components/admin/pagination";
 import { ORDER_PAGE_SIZE } from "@/components/admin/rules";
 import { OrdersToolbar } from "@/components/admin/toolbars";
-import { AdminMain, Card, CellLabel, listCardClasses, listThClasses, PageHead } from "@/components/admin/ui";
+import { AdminMain, Card, CellLabel, listCardClasses, listScrollClasses, listThClasses, PageHead } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { containsText, db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { fulfilmentBadgeInfo, needsActionWhere, paymentStatusInfo } from "@/lib/order-status";
 import { cn } from "@/lib/cn";
@@ -43,7 +43,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   const where: Prisma.OrderWhereInput = {
     ...(needsAction ? needsActionWhere : status ? { paymentStatus: status } : {}),
     ...(q
-      ? { OR: [{ orderNumber: { contains: q } }, { customerName: { contains: q } }, { email: { contains: q } }] }
+      ? { OR: [{ orderNumber: containsText(q) }, { customerName: containsText(q) }, { email: containsText(q) }] }
       : {}),
   };
   const count = await db.order.count({ where });
@@ -90,7 +90,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
       <OrdersToolbar q={q} status={status ?? ""} needsAction={needsAction} count={count} />
 
       <Card className={listCardClasses}>
-        <div className="relative w-full overflow-x-auto">
+        <div className={listScrollClasses}>
           <table aria-label={t.orders.title} className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[860px]">
             <thead className="max-xl:hidden">
               <tr>
@@ -161,7 +161,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         <CellLabel until="xl">{c.payment}</CellLabel>
                         <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
                       </td>
-                      <td className="py-3 pr-3 max-xl:order-4 max-xl:p-0 md:max-xl:col-start-3 md:max-xl:row-start-1">
+                      <td className={cn("py-3 pr-3 max-xl:order-4 max-xl:p-0 md:max-xl:col-start-3 md:max-xl:row-start-1", unpaid && "max-md:hidden")}>
                         <CellLabel until="xl">{c.status}</CellLabel>
                         {unpaid ? (
                           <span className="text-muted-foreground" aria-label={fs[locale]}>—</span>

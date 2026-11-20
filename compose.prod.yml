@@ -40,6 +40,15 @@ services:
     # Only the host's nginx can reach it.
     ports: !override
       - "127.0.0.1:3010:3000"
+    # Reported by `docker ps` / `docker inspect` only: nothing waits on it, so a failing check never
+    # blocks a deploy. /robots.txt is rendered per request without the database, so it shows the
+    # Node server is answering. The image has node but no curl.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/robots.txt').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
   migrate:
     profiles: !reset []

@@ -6,7 +6,7 @@ import { belibayarProvider } from "./belibayar";
 import { mockProvider } from "./mock";
 import type { PaymentProvider } from "./types";
 
-export type { PaymentProvider, PaymentSnapshot, CreatedPayment } from "./types";
+export type { AmountFloor, PaymentProvider, PaymentSnapshot, CreatedPayment } from "./types";
 export { PaymentGatewayError } from "./types";
 export { PAYMENT_WINDOW_MS, formatVaNumber } from "./mock";
 
@@ -47,11 +47,25 @@ export function canSimulatePayment(paymentProvider: string | null): boolean {
  * Methods a customer can choose right now, in checkout order: switched on in
  * store settings and (with a real gateway) active in its channel list. Logos
  * come from the gateway; without them the UI draws the text marks.
+ *
+ * With the order's `amount`, `belowMinimum` lists the methods the gateway is known to
+ * refuse for it (see AmountFloor): each with its minimum, or null when the gateway
+ * didn't say. They stay in `methods`, shown disabled with the minimum, so the
+ * customer sees why. The mock provider knows no minimums.
  */
-export async function getPaymentOptions(settings: StoreSettings) {
-  const list = await getPaymentProvider().channels();
+export async function getPaymentOptions(settings: StoreSettings, amount?: number) {
+  const provider = getPaymentProvider();
+  const list = await provider.channels();
   const methods: PaymentMethod[] = PAYMENT_GROUPS.filter((g) => paymentKindEnabled(settings, g.key))
     .flatMap((g) => [...g.methods])
     .filter((m) => !list || list.methods.has(m));
-  return { methods, logos: list?.logos ?? {} };
+  const belowMinimum: Partial<Record<PaymentMethod, number | null>> = {};
+  if (amount !== undefined) {
+    const floors = provider.amountFloors?.() ?? {};
+    for (const m of methods) {
+      const floor = floors[m];
+      if (floor && ((floor.min !== null && amount < floor.min) || amount <= floor.refusedAt)) belowMinimum[m] = floor.min;
+    }
+  }
+  return { methods, logos: list?.logos ?? {}, belowMinimum };
 }

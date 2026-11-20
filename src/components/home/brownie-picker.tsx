@@ -18,8 +18,8 @@ export function BrowniePicker({ product, legend }: { product: ShopProduct; legen
   const m = useMessages(menuMessages);
   const t = m.sizeModal;
   const { variant, setVariantId, qty, setQty, max, soldOut } = useSizeChoice(product);
-  const { add, pending, failed, left } = useAddToCart();
-  const errorText = useAddError(left, m.card.error);
+  const { add, pending, failed, left, max: cap } = useAddToCart();
+  const errorText = useAddError(left, m.card.error, cap);
 
   return (
     <div className="@container flex w-full flex-col gap-4">

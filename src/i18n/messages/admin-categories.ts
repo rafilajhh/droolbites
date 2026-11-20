@@ -46,8 +46,8 @@ export const adminCategoriesMessages = defineMessages({
       title: (name: string) => `Delete ${name}?`,
       body: "It has no products, so nothing on the menu changes. This can't be undone.",
       lockedTitle: (name: string) => `${name} can't be deleted yet`,
-      lockedBody: (products: string) =>
-        `It still has ${products}. Move them to another category or delete them first, then come back here.`,
+      lockedBody: (products: string, one: boolean) =>
+        `It still has ${products}. Move ${one ? "it" : "them"} to another category or delete ${one ? "it" : "them"} first, then come back here.`,
       lockedHint: "Just want it off the menu? Hide its products: a category with nothing available doesn't show on the menu.",
       products: (n: number) => `${n} ${n === 1 ? "product" : "products"}`,
       someProducts: "products",

@@ -288,7 +288,7 @@ export function DeliveryPicker({
           ref={mapEl}
           role="application"
           aria-labelledby="checkout-location-label"
-          className="size-full font-sans [&_.drool-range]:fill-primary [&_.drool-range]:stroke-primary [&_.leaflet-control-attribution]:text-[11px] [&_.leaflet-control-zoom]:border-0! [&_.leaflet-control-zoom]:shadow-[0_4px_12px_rgb(31_42_20/0.15)] [&_.leaflet-control-zoom_a]:text-foreground"
+          className="size-full font-sans [&_.drool-range]:fill-primary [&_.drool-range]:stroke-primary [&_.leaflet-control-attribution]:text-[11px] [&_.leaflet-control-zoom]:border-0! [&_.leaflet-control-zoom]:shadow-[0_4px_12px_rgb(31_42_20/0.15)] [&_.leaflet-control-zoom_a]:size-10! [&_.leaflet-control-zoom_a]:leading-10! [&_.leaflet-control-zoom_a]:text-foreground"
         />
         {/* The pen's input stroke, drawn over the tiles. */}
         <div aria-hidden className="pointer-events-none absolute inset-0 z-[1001] rounded-sm inset-ring-[1.25px] inset-ring-border-subtle" />

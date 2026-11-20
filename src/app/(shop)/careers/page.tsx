@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Bike, ChefHat, Mail, Paperclip, Store, User } from "lucide-react";
+import { Bike, ChefHat, Mail, Store } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
 import { Chip, Sticker } from "@/components/ui/badges";
 import { buttonClasses } from "@/components/ui/button";
@@ -11,17 +11,11 @@ import { cn } from "@/lib/cn";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(careersMessages);
-  return { title: t.metaTitle, description: t.metaDescription };
+  return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/careers" } };
 }
 
 const px = "px-4 sm:px-8 lg:px-16";
 const sectionTitle = "type-section font-display text-balance font-bold text-foreground";
-
-const cards = [
-  { icon: Mail, bg: "bg-tint-mustard" },
-  { icon: User, bg: "bg-tint-lavender" },
-  { icon: Paperclip, bg: "bg-mint" },
-];
 
 const roleStyle = [
   { icon: ChefHat, fill: "bg-accent-mustard" },
@@ -114,34 +108,30 @@ export default async function CareersPage() {
         <p className="max-w-[640px] text-pretty text-[15px] leading-[23px] text-muted-foreground">{t.rolesNote}</p>
       </section>
 
-      {/* Perks: moss band, like the values band on Our story. */}
-      <section
-        className={cn(
-          "panel-y flex w-full flex-col gap-8 bg-primary [--focus-ring:var(--white)] lg:flex-row lg:gap-16",
-          px,
-        )}
-        aria-labelledby="careers-perks"
-      >
-        <div className="flex flex-col gap-3 lg:w-[360px] lg:shrink-0">
-          <h2
-            id="careers-perks"
-            className="type-section font-display text-balance font-bold text-foreground-inverse"
-          >
-            {t.perksTitle}
-          </h2>
-          <p className="text-pretty text-base leading-6 text-mint lg:text-lg lg:leading-[27px]">{t.perksSub}</p>
+      {/* Perks: a moss panel in the page gutters, like the numbers band on Our story. */}
+      <section className="w-full px-3 md:px-6" aria-labelledby="careers-perks">
+        <div className="panel-y flex w-full flex-col gap-8 rounded-m bg-primary px-6 [--focus-ring:var(--white)] sm:px-10 lg:flex-row lg:gap-16 lg:px-16">
+          <div className="flex flex-col gap-3 lg:w-[360px] lg:shrink-0">
+            <h2
+              id="careers-perks"
+              className="type-section font-display text-balance font-bold text-foreground-inverse"
+            >
+              {t.perksTitle}
+            </h2>
+            <p className="text-pretty text-base leading-6 text-mint lg:text-lg lg:leading-[27px]">{t.perksSub}</p>
+          </div>
+          <ul className="grid flex-1 grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
+            {t.perks.map((perk, i) => (
+              <li key={perk.title} className="flex flex-col gap-3">
+                <span className={cn("size-4 rounded-full", perkDots[i])} aria-hidden />
+                <h3 className="font-display text-[24px] leading-[28px] font-bold text-foreground-inverse">
+                  {perk.title}
+                </h3>
+                <p className="text-base leading-6 text-mint">{perk.body}</p>
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className="grid flex-1 grid-cols-1 gap-x-12 gap-y-8 sm:grid-cols-2">
-          {t.perks.map((perk, i) => (
-            <li key={perk.title} className="flex flex-col gap-3">
-              <span className={cn("size-4 rounded-full", perkDots[i])} aria-hidden />
-              <h3 className="font-display text-[24px] leading-[28px] font-bold text-foreground-inverse">
-                {perk.title}
-              </h3>
-              <p className="text-base leading-6 text-mint">{perk.body}</p>
-            </li>
-          ))}
-        </ul>
       </section>
 
       {/* The team: a snapshot collage and a staff quote. */}
@@ -196,57 +186,43 @@ export default async function CareersPage() {
         </div>
       </section>
 
-      <section
-        className={cn("flex w-full flex-col gap-8 lg:gap-10", px)}
-        aria-labelledby="careers-steps"
-      >
-        <h2 id="careers-steps" className={sectionTitle}>
-          {t.howTitle}
-        </h2>
-        <ol className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">
-          {t.steps.map((step, i) => {
-            const Icon = cards[i].icon;
-            return (
-              <li key={step.title} className={cn("flex flex-col gap-4 rounded-m p-6 lg:min-h-[254px] lg:gap-5 lg:p-8", cards[i].bg)}>
-                <div className="flex items-center justify-between">
-                  <span className="font-display text-5xl leading-none font-bold text-foreground" aria-hidden>
-                    {i + 1}
-                  </span>
-                  <Icon className="size-7 text-foreground" aria-hidden />
-                </div>
-                <h3 className="font-display text-[24px] leading-[28px] font-bold text-foreground">{step.title}</h3>
-                <p className="text-base leading-6 text-foreground">
-                  {i === 0 ? (
-                    <WriteToUs text={step.body(CAREERS_EMAIL)} mailto={mailto} />
-                  ) : (
-                    step.body(CAREERS_EMAIL)
-                  )}
-                </p>
-              </li>
-            );
-          })}
-        </ol>
-      </section>
-
-      {/* Closing CTA: the page ends on the action. */}
-      <section className="section-y w-full px-3 md:px-6" aria-labelledby="careers-cta">
-        <div className="flex w-full flex-col gap-8 rounded-m bg-tint-salmon px-6 panel-y sm:px-10 lg:flex-row lg:items-center lg:gap-12 lg:px-16">
-          <div className="flex flex-1 flex-col gap-3">
-            <h2
-              id="careers-cta"
-              className="type-section font-display text-balance font-bold text-foreground"
-            >
+      {/* Closing panel: the page ends on the action. How to apply sits beside it as three short steps,
+          so the address and the button each appear once here (the hero has the only other button). */}
+      <section className="w-full px-3 pb-12 md:px-6 lg:pb-20" aria-labelledby="careers-cta">
+        <div className="panel-y grid w-full grid-cols-1 gap-10 rounded-m bg-tint-salmon px-6 sm:px-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-16">
+          <div className="flex flex-col items-start gap-6">
+            <h2 id="careers-cta" className={sectionTitle}>
               {t.ctaTitle}
             </h2>
-            <p className="max-w-[600px] text-pretty text-lg leading-[27px] text-muted-foreground">{t.ctaBody}</p>
-          </div>
-          <div className="flex flex-col items-start gap-3 lg:items-end">
-            <a href={mailto} className={buttonClasses("primary")}>
+            <p className="max-w-[480px] text-pretty text-lg leading-[27px] text-muted-foreground">{t.ctaBody}</p>
+            <a href={mailto} className={buttonClasses("primary", "max-sm:w-full")}>
+              <Mail className="size-[18px] shrink-0" aria-hidden />
               {t.cta}
             </a>
-            <p className="font-mono text-[13px] leading-[17px] font-semibold break-all text-foreground">
-              {CAREERS_EMAIL}
-            </p>
+          </div>
+          <div className="flex flex-col gap-1">
+            <h3 className="font-display text-[22px] leading-[28px] font-bold text-foreground">{t.howTitle}</h3>
+            <ol className="flex flex-col">
+              {t.steps.map((step, i) => (
+                <li
+                  key={step.title}
+                  className="flex gap-4 py-5 shadow-[inset_0_-1px_0_var(--border-divider)] last:pb-0 last:shadow-none"
+                >
+                  <span
+                    className="flex size-8 shrink-0 items-center justify-center rounded-pill bg-background font-display text-[15px] leading-none font-bold text-foreground"
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <p className="font-display text-lg leading-6 font-bold text-foreground">{step.title}</p>
+                    <p className="text-pretty text-base leading-6 text-foreground">
+                      {i === 0 ? <WriteToUs text={step.body(CAREERS_EMAIL)} mailto={mailto} /> : step.body(CAREERS_EMAIL)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         </div>
       </section>
@@ -260,7 +236,7 @@ function WriteToUs({ text, mailto }: { text: string; mailto: string }) {
   return (
     <>
       {before}
-      <a href={mailto} className="underline underline-offset-2">
+      <a href={mailto} className="font-semibold break-all underline underline-offset-2 hover:no-underline">
         {CAREERS_EMAIL}
       </a>
       {after}

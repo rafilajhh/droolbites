@@ -10,7 +10,8 @@ import { useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
 
-export function AdminSignInForm({ helpEmail }: { helpEmail: string }) {
+/** `next`: the admin page to continue to after signing in (already checked by adminNext). */
+export function AdminSignInForm({ helpEmail, next }: { helpEmail: string; next: string }) {
   const t = useMessages(adminMessages).signIn;
   const [state, action, pending] = useActionState<AdminSignInState, FormData>(adminSignIn, { error: null, email: "" });
   const [show, setShow] = useState(false);
@@ -18,6 +19,7 @@ export function AdminSignInForm({ helpEmail }: { helpEmail: string }) {
 
   return (
     <form action={action} className="flex w-full flex-col gap-5" noValidate>
+      <input type="hidden" name="next" value={next} />
       <Field label={t.email} htmlFor="admin-email">
         <input
           id="admin-email"
@@ -65,10 +67,16 @@ export function AdminSignInForm({ helpEmail }: { helpEmail: string }) {
         {pending ? t.submitting : t.submit}
       </Button>
       <div className="flex w-full flex-wrap items-start justify-between gap-2 text-sm leading-[21px]">
-        <a href={`mailto:${helpEmail}`} className="text-muted-foreground underline-offset-2 hover:underline">
+        <a
+          href={`mailto:${helpEmail}`}
+          className="relative text-muted-foreground underline-offset-2 after:absolute after:-inset-x-1.5 after:-inset-y-2.5 after:content-[''] hover:underline"
+        >
           {t.help}
         </a>
-        <Link href="/" className="font-bold text-foreground underline-offset-2 hover:underline">
+        <Link
+          href="/"
+          className="relative font-bold text-foreground underline-offset-2 after:absolute after:-inset-x-1.5 after:-inset-y-2.5 after:content-[''] hover:underline"
+        >
           {t.storefront}
         </Link>
       </div>

@@ -215,8 +215,9 @@ export default async function AdminOverviewPage() {
         />
       </PaneCard>
 
-      {/* Recent orders and the menu in one card, split by a hairline, so both end at the same height. */}
-      <PaneCard as="div" cols="grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px]">
+      {/* Recent orders and the menu in one card, split by a hairline, so both end at the same height.
+          Side by side only from 1440px: below that the orders table (two badges per row) has no room beside the menu. */}
+      <PaneCard as="div" cols="grid-cols-1 min-[1440px]:grid-cols-[minmax(0,1fr)_360px]">
         <section aria-labelledby="recent-orders-title" className={cn(paneClasses, "gap-3 p-5 md:p-6")}>
           <div className="flex w-full flex-wrap items-center justify-between gap-3">
             <SectionTitle id="recent-orders-title">{o.recent}</SectionTitle>
@@ -230,9 +231,6 @@ export default async function AdminOverviewPage() {
                 <tr className="shadow-[inset_0_-1px_0_var(--border-subtle)]">
                   <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
                     {t.orders.col.order}
-                  </th>
-                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
-                    {t.orders.col.method}
                   </th>
                   <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
                     {t.orders.col.payment}
@@ -259,23 +257,25 @@ export default async function AdminOverviewPage() {
                       key={order.orderNumber}
                       className="shadow-[inset_0_-1px_0_var(--border-subtle)] last:shadow-none max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-2 max-md:gap-y-2 max-md:py-3.5"
                     >
+                      {/* The method sits under the number (one column fewer), as the orders list does with the customer. */}
                       <th
                         scope="row"
                         className="py-3.5 pr-4 text-left text-base leading-6 font-bold whitespace-nowrap max-md:order-1 max-md:grow max-md:basis-[55%] max-md:p-0"
                       >
                         {order.orderNumber}
+                        <span className="block text-sm leading-[21px] font-normal text-muted-foreground">
+                          <span className="sr-only">{t.orders.col.method}: </span>
+                          {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
+                        </span>
                       </th>
-                      <td className="py-3.5 pr-4 text-[15px] leading-[23px] whitespace-nowrap max-md:order-5 max-md:grow max-md:basis-[55%] max-md:p-0 max-md:text-sm max-md:leading-[21px] max-md:text-muted-foreground">
-                        <CellLabel>{t.orders.col.method}</CellLabel>
-                        {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
-                      </td>
                       <td className="py-3.5 pr-4 max-md:order-3 max-md:p-0">
                         <CellLabel>{t.orders.col.payment}</CellLabel>
                         <StatusBadge tone={payment.tone} className="whitespace-nowrap">
                           {payment[locale]}
                         </StatusBadge>
                       </td>
-                      <td className="py-3.5 pr-4 max-md:order-4 max-md:p-0">
+                      {/* Unpaid: no status yet. The dash keeps the table column; on phones the payment badge says it alone. */}
+                      <td className={cn("py-3.5 pr-4 max-md:order-4 max-md:p-0", unpaid && "max-md:hidden")}>
                         <CellLabel>{t.orders.col.status}</CellLabel>
                         {unpaid ? (
                           <span className="text-muted-foreground" aria-label={status[locale]}>
@@ -318,7 +318,7 @@ export default async function AdminOverviewPage() {
                   <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", categoryStyle(c.slug).dot)} />
                   <span className="flex-1 text-[15px] leading-[23px] font-semibold">{categoryName(c.slug, c.name, locale)}</span>
                   <span className="text-sm leading-[21px] text-muted-foreground">
-                    {isTrayCategory(c.slug) ? o.traySizes(variants) : o.flavors(c.products.length)}
+                    {isTrayCategory(c.slug) ? o.traySizes(variants) : o.productCount(c.products.length)}
                   </span>
                 </li>
               );
@@ -352,8 +352,8 @@ export default async function AdminOverviewPage() {
               ) : null}
             </div>
           ) : null}
-          {/* From xl the pane is as tall as Recent orders: the button closes it at the bottom, level with the last order row. */}
-          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full xl:mt-auto")}>
+          {/* From 1440px the pane is as tall as Recent orders: the button closes it at the bottom, level with the last order row. */}
+          <Link href="/admin/products" className={buttonClasses("secondary", "mt-2 w-full min-[1440px]:mt-auto")}>
             {o.manage}
           </Link>
         </section>

@@ -95,7 +95,7 @@ export function PolicyToc({ heading, items }: { heading: string; items: { id: st
           {links}
         </nav>
       </details>
-      <nav aria-label={heading} className="hidden w-[300px] shrink-0 flex-col gap-1.5 self-start lg:sticky lg:top-[88px] lg:flex">
+      <nav aria-label={heading} className="hidden w-[300px] shrink-0 flex-col gap-1.5 self-start lg:sticky lg:top-[88px] lg:flex xl:w-[260px]">
       <p className="font-mono text-xs leading-[18px] font-semibold tracking-[1px] text-muted-foreground">{heading}</p>
       {links}
       </nav>

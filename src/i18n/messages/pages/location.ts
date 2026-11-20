@@ -40,10 +40,18 @@ export const locationMessages = defineMessages({
         body: "Rough driving times on a normal afternoon. Add ten minutes when it rains.",
       },
     ],
+    /** Shown under "Coming from nearby" (illustrative). */
+    nearbyTimes: [
+      { place: "Citraland", time: "15 min" },
+      { place: "Pakuwon Mall", time: "20 min" },
+      { place: "Tunjungan Plaza", time: "40 min" },
+    ],
 
     reviewsTitle: "What the regulars pick up.",
     reviewsSub: "A few words from people who stop by the counter most weeks.",
     rating: "4.8 on Google Maps · 300+ reviews",
+    /** Phones: the same facts, short enough for a one-line sticker at 320px. */
+    ratingShort: "4.8 · 300+ Google reviews",
     reviews: [
       {
         quote:
@@ -53,7 +61,7 @@ export const locationMessages = defineMessages({
       },
       {
         quote:
-          "Got the 20×20 Fudgy Brownies for my mum’s birthday. Twelve of us, not a crumb left, and pickup took two minutes.",
+          "Got the 20 × 20 Fudgy Brownies for my mum’s birthday. Twelve of us, not a crumb left, and pickup took two minutes.",
         name: "Raka",
         area: "Benowo",
       },
@@ -107,10 +115,16 @@ export const locationMessages = defineMessages({
         body: "Perkiraan waktu berkendara di sore hari biasa. Tambah sepuluh menit kalau hujan.",
       },
     ],
+    nearbyTimes: [
+      { place: "Citraland", time: "15 menit" },
+      { place: "Pakuwon Mall", time: "20 menit" },
+      { place: "Tunjungan Plaza", time: "40 menit" },
+    ],
 
     reviewsTitle: "Andalan para langganan.",
     reviewsSub: "Sedikit cerita dari mereka yang hampir tiap minggu mampir ke kasir kami.",
     rating: "4,8 di Google Maps · 300+ ulasan",
+    ratingShort: "4,8 · 300+ ulasan Google",
     reviews: [
       {
         quote:
@@ -120,7 +134,7 @@ export const locationMessages = defineMessages({
       },
       {
         quote:
-          "Pesan Fudgy Brownies 20×20 buat ultah Mama. Dua belas orang, habis tanpa sisa, ambilnya cuma dua menit.",
+          "Pesan Fudgy Brownies 20 × 20 buat ultah Mama. Dua belas orang, habis tanpa sisa, ambilnya cuma dua menit.",
         name: "Raka",
         area: "Benowo",
       },

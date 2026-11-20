@@ -28,17 +28,31 @@ const COOKIE_STORAGE: Text = {
   id: "Paling enak di hari yang sama. Tahan 3 hari di toples kedap udara pada suhu ruang; hangatkan 10 detik agar bagian tengahnya lembut lagi.",
 };
 /**
- * Placeholder until the kitchen lists the ingredients. The product page links its
- * "Contact us" and opens the first section with real content instead of this one.
+ * Ingredient lists run from the largest share to the smallest, as on a label. The chocolate we buy in
+ * lists its own ingredients in brackets.
  */
-export const INGREDIENTS_ON_REQUEST: Text = {
-  en: "Contact us to confirm the full ingredient list for this flavor.",
-  id: "Hubungi kami untuk memastikan daftar lengkap bahan rasa ini.",
+const DARK_CHOCOLATE: Text = {
+  en: "(cocoa mass, sugar, cocoa butter, soy lecithin)",
+  id: "(massa kakao, gula, lemak kakao, lesitin kedelai)",
 };
-const COOKIE_ALLERGENS: Text = {
-  en: "Contains wheat, egg, milk and soy. Made in a kitchen that also handles nuts.",
-  id: "Mengandung gandum, telur, susu dan kedelai. Dibuat di dapur yang juga mengolah kacang.",
+const WHITE_CHOCOLATE: Text = {
+  en: "(sugar, cocoa butter, whole milk powder, soy lecithin)",
+  id: "(gula, lemak kakao, susu bubuk, lesitin kedelai)",
 };
+/** Shared by every product: we bake nuts in the same kitchen. */
+const NUT_KITCHEN: Text = {
+  en: "Made in a kitchen that also handles nuts.",
+  id: "Dibuat di dapur yang juga mengolah kacang.",
+};
+/** Cookies and brownies. */
+const BAKE_ALLERGENS: Text = {
+  en: `Contains wheat (gluten), egg, milk and soy. ${NUT_KITCHEN.en}`,
+  id: `Mengandung gandum (gluten), telur, susu dan kedelai. ${NUT_KITCHEN.id}`,
+};
+const TIRAMISU_ALLERGENS = (caffeine: Text): Text => ({
+  en: `Contains wheat (gluten), egg and milk. ${caffeine.en} ${NUT_KITCHEN.en}`,
+  id: `Mengandung gandum (gluten), telur dan susu. ${caffeine.id} ${NUT_KITCHEN.id}`,
+});
 
 export const productContent: Record<string, ProductContent> = {
   "chocolate-chunk": {
@@ -51,8 +65,11 @@ export const productContent: Record<string, ProductContent> = {
       en: "Our classic: a thick, buttery dough loaded with dark chocolate chunks, baked until the edges turn golden and the middle stays soft and gooey.",
       id: "Andalan kami: adonan butter yang tebal, penuh potongan cokelat hitam, dipanggang sampai pinggirnya keemasan dan bagian tengahnya tetap lembut dan lumer.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
-    allergens: COOKIE_ALLERGENS,
+    ingredients: {
+      en: `Wheat flour, butter, brown sugar, dark chocolate chunks ${DARK_CHOCOLATE.en}, cane sugar, eggs, vanilla extract, baking soda, sea salt.`,
+      id: `Tepung terigu, butter, brown sugar, potongan cokelat hitam ${DARK_CHOCOLATE.id}, gula pasir, telur, ekstrak vanila, soda kue, garam laut.`,
+    },
+    allergens: BAKE_ALLERGENS,
     storage: COOKIE_STORAGE,
   },
   "double-chocolate": {
@@ -64,8 +81,11 @@ export const productContent: Record<string, ProductContent> = {
       en: "For serious chocolate people: a dark cocoa dough folded with chocolate chunks, baked just long enough to keep the center fudgy.",
       id: "Untuk pencinta cokelat sejati: adonan kakao pekat dengan potongan cokelat, dipanggang secukupnya agar bagian tengahnya tetap fudgy.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
-    allergens: COOKIE_ALLERGENS,
+    ingredients: {
+      en: `Wheat flour, butter, brown sugar, dark chocolate chunks ${DARK_CHOCOLATE.en}, cane sugar, eggs, Dutch-process cocoa powder, vanilla extract, baking soda, sea salt.`,
+      id: `Tepung terigu, butter, brown sugar, potongan cokelat hitam ${DARK_CHOCOLATE.id}, gula pasir, telur, bubuk kakao (dutch process), ekstrak vanila, soda kue, garam laut.`,
+    },
+    allergens: BAKE_ALLERGENS,
     storage: COOKIE_STORAGE,
   },
   "red-velvet": {
@@ -78,8 +98,11 @@ export const productContent: Record<string, ProductContent> = {
       en: "A soft red velvet dough with a hint of cocoa, studded with white chocolate pieces that melt into the warm middle.",
       id: "Adonan red velvet yang lembut dengan sentuhan kakao, bertabur potongan cokelat putih yang meleleh di bagian tengahnya.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
-    allergens: COOKIE_ALLERGENS,
+    ingredients: {
+      en: `Wheat flour, butter, brown sugar, white chocolate pieces ${WHITE_CHOCOLATE.en}, cane sugar, eggs, buttermilk, cocoa powder, red food colouring, vanilla extract, baking soda, salt.`,
+      id: `Tepung terigu, butter, brown sugar, potongan cokelat putih ${WHITE_CHOCOLATE.id}, gula pasir, telur, buttermilk, bubuk kakao, pewarna makanan merah, ekstrak vanila, soda kue, garam.`,
+    },
+    allergens: BAKE_ALLERGENS,
     storage: COOKIE_STORAGE,
   },
   "white-chocolate-almond": {
@@ -91,10 +114,13 @@ export const productContent: Record<string, ProductContent> = {
       en: "Golden vanilla dough with sweet white chocolate and roasted almonds for a little crunch in every bite.",
       id: "Adonan vanila keemasan dengan cokelat putih yang manis dan almon panggang untuk sensasi renyah di setiap gigitan.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
+    ingredients: {
+      en: `Wheat flour, butter, brown sugar, white chocolate pieces ${WHITE_CHOCOLATE.en}, roasted almonds, cane sugar, eggs, vanilla extract, baking soda, sea salt.`,
+      id: `Tepung terigu, butter, brown sugar, potongan cokelat putih ${WHITE_CHOCOLATE.id}, almon panggang, gula pasir, telur, ekstrak vanila, soda kue, garam laut.`,
+    },
     allergens: {
-      en: "Contains wheat, egg, milk, soy and almonds (tree nuts).",
-      id: "Mengandung gandum, telur, susu, kedelai dan almon (kacang pohon).",
+      en: "Contains wheat (gluten), egg, milk, soy and almonds (tree nuts).",
+      id: "Mengandung gandum (gluten), telur, susu, kedelai dan almon (kacang pohon).",
     },
     storage: COOKIE_STORAGE,
   },
@@ -107,11 +133,11 @@ export const productContent: Record<string, ProductContent> = {
       en: "The same crackly-top, fudgy chocolate brownie in four tray sizes. Pick the one that fits your table.",
       id: "Brownies cokelat fudgy dengan permukaan renyah yang sama dalam empat ukuran loyang. Pilih yang pas untuk mejamu.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
-    allergens: {
-      en: "Contains wheat, egg, milk and soy.",
-      id: "Mengandung gandum, telur, susu dan kedelai.",
+    ingredients: {
+      en: `Dark chocolate ${DARK_CHOCOLATE.en}, butter, cane sugar, eggs, wheat flour, cocoa powder, vanilla extract, salt.`,
+      id: `Cokelat hitam ${DARK_CHOCOLATE.id}, butter, gula pasir, telur, tepung terigu, bubuk kakao, ekstrak vanila, garam.`,
     },
+    allergens: BAKE_ALLERGENS,
     storage: {
       en: "Keeps for 4 days in an airtight container at room temperature, or a week in the fridge.",
       id: "Tahan 4 hari di wadah kedap udara pada suhu ruang, atau seminggu di kulkas.",
@@ -126,11 +152,11 @@ export const productContent: Record<string, ProductContent> = {
       en: "Coffee-soaked sponge layered with mascarpone cream, chilled overnight and finished with a thick dusting of cocoa.",
       id: "Bolu yang direndam kopi, berlapis krim mascarpone, didinginkan semalaman lalu ditaburi kakao yang tebal.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
-    allergens: {
-      en: "Contains wheat, egg and milk. Contains caffeine.",
-      id: "Mengandung gandum, telur dan susu. Mengandung kafein.",
+    ingredients: {
+      en: "Mascarpone, fresh cream, ladyfinger sponge (wheat flour, eggs, sugar), espresso, egg yolks, sugar, cocoa powder. No alcohol.",
+      id: "Mascarpone, krim segar, bolu ladyfinger (tepung terigu, telur, gula), espresso, kuning telur, gula, bubuk kakao. Tanpa alkohol.",
     },
+    allergens: TIRAMISU_ALLERGENS({ en: "Espresso contains caffeine.", id: "Espresso mengandung kafein." }),
     storage: {
       en: "Keep refrigerated and enjoy within 2 days.",
       id: "Simpan di kulkas dan nikmati dalam 2 hari.",
@@ -146,11 +172,11 @@ export const productContent: Record<string, ProductContent> = {
       en: "Matcha-soaked sponge layered with mascarpone cream, chilled overnight and finished with a bright layer of matcha.",
       id: "Bolu yang direndam matcha, berlapis krim mascarpone, didinginkan semalaman lalu ditutup lapisan matcha.",
     },
-    ingredients: INGREDIENTS_ON_REQUEST,
-    allergens: {
-      en: "Contains wheat, egg and milk. Matcha contains caffeine.",
-      id: "Mengandung gandum, telur dan susu. Matcha mengandung kafein.",
+    ingredients: {
+      en: "Mascarpone, fresh cream, ladyfinger sponge (wheat flour, eggs, sugar), milk, egg yolks, sugar, Japanese matcha powder. No alcohol.",
+      id: "Mascarpone, krim segar, bolu ladyfinger (tepung terigu, telur, gula), susu, kuning telur, gula, bubuk matcha Jepang. Tanpa alkohol.",
     },
+    allergens: TIRAMISU_ALLERGENS({ en: "Matcha contains caffeine.", id: "Matcha mengandung kafein." }),
     storage: {
       en: "Keep refrigerated and enjoy within 2 days.",
       id: "Simpan di kulkas dan nikmati dalam 2 hari.",

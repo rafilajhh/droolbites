@@ -12,6 +12,9 @@ export const paymentStatusInfo: Record<PaymentStatus, Entry> = {
   expired: { en: "Payment failed", id: "Pembayaran gagal", tone: "crimson" },
 };
 
+/** The payment badge of an order the store cancelled before it was paid: nothing failed, it just wasn't paid. */
+export const notPaidInfo: Entry = { en: "Not paid", id: "Tidak dibayar", tone: "muted" };
+
 export const fulfilmentStatusInfo: Record<FulfilmentStatus, Entry> = {
   pending: { en: "New order", id: "Pesanan baru", tone: "mustard" },
   baking: { en: "Baking", id: "Dipanggang", tone: "lavender" },
@@ -118,7 +121,7 @@ export function cancelReasonText(reason: string | null, labels: Record<CancelRea
 
 const unpaidFulfilmentInfo: Record<Exclude<PaymentStatus, "paid">, Entry> = {
   awaiting: { en: "Unpaid", id: "Belum dibayar", tone: "muted" },
-  expired: { en: "Not paid", id: "Tidak dibayar", tone: "muted" },
+  expired: notPaidInfo,
 };
 
 /**

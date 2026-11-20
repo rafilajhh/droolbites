@@ -75,3 +75,10 @@ export function safeNext(next: unknown, fallback = "/account"): string {
     return fallback;
   }
 }
+
+/** Where the admin sign-in continues to: an admin page from `?next=` (the order link in the store's email), else the dashboard. */
+export function adminNext(next: unknown): string {
+  const path = safeNext(next, "/admin");
+  const page = path.split(/[?#]/)[0];
+  return (page === "/admin" || page.startsWith("/admin/")) && !page.startsWith("/admin/sign-in") ? path : "/admin";
+}

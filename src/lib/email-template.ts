@@ -115,12 +115,17 @@ export function itemsTable(items: EmailItem[], totals: [string, string][]) {
 </table>`;
 }
 
-/** Oat box with a small label: where the order goes, or anything else worth keeping in view. */
-export function infoBox(label: string, value: string) {
+/**
+ * Oat box with a small label: where the order goes, or anything else worth keeping in view. With
+ * `href` the value is a link (a map pin, a WhatsApp chat). Long unbroken text wraps instead of
+ * widening the card on phones.
+ */
+export function infoBox(label: string, value: string, href?: string) {
+  const text = href ? `<a href="${esc(href)}" style="color:${c.moss};font-weight:600;text-decoration:underline;">${esc(value)}</a>` : esc(value);
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 24px;">
   <tr><td bgcolor="${c.oat}" style="background:${c.oat};border-radius:12px;padding:16px 20px;">
     <p style="margin:0 0 4px;font-family:${font.mono};font-size:11px;line-height:16px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:${c.moss};">${esc(label)}</p>
-    <p style="margin:0;font-family:${font.body};font-size:15px;line-height:22px;color:${c.ink};">${esc(value)}</p>
+    <p style="margin:0;font-family:${font.body};font-size:15px;line-height:22px;color:${c.ink};overflow-wrap:anywhere;word-break:break-word;">${text}</p>
   </td></tr>
 </table>`;
 }

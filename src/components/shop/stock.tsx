@@ -49,9 +49,10 @@ export function useSizeChoice(product: ShopProduct) {
   return { variant, setVariantId, qty: Math.min(qty, max), setQty, max, soldOut: variant.left === 0 };
 }
 
-/** Why an add was refused (from useAddToCart's `left`), or the generic error. */
-export function useAddError(left: number | null, generic: string) {
+/** Why an add was refused (from useAddToCart's `left` and `max`), or the generic error. */
+export function useAddError(left: number | null, generic: string, max: number | null = null) {
   const t = useMessages(menuMessages).stock;
+  if (max !== null) return t.atMax(max);
   if (left === null) return generic;
   return left === 0 ? t.soldOutNow : t.allInCart(left);
 }

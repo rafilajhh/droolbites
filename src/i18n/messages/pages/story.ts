@@ -14,30 +14,30 @@ export const storyMessages = defineMessages({
     body: "Droolbites is a dessert shop in Surabaya, with a menu of soft cookies, fudgy brownies, and creamy tiramisu. We bring these familiar favorites together so you can find something for a quick treat, dessert after dinner, or a table to share.",
 
     intro:
-      "It started with one oven, Olivia and a tray of chocolate chunk cookies sold to the neighbors in Sememi. Five years on there's a counter of our own, and the first tray still comes out at 06:00.",
+      "It started with one oven, Olivia and a tray of chocolate chunk cookies baked at home for the school canteen. Two years on the orders come from all over Surabaya, and the first tray still comes out at 06:00.",
 
     timelineTitle: "From a home kitchen to your table.",
     timelineSub: "One street, and a lot of cookie dough.",
     timeline: [
       {
-        year: "2021",
-        title: "A home kitchen in Sememi",
-        body: "Olivia baked at night and took the orders over WhatsApp by day. Chocolate chunk, one tray at a time.",
+        year: "2024",
+        title: "From the kitchen to the school canteen",
+        body: "The first trays left a home kitchen in Sememi for the school canteen. Chocolate chunk, one tray at a time.",
       },
       {
-        year: "2023",
-        title: "A counter on Jl. Palem Sememi",
-        body: "The waiting list outgrew the kitchen, so we rented a small shopfront down the road. Brownies and tiramisu joined the cookies.",
+        year: "2024",
+        title: "Orders go online",
+        body: "Orders started coming in through Shopee and WhatsApp, packed in the same kitchen and sent across Surabaya.",
       },
       {
         year: "2025",
-        title: "Orders go online",
-        body: "Order on the site, pay with QRIS, a virtual account or an e-wallet, then get it delivered anywhere in Surabaya or pick it up at the counter.",
+        title: "Finding us on social",
+        body: "We started sharing every bake on Instagram, Threads and more, and that's where a lot of new regulars found us.",
       },
       {
         year: "Today",
         title: "Bigger crew, same recipes",
-        body: "Olivia still tastes every batch of dough, and still answers your messages in person.",
+        body: "Now you can order right here on the site. Olivia still tastes every batch of dough, and still answers your messages in person.",
       },
     ],
 
@@ -76,30 +76,30 @@ export const storyMessages = defineMessages({
     body: "Droolbites adalah toko dessert di Surabaya dengan menu soft cookies, brownies fudgy dan tiramisu yang creamy. Semua favorit yang sudah akrab ini kami kumpulkan di satu tempat, jadi selalu ada pilihan buat ngemil sebentar, pencuci mulut habis makan malam, atau suguhan untuk ramai-ramai.",
 
     intro:
-      "Awalnya cuma satu oven, Olivia, dan seloyang cookies chocolate chunk yang dijual ke tetangga di Sememi. Lima tahun kemudian sudah ada counter sendiri, dan loyang pertama tetap keluar oven jam 06:00.",
+      "Awalnya cuma satu oven, Olivia, dan seloyang cookies chocolate chunk yang dipanggang di rumah untuk kantin sekolah. Dua tahun kemudian pesanan datang dari seluruh Surabaya, dan loyang pertama tetap keluar oven jam 06:00.",
 
     timelineTitle: "Dari dapur rumah sampai ke mejamu.",
     timelineSub: "Satu jalan yang sama, dan adonan cookies yang nggak ada habisnya.",
     timeline: [
       {
-        year: "2021",
-        title: "Dapur rumah di Sememi",
-        body: "Olivia memanggang malam hari dan mencatat pesanan lewat WhatsApp siang harinya. Chocolate chunk, seloyang demi seloyang.",
+        year: "2024",
+        title: "Dari dapur ke kantin sekolah",
+        body: "Loyang-loyang pertama berangkat dari dapur rumah di Sememi ke kantin sekolah. Chocolate chunk, seloyang demi seloyang.",
       },
       {
-        year: "2023",
-        title: "Counter di Jl. Palem Sememi",
-        body: "Daftar pesanan sudah nggak muat di dapur rumah, jadi kami sewa toko kecil nggak jauh dari situ. Brownies dan tiramisu ikut masuk menu.",
+        year: "2024",
+        title: "Mulai jualan online",
+        body: "Pesanan mulai masuk lewat Shopee dan WhatsApp, dikemas di dapur yang sama lalu dikirim ke seluruh Surabaya.",
       },
       {
         year: "2025",
-        title: "Bisa pesan online",
-        body: "Pesan lewat website, bayar pakai QRIS, virtual account atau e-wallet, lalu dikirim ke mana pun di Surabaya atau ambil sendiri di toko.",
+        title: "Ketemu kamu di sosmed",
+        body: "Kami mulai berbagi tiap adonan di Instagram, Threads dan lainnya, dan dari situlah banyak pelanggan baru kenal kami.",
       },
       {
         year: "Sekarang",
         title: "Tim makin ramai, resep tetap sama",
-        body: "Olivia masih mencicipi tiap adonan, dan masih membalas sendiri pesan-pesan kamu.",
+        body: "Sekarang kamu bisa pesan langsung di website ini. Olivia masih mencicipi tiap adonan, dan masih membalas sendiri pesan-pesan kamu.",
       },
     ],
 

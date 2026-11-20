@@ -2,6 +2,7 @@ import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import type { FulfilmentMethod, PaymentMethod } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
+import { cancelledByStore } from "@/lib/orders";
 
 /**
  * Admin / Sales report queries. Days are Surabaya days (WIB, UTC+7 all year,
@@ -167,8 +168,13 @@ export async function getSalesReport(range: ReportRange) {
   const placed = rangeWhere(range);
   const kept: Prisma.OrderWhereInput = { ...placed, ...keptOrderWhere };
 
-  const [statuses, itemGroups, keptOrders] = await Promise.all([
+  const [statuses, closedUnpaid, itemGroups, keptOrders] = await Promise.all([
     db.order.groupBy({ by: ["paymentStatus", "fulfilmentStatus"], where: placed, _count: { _all: true } }),
+    // Unpaid and cancelled: closed at the payment deadline, or cancelled by the store before payment.
+    db.order.findMany({
+      where: { ...placed, paymentStatus: "expired", fulfilmentStatus: "cancelled" },
+      select: { paymentStatus: true, fulfilmentStatus: true, createdAt: true, updatedAt: true },
+    }),
     // Grouped by unit price too, so a price change mid-period still sums to the exact revenue.
     db.orderItem.groupBy({ by: ["variantId", "unitPrice"], where: { order: kept }, _sum: { qty: true } }),
     // A small shop: every kept order of the period, a few columns each, feeds the totals, the chart and the splits.
@@ -235,6 +241,10 @@ export async function getSalesReport(range: ReportRange) {
       if (s.paymentStatus === "paid") cancelledPaid += n;
     } else if (s.paymentStatus === "awaiting") awaiting += n;
   }
+  // A store cancel also closes the payment (expired), but the payment didn't fail: count it as cancelled.
+  const storeCancelled = closedUnpaid.filter(cancelledByStore).length;
+  expired -= storeCancelled;
+  cancelled += storeCancelled;
 
   // All time starts on the first kept order's day (today when there is none).
   const from = range.from ?? (keptOrders[0] ? wibDayKey(keptOrders[0].createdAt) : range.to);

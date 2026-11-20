@@ -31,8 +31,11 @@ export default async function CheckoutPaymentPage() {
   const fee = checkoutDeliveryFee(settings, details);
   // No distance on file, or the store's range shrank since: pin the address again.
   if (fee === null) redirect("/checkout");
-  const { methods, logos } = await getPaymentOptions(settings);
-  const defaultMethod = methods.includes("bca_va") ? "bca_va" : (methods[0] ?? null);
+  const total = cart.subtotal + fee;
+  const { methods, logos, belowMinimum } = await getPaymentOptions(settings, total);
+  // BCA VA first, unless the gateway refuses it for this total: then the first method it takes.
+  const usable = methods.filter((m) => !(m in belowMinimum));
+  const defaultMethod = usable.includes("bca_va") ? "bca_va" : (usable[0] ?? null);
 
   return (
     <>
@@ -55,12 +58,13 @@ export default async function CheckoutPaymentPage() {
           }}
           methods={methods}
           logos={logos}
+          belowMinimum={belowMinimum}
           defaultMethod={defaultMethod}
           summary={{
             lines: cartSummaryLines(cart, locale),
             itemCount: cart.count,
             subtotal: cart.subtotal,
-            total: cart.subtotal + fee,
+            total,
           }}
         />
       </main>

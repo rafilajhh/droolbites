@@ -16,7 +16,8 @@ export function tabHref(tab: AccountTab) {
  * The account's tabs as one bar under the greeting, across the page's full width: each tab shows its
  * own panel (orders, account information, saved address); the current one carries a 2px moss
  * underline on the bar's hairline. Sign out is a quieter action at the bar's right end. Below sm the
- * three tabs share the row equally with short labels, and sign out keeps only its icon.
+ * three tabs share the row equally with short labels, and sign out keeps only its icon; under 360px
+ * the tabs drop their icons too.
  */
 export async function AccountNav({ current }: { current: AccountTab }) {
   const t = (await getMessages(accountMessages)).nav;
@@ -45,7 +46,8 @@ export async function AccountNav({ current }: { current: AccountTab }) {
                       : "font-medium text-muted-foreground hover:text-foreground hover:shadow-[inset_0_-2px_0_var(--border-divider)]",
                   )}
                 >
-                  <Icon className={cn("size-[18px] shrink-0", active && "text-primary")} aria-hidden />
+                  {/* Under 360px a third of the row can't hold the icon and the label, so the label goes alone. */}
+                  <Icon className={cn("size-[18px] shrink-0 max-[359px]:hidden", active && "text-primary")} aria-hidden />
                   <span className="sm:hidden" aria-hidden>
                     {short}
                   </span>

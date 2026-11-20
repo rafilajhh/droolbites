@@ -116,7 +116,7 @@ export const faqMessages = defineMessages({
           {
             q: "Where can I find ingredient and allergen details?",
             a: (f: FaqFacts) =>
-              `Each product page lists its allergens and storage notes. Our kitchen also handles wheat, egg, milk, soy and nuts. For the full ingredient list or a severe allergy, email ${f.email} before you order.`,
+              `Each product page lists its ingredients, allergens and storage notes. Our kitchen also handles wheat, egg, milk, soy and nuts, so if you have a severe allergy, email ${f.email} before you order.`,
           },
         ],
       },
@@ -215,7 +215,7 @@ export const faqMessages = defineMessages({
           {
             q: "Di mana info bahan dan alergen?",
             a: (f: FaqFacts) =>
-              `Setiap halaman produk mencantumkan alergen dan cara penyimpanannya. Dapur kami juga mengolah gandum, telur, susu, kedelai dan kacang. Untuk daftar bahan lengkap atau alergi berat, email ${f.email} sebelum memesan.`,
+              `Setiap halaman produk mencantumkan bahan, alergen dan cara penyimpanannya. Dapur kami juga mengolah gandum, telur, susu, kedelai dan kacang, jadi kalau kamu punya alergi berat, email ${f.email} dulu sebelum memesan.`,
           },
         ],
       },

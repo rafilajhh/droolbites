@@ -7,8 +7,10 @@ import { getStoreSettings } from "@/lib/settings";
 import { Cutout } from "@/components/ui/snapshot";
 import { NewsletterForm } from "./newsletter-form";
 
+// The hit-slop splits the 20px gap between links (14px from lg, the pen's spacing for a pointer), so every
+// link is a 41px+ tap target below lg and no two areas overlap.
 const linkClass =
-  "w-fit font-display text-base leading-[1.3] sm:text-lg font-medium text-foreground-inverse transition-opacity hover:opacity-75";
+  "relative w-fit font-display text-base leading-[1.3] sm:text-lg font-medium text-foreground-inverse transition-opacity after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-[''] hover:opacity-75 lg:after:-inset-y-[7px]";
 const headingClass = "font-mono text-[13px] leading-normal font-semibold tracking-[1px] text-mint";
 
 /** pen: Footer (Rrkv4), restaged by owner request: centred badge + newsletter on top, link columns below. */
@@ -48,7 +50,7 @@ export async function Footer() {
   ];
 
   return (
-    <footer className="w-full bg-background px-3 pb-3 md:px-6 md:pb-6">
+    <footer className="mx-auto w-full max-w-[1440px] bg-background px-3 pb-3 md:px-6 md:pb-6">
       <div className="relative flex w-full flex-col gap-12 rounded-m bg-surface-inverse [--focus-ring:var(--white)] px-6 pt-12 pb-8 md:px-16 md:pt-16 lg:gap-14">
         {/* Decorative cookies peeking over the top edge, clear of the centred newsletter (lg+ only). */}
         <Cutout name="white-chocolate-almond" width={150} className="-top-10 left-8 hidden lg:block" />
@@ -123,7 +125,7 @@ export async function Footer() {
               <p className={headingClass}>{col.heading}</p>
               <div
                 className={cn(
-                  "flex flex-col gap-3.5",
+                  "flex flex-col gap-5 lg:gap-3.5",
                   i === columns.length - 1 && "max-sm:grid max-sm:grid-cols-2 max-sm:gap-x-6",
                 )}
               >

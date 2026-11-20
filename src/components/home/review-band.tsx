@@ -24,7 +24,7 @@ export function ReviewBand({
   products,
   city,
 }: {
-  t: { title: string; rating: string; more: string; try: (name: string) => string; items: readonly Review[] };
+  t: { title: string; rating: string; ratingShort: string; more: string; try: (name: string) => string; items: readonly Review[] };
   products: ShopProduct[];
   city: string;
 }) {
@@ -47,9 +47,10 @@ export function ReviewBand({
             <h2 id="home-reviews" className="font-display type-section font-bold text-balance text-foreground-inverse">
               {t.title}
             </h2>
-            <Sticker className="rotate-0 gap-2">
+            <Sticker className="rotate-0 gap-2 whitespace-nowrap">
               <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
-              {t.rating}
+              <span className="sm:hidden">{t.ratingShort}</span>
+              <span className="max-sm:hidden">{t.rating}</span>
             </Sticker>
           </div>
           <figure className="flex flex-col gap-6">

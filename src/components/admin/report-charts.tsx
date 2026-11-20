@@ -77,7 +77,8 @@ export function ColumnChart({
         ))}
         {max === 0 ? (
           <p className="absolute inset-0 flex items-center justify-center px-4 text-center text-[15px] leading-[23px] text-muted-foreground">
-            {empty}
+            {/* On the card's white, so the middle grid line doesn't strike through it. */}
+            <span className="bg-white px-3">{empty}</span>
           </p>
         ) : null}
         <ol

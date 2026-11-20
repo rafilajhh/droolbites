@@ -6,9 +6,12 @@ import { PaymentOption } from "@/components/ui/choice-tiles";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import type { CheckoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
+import { formatRupiah } from "@/lib/format";
 import { PAYMENT_GROUPS, PRIMARY_VA_COUNT, paymentMethodInfo } from "@/lib/order-status";
 
 export type PaymentLogos = Partial<Record<PaymentMethod, string>>;
+/** Methods the gateway refuses for this total: the minimum, or null when it isn't known. */
+export type BelowMinimum = Partial<Record<PaymentMethod, number | null>>;
 
 /**
  * The E-wallet / QRIS / Virtual account / Retail groups with their radio tiles, each straight on the
@@ -27,6 +30,7 @@ export function PaymentMethodGroups({
   selected,
   onSelect,
   leadMethod = null,
+  belowMinimum = {},
   className,
 }: {
   t: CheckoutMessages["payment"];
@@ -35,6 +39,8 @@ export function PaymentMethodGroups({
   selected: PaymentMethod | null;
   onSelect: (method: PaymentMethod) => void;
   leadMethod?: PaymentMethod | null;
+  /** Shown disabled with "Min. RpX" instead of the hint, so the customer sees why. */
+  belowMinimum?: BelowMinimum;
   className?: string;
 }) {
   const groups = PAYMENT_GROUPS.map((g) => ({ key: g.key, methods: g.methods.filter((m) => methods.includes(m)) })).filter(
@@ -65,6 +71,8 @@ export function PaymentMethodGroups({
             <div id={`${titleId}-options`} className="grid w-full gap-3 sm:grid-cols-2 sm:[&>*:last-child:nth-child(odd)]:col-span-2">
               {shown.map((method) => {
                 const info = paymentMethodInfo[method];
+                const tooSmall = method in belowMinimum;
+                const min = belowMinimum[method];
                 return (
                   <PaymentOption
                     key={method}
@@ -72,11 +80,16 @@ export function PaymentMethodGroups({
                     value={method}
                     checked={selected === method}
                     onChange={() => onSelect(method)}
+                    disabled={tooSmall}
                     markLabel={info.mark}
                     markClassName={info.markClass}
                     logoUrl={logos[method]}
                     title={<span className="block leading-5">{info.name}</span>}
-                    sub={<span className="block leading-[18px]">{t.hints[method]}</span>}
+                    sub={
+                      <span className="block leading-[18px]">
+                        {tooSmall ? (typeof min === "number" ? t.minimum(formatRupiah(min)) : t.belowMinimum) : t.hints[method]}
+                      </span>
+                    }
                   />
                 );
               })}

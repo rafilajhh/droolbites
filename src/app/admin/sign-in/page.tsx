@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AdminSignInForm } from "@/components/admin/sign-in-form";
-import { getCurrentUser } from "@/lib/auth";
+import { adminNext, getCurrentUser } from "@/lib/auth";
 import { getStoreSettings } from "@/lib/settings";
 import { getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -13,9 +13,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** pen: Admin / Sign in (oW5vB). */
-export default async function AdminSignInPage() {
+export default async function AdminSignInPage({ searchParams }: PageProps<"/admin/sign-in">) {
+  const next = adminNext((await searchParams).next);
   const user = await getCurrentUser();
-  if (user?.role === "admin") redirect("/admin");
+  if (user?.role === "admin") redirect(next);
   const [t, settings] = await Promise.all([getMessages(adminMessages), getStoreSettings()]);
   const s = t.signIn;
 
@@ -61,7 +62,7 @@ export default async function AdminSignInPage() {
             <h1 className="font-display text-[36px] leading-none font-bold tracking-[-1px] lg:text-[44px]">{s.title}</h1>
             <p className="text-base leading-6 text-muted-foreground">{s.sub}</p>
           </div>
-          <AdminSignInForm helpEmail={settings.email} />
+          <AdminSignInForm helpEmail={settings.email} next={next} />
         </div>
       </div>
     </main>

@@ -121,7 +121,7 @@ export function ProfileForm({ fullName, phone, email }: { fullName: string; phon
           type="tel"
           autoComplete="tel"
           inputMode="tel"
-          maxLength={20}
+          maxLength={24}
           placeholder={t.info.phonePlaceholder}
           defaultValue={state.values?.phone ?? phone}
           error={err("phone")}
@@ -191,9 +191,11 @@ export function AddressForm({
         ["city", place.city],
         ["postalCode", place.postal],
       ] as const;
+      // A chosen search result replaces the whole address, clearing what it has no value for (a stale
+      // postal code included); a tap, drag or GPS fix only touches fields the map filled or empty ones.
       for (const [key, value] of pairs) {
         const ours = v[key].trim() === "" || v[key] === autoFilled.current[key];
-        if ((!replace && !ours) || (!value && !ours)) continue;
+        if (!replace && !ours) continue;
         next[key] = value;
         autoFilled.current[key] = value;
       }
@@ -257,7 +259,7 @@ export function AddressForm({
               inputMode: "tel",
               autoComplete: "shipping tel",
               required: true,
-              maxLength: 20,
+              maxLength: 24,
               placeholder: t.info.phonePlaceholder,
             })}
           </Field>

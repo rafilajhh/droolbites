@@ -3,9 +3,14 @@ import { defineMessages } from "../config";
 /** Site chrome shared by every storefront page: header, nav menu, cart drawer, footer. */
 export const commonMessages = defineMessages({
   en: {
+    /** The site-wide <title> and description (the home page uses them as they are). */
+    site: {
+      title: "Droolbites — Soft cookies, fudgy brownies & tiramisu in Surabaya",
+      description:
+        "Thick, soft-centered cookies, fudgy brownies and creamy tiramisu — made in small batches in Surabaya for delivery or store pickup.",
+    },
     announce: {
       label: "Store news",
-      fresh: "Baked fresh every morning in Surabaya",
       hoursLabel: "Hours:",
       hours: (hours: string) => `${hours} WIB`,
     },
@@ -36,7 +41,8 @@ export const commonMessages = defineMessages({
       close: "Close cart",
       items: (n: number) => `${n} ${n === 1 ? "item" : "items"}`,
       remove: (name: string) => `Remove ${name}`,
-      each: (price: string) => `${price} each`,
+      /** Unit price beside a quantity of two or more; `unit` names what one of them is. */
+      each: (price: string, unit: "tray" | "piece" | "portion") => `${price} ${unit === "tray" ? "per tray" : "each"}`,
       subtotal: "Subtotal",
       note: (fee: string) => `Plus delivery from ${fee}, or pick up for free.`,
       checkout: "CHECKOUT",
@@ -81,9 +87,13 @@ export const commonMessages = defineMessages({
     },
   },
   id: {
+    site: {
+      title: "Droolbites — Soft cookies, brownies fudgy & tiramisu di Surabaya",
+      description:
+        "Cookies tebal yang lembut di tengah, brownies fudgy dan tiramisu creamy, dibuat dalam batch kecil di Surabaya untuk diantar atau diambil di toko.",
+    },
     announce: {
       label: "Info toko",
-      fresh: "Dipanggang segar setiap pagi di Surabaya",
       hoursLabel: "Jam buka:",
       hours: (hours: string) => `${hours} WIB`,
     },
@@ -114,7 +124,8 @@ export const commonMessages = defineMessages({
       close: "Tutup keranjang",
       items: (n: number) => `${n} item`,
       remove: (name: string) => `Hapus ${name}`,
-      each: (price: string) => `${price} per item`,
+      each: (price: string, unit: "tray" | "piece" | "portion") =>
+        `${price}/${unit === "tray" ? "loyang" : unit === "portion" ? "porsi" : "buah"}`,
       subtotal: "Subtotal",
       note: (fee: string) => `Belum termasuk ongkir (mulai ${fee}), ambil di toko gratis.`,
       checkout: "CHECKOUT",

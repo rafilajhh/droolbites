@@ -24,6 +24,7 @@ export const ordersMessages = defineMessages({
     },
     stepDone: "done",
     stepCurrent: "in progress",
+    stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
     // What the progress card says under the bar: one sentence for where the order is now.
     now: {
       awaiting: (when: string) => `Pay before ${when} WIB to confirm your order.`,
@@ -77,6 +78,7 @@ export const ordersMessages = defineMessages({
     },
     stepDone: "selesai",
     stepCurrent: "sedang berjalan",
+    stepOf: (n: number, total: number) => `Langkah ${n} dari ${total}`,
     now: {
       awaiting: (when: string) => `Bayar sebelum ${when} WIB supaya pesananmu terkonfirmasi, ya.`,
       confirming: "Toko mengecek setiap pesanan baru sebelum dipanggang. Kami kabari lewat email begitu pesananmu diterima.",

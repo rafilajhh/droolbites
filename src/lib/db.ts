@@ -10,3 +10,12 @@ export const db =
   new PrismaClient({ adapter: new PrismaMariaDb(mariadbUrl()) });
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+
+/**
+ * A Prisma `contains` filter that matches the text literally. Prisma sends `contains` to MySQL as
+ * LIKE '%…%' without escaping, so a search for "%" or "_" would match every row; the wildcards (and
+ * the backslash, MySQL's LIKE escape character) are escaped here.
+ */
+export function containsText(q: string) {
+  return { contains: q.replace(/[\\%_]/g, (c) => `\\${c}`) };
+}

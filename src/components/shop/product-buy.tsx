@@ -42,8 +42,8 @@ export function ProductBuy({
   const t = useMessages(productMessages);
   const stock = useMessages(menuMessages).stock;
   const { variant, setVariantId, qty, setQty, max, soldOut } = useSizeChoice(product);
-  const { add, pending, failed, left } = useAddToCart();
-  const errorText = useAddError(left, t.error);
+  const { add, pending, failed, left, max: cap } = useAddToCart();
+  const errorText = useAddError(left, t.error, cap);
   const multi = product.variants.length > 1;
 
   // The pinned bar shows while the in-box Add row is off screen, and hides once the page's end
@@ -113,7 +113,9 @@ export function ProductBuy({
 
       <p className="text-base leading-[24px] text-muted-foreground lg:text-lg lg:leading-[27px]">{description}</p>
 
-      <div className="flex w-full flex-col gap-4 rounded-m bg-card p-4 sm:p-6">
+      {/* Flat on the paper (no oat box around white tiles): sizes, then quantity and the button, then the
+          delivery line under a hairline. */}
+      <div className="flex w-full flex-col gap-5">
         {multi ? (
           <fieldset className="flex w-full flex-col gap-2.5">
             <legend className="mb-3 font-mono text-[13px] leading-[20px] font-semibold tracking-[1px] text-primary uppercase">
@@ -161,7 +163,7 @@ export function ProductBuy({
           </p>
         ) : null}
         {deliveryFee || pickup ? (
-          <ul className="flex w-full flex-wrap gap-x-6 gap-y-2">
+          <ul className="flex w-full flex-wrap gap-x-6 gap-y-2 pt-5 shadow-[inset_0_1px_0_var(--border-subtle)]">
             {deliveryFee ? (
               <li className="flex items-center gap-2">
                 <Truck className="size-[18px] shrink-0" aria-hidden />

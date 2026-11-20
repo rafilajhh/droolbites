@@ -1,7 +1,7 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { Ban, Info } from "lucide-react";
+import { Ban } from "lucide-react";
 import { decideOrder, type DecisionState } from "@/app/actions/admin/orders";
 import { Button } from "@/components/ui/button";
 import { inputClasses } from "@/components/ui/form-field";
@@ -18,7 +18,7 @@ type Reason = (typeof CANCEL_REASONS)[number] | "other";
  * reason the customer sees (it's cancelled and the payment is owed back). Replaces the status
  * dropdown until the store decides.
  */
-export function OrderDecision({ orderNumber, note, paidAmount }: { orderNumber: string; note: string; paidAmount: string }) {
+export function OrderDecision({ orderNumber, paidAmount }: { orderNumber: string; paidAmount: string }) {
   const t = useMessages(adminMessages).order;
   const d = t.decision;
   const [state, action, pending] = useActionState<DecisionState, FormData>(decideOrder, { status: "idle" });
@@ -51,10 +51,6 @@ export function OrderDecision({ orderNumber, note, paidAmount }: { orderNumber: 
         <p className="text-base leading-6 font-bold">{d.title}</p>
         <p className="text-sm leading-[21px] text-muted-foreground">{d.sub}</p>
       </div>
-      <p className="flex w-full gap-2 rounded-sm bg-mint p-3 text-[13px] leading-5 font-semibold">
-        <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span className="flex-1">{note}</span>
-      </p>
       <Button onClick={() => send("accept")} disabled={pending} className="w-full">
         {pending ? d.accepting : d.accept}
       </Button>

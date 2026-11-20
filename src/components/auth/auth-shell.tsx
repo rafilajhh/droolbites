@@ -6,6 +6,15 @@ import { cn } from "@/lib/cn";
 
 export type AuthPhoto = "hero-cookies" | "gift-box" | "story-bakers" | "party-spread" | "store-front";
 
+/** Width ÷ height of each photo file. From lg the panel is a tall box, so a wide photo is cropped from much more than 640px of width. */
+const ASPECT: Record<AuthPhoto, number> = {
+  "hero-cookies": 1024 / 1536,
+  "gift-box": 1024 / 1536,
+  "story-bakers": 1536 / 1024,
+  "party-spread": 1024 / 1536,
+  "store-front": 1312 / 1199,
+};
+
 /**
  * pen: the shared auth layout (tjpUD, mjLE0, TwZFf, y7fayf, mK4mI).
  * 1440: 640px photo panel with logo + quote, form column centered in the rest.
@@ -24,22 +33,28 @@ export async function AuthShell({
   const t = await getMessages(authMessages);
   return (
     <div className="flex min-h-dvh w-full flex-col gap-4 p-4 sm:gap-6 sm:p-6 lg:flex-row lg:items-start">
-      <div
+      {/* The photo panel is the page's banner: the logo home and the quote. */}
+      <header
         className={cn(
           "relative isolate flex min-h-22 w-full shrink-0 items-center gap-3 overflow-hidden rounded-m px-4 py-3 [--focus-ring:var(--white)]",
           "sm:h-72 sm:flex-col sm:items-stretch sm:justify-between sm:gap-0 sm:p-6",
           "lg:sticky lg:top-6 lg:h-[calc(100dvh-48px)] lg:min-h-[640px] lg:w-[45%] xl:w-[640px] lg:p-8",
         )}
       >
-        <Image
-          src={`/images/site/${photo}.png`}
-          alt=""
-          fill
-          priority
-          quality={100}
-          sizes="(min-width: 1024px) 640px, 100vw"
-          className="-z-10 object-cover"
-        />
+        {/* In its own absolute box: next/image's fill wants a relative/absolute parent, and the panel is sticky from lg. */}
+        <div className="absolute inset-0 -z-10">
+          <Image
+            src={`/images/site/${photo}.png`}
+            alt=""
+            fill
+            priority
+            quality={100}
+            // From lg the photo covers a panel up to 640px wide and (100vh - 48px) tall, so it is drawn at
+            // whichever is larger: the width, or the height times the photo's aspect.
+            sizes={`(min-width: 1024px) max(640px, calc((100vh - 48px) * ${ASPECT[photo].toFixed(3)})), 100vw`}
+            className="object-cover"
+          />
+        </div>
         <div
           className="absolute inset-0 -z-10 bg-foreground/55 sm:bg-transparent sm:bg-linear-to-b sm:from-foreground/0 sm:from-45% sm:to-foreground/80"
           aria-hidden
@@ -51,14 +66,14 @@ export async function AuthShell({
             width={96}
             height={96}
             quality={100}
-            priority
+            loading="eager"
             className="size-12 rounded-full sm:size-16 lg:size-24"
           />
         </Link>
         <p className="font-display text-lg leading-[1.15] font-bold tracking-[-0.25px] text-white text-balance sm:text-[28px] sm:leading-[1.05] sm:tracking-[-0.5px] lg:text-[40px]">
           {quote}
         </p>
-      </div>
+      </header>
       <div className="flex w-full flex-1 flex-col items-center justify-start pb-6 lg:justify-center lg:min-h-[calc(100dvh-48px)] lg:pb-0">
         <main className="flex w-full max-w-[440px] flex-col gap-5">{children}</main>
       </div>

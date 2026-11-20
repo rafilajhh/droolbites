@@ -14,7 +14,7 @@ import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(locationMessages);
-  return { title: t.metaTitle, description: t.metaDescription };
+  return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/location" } };
 }
 
 const linkClass = "underline underline-offset-2 hover:text-foreground-inverse";
@@ -138,6 +138,22 @@ export default async function LocationPage() {
                     {route.title}
                   </h3>
                   <p className="max-w-[600px] text-pretty text-base leading-normal text-muted-foreground">{route.body}</p>
+                  {/* The last route lists the driving times its line promises. */}
+                  {i === t.routes.length - 1 ? (
+                    <dl className="flex w-full max-w-[600px] flex-col">
+                      {t.nearbyTimes.map((row) => (
+                        <div
+                          key={row.place}
+                          className="flex items-baseline justify-between gap-4 py-2.5 shadow-[inset_0_-1px_0_var(--border-subtle)] last:shadow-none"
+                        >
+                          <dt className="text-[15px] leading-[23px] text-foreground">{row.place}</dt>
+                          <dd className="font-mono text-[13px] leading-5 font-semibold text-foreground tabular-nums">
+                            {row.time}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : null}
                 </div>
               </li>
             );
@@ -154,9 +170,10 @@ export default async function LocationPage() {
             </h2>
             <p className={sectionSub}>{t.reviewsSub}</p>
           </div>
-          <Sticker className="shrink-0 rotate-0 gap-2 sm:mb-2">
+          <Sticker className="shrink-0 rotate-0 gap-2 whitespace-nowrap sm:mb-2">
             <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
-            {t.rating}
+            <span className="sm:hidden">{t.ratingShort}</span>
+            <span className="max-sm:hidden">{t.rating}</span>
           </Sticker>
         </div>
         <ul className="grid w-full grid-cols-1 gap-4 md:grid-cols-3 lg:gap-6">

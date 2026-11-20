@@ -106,8 +106,8 @@ export const productReviews: Record<string, ProductReview[]> = {
       area: "Mulyorejo",
       stars: 5,
       quote: {
-        en: "Got the 20 × 30 tray for my mum's birthday. Twenty people, no leftovers.",
-        id: "Pesan loyang 20 × 30 buat ulang tahun ibu. Dua puluh orang, nggak ada sisa.",
+        en: "I keep a 10 × 10 in the fridge for late study nights. Cold, it gets even fudgier.",
+        id: "Selalu sedia yang 10 × 10 di kulkas buat begadang ngerjain tugas. Dingin malah makin fudgy.",
       },
     },
     {

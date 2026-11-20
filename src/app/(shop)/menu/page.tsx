@@ -8,7 +8,7 @@ import { getMenu } from "@/lib/catalog";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(menuMessages);
-  return { title: t.metaTitle, description: t.metaDescription };
+  return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/menu" } };
 }
 
 /** pen: Our Menu (uQ4f5). Search and category filters live in the URL (?q=, ?category=). */
@@ -17,7 +17,7 @@ export default async function MenuPage() {
   const categories = toShopCategories(menu, locale);
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col">
+    <div className="flex w-full flex-col">
       <div className="flex w-full flex-col gap-3 px-4 pt-8 pb-8 sm:px-8 lg:gap-4 lg:px-16 lg:pt-14 lg:pb-10">
         <div className="flex min-w-0 flex-col gap-3 lg:gap-4">
           <p className="font-mono text-[13px] leading-[20px] font-semibold tracking-[1px] text-primary">{t.eyebrow}</p>

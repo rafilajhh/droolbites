@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Ban, CalendarRange, CircleAlert, CircleX, Download, Hourglass, Package, Receipt, ShoppingBag, Wallet } from "lucide-react";
+import { Ban, CircleAlert, CircleX, Download, Hourglass, Package, Receipt, ShoppingBag, Wallet } from "lucide-react";
 import { PrintButton } from "@/components/admin/print-button";
+import { buttonClasses } from "@/components/ui/button";
 import { BarItem, BarList, ColumnChart, type ColumnPoint } from "@/components/admin/report-charts";
 import { SegmentedLinks } from "@/components/admin/reports-segmented";
 import { categoryStyle, paymentMethodShort } from "@/components/admin/rules";
@@ -155,7 +156,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 href={exportHref}
                 download
                 aria-label={t.actions.exportLabel}
-                className={cn(fieldClasses, "min-h-11 text-sm leading-[21px] font-semibold text-foreground")}
+                className={buttonClasses("secondary", "min-h-11 px-5 py-3")}
               >
                 <Download className="size-4" aria-hidden />
                 {t.actions.export}
@@ -180,9 +181,8 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           action="/admin/reports"
           method="get"
           aria-label={t.custom.label}
-          className="flex flex-wrap items-center gap-2"
+          className="grid w-full grid-cols-2 items-center gap-2 max-[479px]:grid-cols-1 sm:flex sm:w-auto sm:flex-wrap"
         >
-          <CalendarRange className="size-[18px] shrink-0 text-muted-foreground max-sm:hidden" aria-hidden />
           {(
             [
               { name: "from", label: t.custom.from, value: report.from },
@@ -193,7 +193,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
               key={f.name}
               className={cn(
                 fieldClasses,
-                "min-h-11 gap-2 py-0 text-sm leading-[21px] focus-within:inset-ring-2 focus-within:inset-ring-primary",
+                "min-h-11 min-w-0 gap-2 py-0 text-sm leading-[21px] focus-within:inset-ring-2 focus-within:inset-ring-primary",
               )}
             >
               <span className="text-muted-foreground">{f.label}</span>
@@ -204,13 +204,13 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
                 defaultValue={f.value}
                 min={REPORT_EARLIEST_DAY}
                 max={today}
-                className="h-11 bg-transparent font-semibold text-foreground tabular-nums outline-hidden"
+                className="h-11 min-w-0 flex-1 bg-transparent font-semibold text-foreground tabular-nums outline-hidden"
               />
             </label>
           ))}
           <button
             type="submit"
-            className="min-h-11 rounded-sm bg-primary px-4 font-display text-[15px] leading-[18px] font-semibold tracking-[0.5px] text-primary-foreground transition-colors hover:bg-primary-hover"
+            className="col-span-full min-h-11 rounded-sm bg-primary px-4 font-display text-[15px] leading-[18px] font-semibold tracking-[0.5px] text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             {t.custom.apply}
           </button>

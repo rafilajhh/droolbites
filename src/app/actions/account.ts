@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { isLatLng } from "@/lib/delivery";
-import { isIdMobile } from "@/lib/orders";
+import { isValidMobile, normalizePhone } from "@/lib/orders";
 import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
 import { createSession, getSession } from "@/lib/session";
 
@@ -72,7 +72,7 @@ function text(formData: FormData, key: string) {
 
 const nameOk = (name: string) => name.length >= 2 && name.length <= 100;
 // The same rule as checkout (the profile phone prefills it): an Indonesian mobile number.
-const phoneOk = (phone: string) => phone.length <= 20 && isIdMobile(phone);
+const phoneOk = isValidMobile;
 
 export async function updateProfile(_prev: AccountState<ProfileField>, formData: FormData): Promise<AccountState<ProfileField>> {
   const attempt = Date.now();
@@ -80,7 +80,7 @@ export async function updateProfile(_prev: AccountState<ProfileField>, formData:
   if (!user) return { formError: "generic", attempt };
 
   const fullName = text(formData, "fullName");
-  const phone = text(formData, "phone");
+  const phone = normalizePhone(text(formData, "phone"));
   const email = text(formData, "email").toLowerCase();
 
   const values = { fullName, phone, email };
@@ -118,7 +118,7 @@ export async function updateAddress(_prev: AccountState<AddressField>, formData:
   if (!user) return { formError: "generic", attempt };
 
   const recipientName = text(formData, "recipientName");
-  const recipientPhone = text(formData, "recipientPhone");
+  const recipientPhone = normalizePhone(text(formData, "recipientPhone"));
   const address = text(formData, "address");
   const addressDetail = text(formData, "addressDetail");
   const district = text(formData, "district").slice(0, 100);

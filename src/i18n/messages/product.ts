@@ -15,9 +15,6 @@ export const productMessages = defineMessages({
     perkDelivery: (fee: string) => `Delivery from ${fee}`,
     perkPickup: "Free pickup",
     ingredients: "Ingredients",
-    /** Start of the ingredients placeholder, linked to the store email. */
-    ingredientsContact: "Contact us",
-    ingredientsSubject: (name: string) => `Ingredients: ${name}`,
     allergens: "Allergens",
     storage: "Storage & shelf life",
     gallery: "Product photos",
@@ -57,8 +54,6 @@ export const productMessages = defineMessages({
     perkDelivery: (fee: string) => `Ongkir mulai ${fee}`,
     perkPickup: "Ambil di toko gratis",
     ingredients: "Bahan",
-    ingredientsContact: "Hubungi kami",
-    ingredientsSubject: (name: string) => `Bahan: ${name}`,
     allergens: "Alergen",
     storage: "Penyimpanan & daya tahan",
     gallery: "Foto produk",

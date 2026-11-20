@@ -7,7 +7,7 @@ import { formatDateTime, formatDistance, formatRupiah } from "./format";
 import { button, fallbackLink, highlight, infoBox, itemsTable, paragraph, renderEmail, type EmailItem } from "./email-template";
 import { appUrl, sendMail } from "./mail";
 import { cancelReasonText, paymentMethodInfo } from "./order-status";
-import { orderAccessToken, orderAddress, orderDeadline, payable, type FullOrder } from "./orders";
+import { orderAccessToken, orderAddress, orderDeadline, otherRecipient, payable, type FullOrder } from "./orders";
 import { getStoreSettings } from "./settings";
 
 /**
@@ -47,6 +47,12 @@ async function context(order: FullOrder) {
 }
 
 const rowsText = (rows: Row[]) => rows.map(([k, v]) => `${k}: ${v}`);
+
+/** A wa.me chat link for an Indonesian mobile number as it was typed (08…, +62 8…, 62 8…). */
+function whatsappUrl(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return `https://wa.me/${digits.startsWith("0") ? `62${digits.slice(1)}` : digits}`;
+}
 
 export async function sendOrderPlacedEmail(order: FullOrder) {
   const { lang, t, link, items, where, footer, itemsText, signature } = await context(order);
@@ -179,8 +185,12 @@ export async function sendOrderStatusEmail(order: FullOrder, status: NotifiedSta
   const { lang, t, settings, link, items, where, footer, itemsText, signature } = await context(order);
   const s = t.status[status];
   const hours = t.status.hours(settings.opensAt, settings.closesAt);
+  const ready = status === "ready_for_pickup";
   // Pickup: where and when to come. Delivery and completed: the address it went to.
-  const place: Row = status === "ready_for_pickup" ? [where[0], `${where[1]} · ${hours}`] : where;
+  const place: Row = ready ? [where[0], `${where[1]} · ${hours}`] : where;
+  // The pickup email asks the customer to show the order number, so it says it where it can be seen.
+  const number: Row = [t.common.orderNumber, order.orderNumber];
+  const total = formatRupiah(payable(order, order.payments.find((x) => x.status === "paid")).amount);
 
   const text = [
     t.common.hi(order.customerName),
@@ -189,8 +199,9 @@ export async function sendOrderStatusEmail(order: FullOrder, status: NotifiedSta
     s.body,
     "",
     itemsText,
+    `${t.common.total}: ${total}`,
     "",
-    ...rowsText([place]),
+    ...rowsText(ready ? [number, place] : [place]),
     "",
     `${t.common.viewOrderText}: ${link}`,
     "",
@@ -204,10 +215,13 @@ export async function sendOrderStatusEmail(order: FullOrder, status: NotifiedSta
     eyebrow: `${t.common.orderEyebrow(order.orderNumber)} · ${s.tag}`,
     title: s.title,
     body: [
-      paragraph(`${t.common.hi(order.customerName)} ${s.body}`),
+      // The greeting is its own line, as in the text part: the bodies are full sentences.
+      paragraph(t.common.hi(order.customerName)),
+      paragraph(s.body),
+      ...(ready ? [infoBox(...number)] : []),
       infoBox(...place),
       button(t.common.viewOrder, link),
-      itemsTable(items, [[t.common.total, formatRupiah(payable(order, order.payments.find((x) => x.status === "paid")).amount)]]),
+      itemsTable(items, [[t.common.total, total]]),
       fallbackLink(t.common.fallback, link),
     ].join("\n"),
     footer,
@@ -223,7 +237,8 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
   const c = t.cancelled;
   const n = order.orderNumber;
   const paid = why === "store" && order.payments.some((x) => x.status === "paid");
-  const reason = why === "store" ? cancelReasonText(order.cancelReason, c.reasons) : null;
+  // The message adds its own full stop, so one typed at the end of a custom reason is dropped.
+  const reason = why === "store" ? cancelReasonText(order.cancelReason, c.reasons)?.replace(/[\s.!?]+$/, "") || null : null;
   const lines =
     why === "expired" ? [c.expiredBody(n)] : [c.storeBody(n), ...(reason ? [c.reason(reason)] : []), ...(paid ? [c.storePaid] : [])];
   const menu = appUrl("/menu");
@@ -248,8 +263,8 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
     eyebrow: `${t.common.orderEyebrow(n)} · ${c.tag}`,
     title: why === "expired" ? c.expiredTitle : c.storeTitle,
     body: [
-      paragraph(`${t.common.hi(order.customerName)} ${lines[0]}`),
-      ...lines.slice(1).map((line) => paragraph(line)),
+      paragraph(t.common.hi(order.customerName)),
+      ...lines.map((line) => paragraph(line)),
       itemsTable(items, [[t.common.total, formatRupiah(order.total)]]),
       paragraph(c.again, { muted: true }),
       button(c.button, menu),
@@ -273,7 +288,9 @@ export async function sendStoreNewOrderEmail(order: FullOrder) {
   const s = t.storeNew;
   const settings = await getStoreSettings();
   const to = settings.notifyEmail?.trim() || settings.email;
-  const link = appUrl(`/admin/orders/${order.orderNumber}`);
+  // Through the admin sign-in, which goes straight on to the order when the session is still valid
+  // and comes back to it after signing in otherwise (the panel's own guard drops the path).
+  const link = appUrl(`/admin/sign-in?next=${encodeURIComponent(`/admin/orders/${order.orderNumber}`)}`);
   const payment = order.payments.find((x) => x.status === "paid");
   const via = payment ? ` (${paymentMethodInfo[payment.method].name})` : "";
   const total = formatRupiah(payable(order, payment).amount);
@@ -284,26 +301,35 @@ export async function sendStoreNewOrderEmail(order: FullOrder) {
     detail: variantLabel(item.variant.name, item.variant.product.category.slug, lang),
     price: formatRupiah(item.unitPrice * item.qty),
   }));
-  const rows: Row[] = [
-    [s.customer, order.customerName],
-    [s.phone, order.phone],
-    [s.method, delivery ? s.delivery(order.deliveryDistanceM !== null ? formatDistance(order.deliveryDistanceM, lang) : null) : s.pickup],
-    ...(delivery ? ([[s.address, orderAddress(order)]] as Row[]) : []),
-    ...(delivery && order.recipientName
-      ? ([[s.recipient, `${order.recipientName} · ${order.recipientPhone ?? order.phone}`]] as Row[])
-      : []),
-    ...(delivery && order.deliveryNote ? ([[s.note, order.deliveryNote]] as Row[]) : []),
-    ...(delivery && order.shippingLat !== null && order.shippingLng !== null
-      ? ([[s.pin, `https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`]] as Row[])
-      : []),
+  // { label, value, href, text }: the phone numbers open WhatsApp and the pin opens the map, so the shop
+  // can act straight from the email; `text` is what the plain-text part shows instead of the value.
+  type Fact = { label: string; value: string; href?: string; text?: string };
+  const rows: Fact[] = [
+    { label: s.customer, value: order.customerName },
+    { label: s.phone, value: order.phone, href: whatsappUrl(order.phone) },
+    {
+      label: s.method,
+      value: delivery ? s.delivery(order.deliveryDistanceM !== null ? formatDistance(order.deliveryDistanceM, lang) : null) : s.pickup,
+    },
   ];
+  if (delivery) {
+    rows.push({ label: s.address, value: orderAddress(order) });
+    // Checkout copies the contact into an empty recipient, so the row only shows for someone else.
+    const recipient = otherRecipient(order);
+    if (recipient) rows.push({ label: s.recipient, value: `${recipient.name} · ${recipient.phone}`, href: whatsappUrl(recipient.phone) });
+    if (order.deliveryNote) rows.push({ label: s.note, value: order.deliveryNote });
+    if (order.shippingLat !== null && order.shippingLng !== null) {
+      const map = `https://www.google.com/maps/search/?api=1&query=${order.shippingLat},${order.shippingLng}`;
+      rows.push({ label: s.pin, value: s.pinLink, href: map, text: map });
+    }
+  }
 
   const text = [
     s.intro(order.customerName, via),
     "",
     ...items.map((i) => `- ${i.qty} × ${i.name} (${i.detail})  ${i.price}`),
     "",
-    ...rowsText([...rows, [s.totalPaid, total]]),
+    ...rowsText([...rows.map((r): Row => [r.label, r.text ?? r.value]), [s.totalPaid, total]]),
     "",
     `${s.textLink}: ${link}`,
   ].join("\n");
@@ -318,7 +344,7 @@ export async function sendStoreNewOrderEmail(order: FullOrder) {
       paragraph(s.intro(order.customerName, via)),
       button(s.button, link),
       itemsTable(items, [[s.totalPaid, total]]),
-      ...rows.map(([label, value]) => infoBox(label, value)),
+      ...rows.map((r) => infoBox(r.label, r.value, r.href)),
       fallbackLink(t.common.fallback, link),
     ].join("\n"),
     footer: { storeName: settings.storeName, address: settings.address, phone: settings.phone, email: settings.email },

@@ -12,24 +12,16 @@ import type { ShopProduct } from "./shop-product";
 import { AddButton } from "./add-to-cart";
 import { StockBadge } from "./stock";
 
-type CardSize = "md" | "lg" | "sm";
+type CardSize = "md" | "sm";
 
 const styles: Record<CardSize, { media: string; name: string; desc: string; price: string; sizes: string }> = {
-  // Card/Menu Item (gYvmU) as used on the menu and the landing cookie row.
+  // Card/Menu Item (gYvmU) as used on the menu and the landing cookie and tiramisu rows.
   md: {
     media: "h-[180px] sm:h-[240px] xl:h-[300px]",
     name: "text-[17px] leading-[20px] sm:text-[22px] sm:leading-[25px]",
     desc: "text-[13px] leading-[19px] sm:text-sm sm:leading-[20px]",
     price: "text-[17px] leading-[21px] sm:text-xl sm:leading-[24px]",
     sizes: "(min-width: 1024px) 316px, 50vw",
-  },
-  // Landing tiramisu row: 440px media, 28px name. Two-up below sm, so the media matches md there.
-  lg: {
-    media: "h-[180px] sm:h-[300px] xl:h-[400px]",
-    name: "text-[22px] leading-[25px] lg:text-[28px] lg:leading-[32px]",
-    desc: "text-sm leading-[20px] lg:text-base lg:leading-[23px]",
-    price: "text-xl leading-[24px] lg:text-2xl lg:leading-[29px]",
-    sizes: "(min-width: 1024px) 644px, (min-width: 640px) 100vw, 50vw",
   },
   // "You may also like" on product detail: 260px media.
   sm: {
@@ -84,18 +76,20 @@ export function MenuItemCard({
         <p className={cn("text-muted-foreground", s.desc)}>{product.description}</p>
         {left !== undefined ? <StockBadge left={left} className="mt-0.5" /> : null}
       </div>
-      {/* A landscape card has the height of a portrait one beside it; its sizes and prices fill it. */}
+      {/* A landscape card has the height of a portrait one beside it. Its sizes and the price row sit together
+          at the bottom (level with the neighbours' prices), and any spare height goes under the description. */}
       {banner && multi ? (
-        <ul className="hidden w-full flex-col sm:flex">
+        <ul className="mt-auto hidden w-full flex-col sm:flex">
           {product.variants.map((v) => (
             <li
               key={v.id}
-              className="flex items-baseline justify-between gap-3 py-2 text-sm leading-5 shadow-[inset_0_-1px_0_var(--border-subtle)] first:shadow-[inset_0_1px_0_var(--border-subtle),inset_0_-1px_0_var(--border-subtle)]"
+              className="flex items-baseline justify-between gap-3 py-2.5 text-sm leading-5 xl:py-3 shadow-[inset_0_-1px_0_var(--border-subtle)] first:shadow-[inset_0_1px_0_var(--border-subtle),inset_0_-1px_0_var(--border-subtle)]"
             >
               <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-foreground">
                 <span>
                   {v.name}
-                  {v.serves ? <span className="text-muted-foreground"> · {v.serves}</span> : null}
+                  {/* The banner's text column is narrowest from lg to xl: the size alone keeps each row on one line. */}
+                  {v.serves ? <span className="text-muted-foreground lg:max-xl:hidden"> · {v.serves}</span> : null}
                 </span>
                 {v.left !== undefined ? <StockBadge left={v.left} /> : null}
               </span>
@@ -104,7 +98,7 @@ export function MenuItemCard({
           ))}
         </ul>
       ) : null}
-      <div className="mt-auto flex w-full items-center justify-between gap-2">
+      <div className={cn("flex w-full items-center justify-between gap-2", banner && multi ? "max-sm:mt-auto" : "mt-auto")}>
         <p className={cn("font-display font-semibold text-foreground", s.price)}>{multi ? t.from(price) : price}</p>
         <AddButton product={product} />
       </div>
@@ -138,7 +132,7 @@ export function MenuItemCard({
             fill
             sizes={banner ? "(min-width: 1024px) 316px, 50vw" : s.sizes}
             quality={100}
-            className="object-cover transition-transform duration-500 ease-out group-hover/card:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100"
+            className="object-cover transition-transform duration-300 ease-out group-hover/card:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100"
           />
         </Link>
         {badge ? (

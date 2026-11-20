@@ -1,5 +1,4 @@
 import { cache } from "react";
-import { ArrowLink } from "@/components/ui/button";
 import { getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
 import { cn } from "@/lib/cn";
@@ -44,14 +43,8 @@ export async function SweetStats({ userId, className }: { userId: bigint; classN
   const desserts = [...byProduct.values()].reduce((sum, p) => sum + p.qty, 0);
   const favorite = [...byProduct.values()].sort((a, b) => b.qty - a.qty)[0];
 
-  if (!favorite) {
-    return (
-      <p className={cn("flex flex-wrap items-center gap-x-3 gap-y-1 text-[15px] leading-[23px] text-muted-foreground", className)}>
-        <span>{s.empty}</span>
-        <ArrowLink href="/menu">{s.emptyCta}</ArrowLink>
-      </p>
-    );
-  }
+  // No figures yet: the header stays clean, and the order history's empty state carries the one way on.
+  if (!favorite) return null;
 
   // Each figure: the value on top, its label under it (the label comes first for screen readers).
   const cell = "flex min-w-0 flex-col-reverse justify-end gap-1";

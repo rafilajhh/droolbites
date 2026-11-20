@@ -12,7 +12,7 @@ import { formatRupiah } from "@/lib/format";
 import { paymentMethodInfo } from "@/lib/order-status";
 import { CheckoutColumns, CheckoutHeading, ReviewRows } from "./checkout-section";
 import { OrderSummary, type SummaryLine } from "./order-summary";
-import { PaymentMethodGroups, type PaymentLogos } from "./payment-methods";
+import { PaymentMethodGroups, type BelowMinimum, type PaymentLogos } from "./payment-methods";
 import { SummaryToggle } from "./summary-toggle";
 
 const initialState: PlaceOrderState = { attempt: 0 };
@@ -22,12 +22,14 @@ export function PaymentForm({
   review,
   methods,
   logos,
+  belowMinimum,
   defaultMethod,
   summary,
 }: {
   review: { email: string; fulfilment: "delivery" | "pickup"; address: string; distance: string | null; fee: number };
   methods: PaymentMethod[];
   logos: PaymentLogos;
+  belowMinimum: BelowMinimum;
   defaultMethod: PaymentMethod | null;
   summary: { lines: SummaryLine[]; itemCount: number; subtotal: number; total: number };
 }) {
@@ -89,7 +91,7 @@ export function PaymentForm({
     { label: p.contact, value: email },
     { label: delivery ? p.deliverTo : p.pickupAt, value: review.address },
     {
-      label: p.method,
+      label: p.fulfilment,
       value: delivery
         ? [p.localDelivery, review.distance, formatRupiah(review.fee)].filter(Boolean).join(" · ")
         : `${p.pickup} · ${p.free}`,
@@ -141,6 +143,7 @@ export function PaymentForm({
             selected={method}
             onSelect={chooseMethod}
             leadMethod={defaultMethod}
+            belowMinimum={belowMinimum}
           />
         ) : (
           <p className="pt-8 text-[15px] leading-normal text-muted-foreground shadow-[inset_0_1px_0_var(--border-subtle)]">{p.none}</p>

@@ -7,14 +7,15 @@ import { StatusBadge } from "@/components/ui/badges";
 import { OrderDecision } from "@/components/admin/order-decision";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
-import { AdminMain, Card, SectionTitle, smallButtonClasses } from "@/components/admin/ui";
+import { AdminMain, Card, SectionTitle } from "@/components/admin/ui";
+import { buttonClasses } from "@/components/ui/button";
 import { productImageUrl, variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
-import { cancelReasonText, fulfilmentBadgeInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { orderAddress, payable } from "@/lib/orders";
+import { cancelReasonText, fulfilmentBadgeInfo, notPaidInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { cancelledByStore, orderAddress, otherRecipient, payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -32,7 +33,7 @@ const rowClasses =
   "grid w-full gap-x-6 gap-y-0.5 py-3 text-[15px] leading-[23px] shadow-[inset_0_-1px_0_var(--border-subtle)] first:pt-0 last:pb-0 last:shadow-none sm:grid-cols-[160px_minmax(0,1fr)]";
 const dtClasses = "text-muted-foreground";
 const linkClasses =
-  "underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-current";
+  "relative underline decoration-muted-foreground/40 underline-offset-[3px] transition-colors after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-[''] hover:text-foreground hover:decoration-current";
 
 /**
  * Admin / Order detail. From xl two columns that end near each other: what was ordered and where it
@@ -80,7 +81,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const refundAmount = paidAttempts.reduce((sum, p) => sum + payable(order, p).amount, 0);
   const paidLate = order.paymentStatus !== "paid";
   const fs = fulfilmentBadgeInfo(order);
-  const ps = paymentStatusInfo[refund ? "paid" : order.paymentStatus];
+  // Cancelled from the admin before any payment arrived: the payment didn't fail, it was never made.
+  const storeCancelledUnpaid = !refund && order.paymentStatus !== "paid" && cancelledByStore(order);
+  const ps = storeCancelledUnpaid ? notPaidInfo : paymentStatusInfo[refund ? "paid" : order.paymentStatus];
   const isDelivery = order.fulfilmentMethod === "delivery";
   const methodLabel = isDelivery ? t.common.delivery : t.common.pickup;
   // Completed and Cancelled are final: the status shows as information, not as a disabled form.
@@ -107,17 +110,12 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
     value: status,
     label: fulfilmentBadgeInfo({ paymentStatus: order.paymentStatus, fulfilmentStatus: status })[locale],
   }));
-  const note =
-    order.paymentStatus === "paid"
-      ? { text: o.paidOn(formatDateTime(payment?.paidAt ?? order.updatedAt ?? order.createdAt, locale)), className: "bg-mint" }
-      : order.paymentStatus === "awaiting"
-        ? {
-            text: o.awaitingNote(payment?.expiresAt ? formatDateTime(payment.expiresAt, locale) : null),
-            className: "bg-tint-mustard",
-          }
-        : { text: o.failedNote, className: "bg-tint-salmon" };
+  // Why a closed, unpaid order never reached the kitchen (a paid one says it in the refund alert or needs nothing).
+  const closedNote =
+    closed && order.paymentStatus !== "paid" && !refund ? (storeCancelledUnpaid ? o.cancelledUnpaidNote : o.expiredNote) : null;
 
   const address = orderAddress(order);
+  const recipient = isDelivery ? otherRecipient(order) : null;
   const subParts = [o.placed(formatDate(order.createdAt, locale)), methodLabel, payment ? paymentMethodInfo[payment.method].name : null];
   const cancelWhy =
     order.fulfilmentStatus === "cancelled" && order.cancelReason
@@ -127,6 +125,12 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const paymentRows: { label: string; value: React.ReactNode; mono?: boolean }[] = [
     { label: o.method, value: payment ? paymentMethodShort(payment.method) : o.noPayment },
     { label: o.amount, value: formatRupiah(pay.amount) },
+    // The payment's times live here, once: when it was paid, or until when it can still be paid.
+    ...(order.paymentStatus === "paid" && payment?.paidAt
+      ? [{ label: o.paidOn, value: `${formatDateTime(payment.paidAt, locale)} ${t.common.wib}` }]
+      : order.paymentStatus === "awaiting" && payment?.expiresAt
+        ? [{ label: o.payBefore, value: `${formatDateTime(payment.expiresAt, locale)} ${t.common.wib}` }]
+        : []),
     ...(pay.serviceFee > 0 ? [{ label: o.serviceFee, value: formatRupiah(pay.serviceFee) }] : []),
     ...(gateway && payment?.vaNumber ? [{ label: o.paymentNumber, value: payment.vaNumber, mono: true }] : []),
     ...(gateway && payment?.reference ? [{ label: o.reference, value: payment.reference, mono: true }] : []),
@@ -137,7 +141,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
     <AdminMain>
       <Link
         href="/admin/orders"
-        className="inline-flex w-fit items-center gap-1.5 text-sm leading-[21px] font-bold text-primary underline-offset-2 hover:underline"
+        className="relative inline-flex w-fit items-center gap-1.5 text-sm leading-[21px] font-bold text-primary underline-offset-2 after:absolute after:-inset-x-2 after:-inset-y-2.5 after:content-[''] hover:underline"
       >
         <ArrowLeft className="size-4" aria-hidden />
         {o.back}
@@ -154,9 +158,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           <Link
             href={`/admin/invoice/${order.orderNumber}`}
             aria-label={tx.invoice.openInvoiceLabel(order.orderNumber)}
-            className={smallButtonClasses}
+            className={buttonClasses("secondary", "min-h-11 px-5 py-3")}
           >
-            <Printer className="size-3.5" aria-hidden />
+            <Printer className="size-[18px]" aria-hidden />
             {tx.invoice.openInvoice}
           </Link>
           <StatusBadge tone={fs.tone}>{fs[locale]}</StatusBadge>
@@ -190,7 +194,8 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
       ) : null}
 
       <div className="grid w-full grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <Card as="div" className="flex min-w-0 flex-col">
+        {/* Stretches to the side card when that one is taller, so both cards end on one line. */}
+        <Card as="div" className="flex min-w-0 flex-col self-stretch">
           <section aria-labelledby="order-items-title" className={sectionClasses}>
             <SectionTitle id="order-items-title">{o.items}</SectionTitle>
             <ul className="flex w-full flex-col">
@@ -252,19 +257,15 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                   ) : null}
                 </dd>
               </div>
-              {isDelivery && order.recipientName ? (
+              {recipient ? (
                 <div className={rowClasses}>
                   <dt className={dtClasses}>{o.recipientLabel}</dt>
                   <dd className="break-words">
-                    {order.recipientName}
-                    {order.recipientPhone ? (
-                      <>
-                        {" · "}
-                        <a href={`tel:${order.recipientPhone.replace(/\s/g, "")}`} className={linkClasses}>
-                          {order.recipientPhone}
-                        </a>
-                      </>
-                    ) : null}
+                    {recipient.name}
+                    {" · "}
+                    <a href={`tel:${recipient.phone.replace(/\s/g, "")}`} className={linkClasses}>
+                      {recipient.phone}
+                    </a>
                   </dd>
                 </div>
               ) : null}
@@ -284,6 +285,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               ) : null}
             </dl>
           </section>
+
         </Card>
 
         {/* From md to xl the side card spans the page: status on top, payment and customer side by side under it. */}
@@ -296,19 +298,26 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               <div className="flex flex-col gap-3">
                 {cancelWhy ? <p className="text-[15px] leading-[23px] font-semibold">{cancelWhy}</p> : null}
                 <p className="text-sm leading-[21px] text-muted-foreground">{o.finalNote}</p>
-                <p className={cn("flex w-full gap-2 rounded-sm p-3 text-[13px] leading-5 font-semibold", note.className)}>
-                  <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-                  <span className="flex-1">{note.text}</span>
-                </p>
+                {closedNote ? (
+                  <p className="flex w-full gap-2 rounded-sm bg-tint-salmon p-3 text-[13px] leading-5 font-semibold">
+                    <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    <span className="flex-1">{closedNote}</span>
+                  </p>
+                ) : null}
               </div>
             ) : order.paymentStatus === "paid" && order.fulfilmentStatus === "pending" ? (
-              <OrderDecision orderNumber={order.orderNumber} note={note.text} paidAmount={formatRupiah(pay.amount)} />
+              <OrderDecision orderNumber={order.orderNumber} paidAmount={formatRupiah(pay.amount)} />
             ) : (
               <StatusForm
                 orderNumber={order.orderNumber}
                 current={order.fulfilmentStatus}
                 options={options}
-                note={note}
+                // Unpaid: there is nothing to move along yet, only the cancel.
+                cancelOnly={
+                  order.paymentStatus !== "paid"
+                    ? { hint: order.paymentStatus === "awaiting" ? o.unpaidHint : o.failedNote }
+                    : undefined
+                }
                 paidAmount={order.paymentStatus === "paid" ? formatRupiah(pay.amount) : undefined}
               />
             )}

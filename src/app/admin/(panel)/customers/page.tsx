@@ -5,9 +5,9 @@ import { ArrowLink } from "@/components/ui/button";
 import { CustomersSearch } from "@/components/admin/customers-search";
 import { Pagination } from "@/components/admin/pagination";
 import { SegmentedLinks } from "@/components/admin/reports-segmented";
-import { AdminMain, Card, CellLabel, listCardClasses, listThClasses, mobileCardRowClasses, PageHead } from "@/components/admin/ui";
+import { AdminMain, Card, CellLabel, listCardClasses, listScrollClasses, listThClasses, mobileCardRowClasses, PageHead } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { containsText, db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
 import { keptOrderWhere } from "@/lib/reports";
 import { cn } from "@/lib/cn";
@@ -100,7 +100,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   const emptyCell = "block px-4 py-8 text-center text-[15px] leading-[23px] text-muted-foreground xl:table-cell";
 
   if (tab === "newsletter") {
-    const where: Prisma.NewsletterSubscriberWhereInput = q ? { email: { contains: q } } : {};
+    const where: Prisma.NewsletterSubscriberWhereInput = q ? { email: containsText(q) } : {};
     const count = q ? await db.newsletterSubscriber.count({ where }) : subscriberTotal;
     const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
     if (page > totalPages) redirect(href(totalPages));
@@ -159,7 +159,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
 
   const where: Prisma.UserWhereInput = {
     ...customerWhere,
-    ...(q ? { OR: [{ fullName: { contains: q } }, { email: { contains: q } }] } : {}),
+    ...(q ? { OR: [{ fullName: containsText(q) }, { email: containsText(q) }] } : {}),
   };
   const count = q ? await db.user.count({ where }) : customerTotal;
   const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
@@ -199,7 +199,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
       {toolbar(t.count(count))}
 
       <Card className={listCardClasses}>
-        <div className="relative w-full overflow-x-auto">
+        <div className={listScrollClasses}>
           <table aria-label={t.tabs.customers} className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[860px]">
             <thead className="max-xl:hidden">
               <tr>

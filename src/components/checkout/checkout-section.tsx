@@ -2,9 +2,11 @@ import { cn } from "@/lib/cn";
 
 /**
  * The page frame every checkout step shares (details, payment, pay, success): the step's own
- * column on the left and the order summary on the right, 440px and sticky from lg so the receipt
+ * column on the left and the order summary on the right, sticky from lg so the receipt
  * stays beside whatever part of the step is on screen. The checkout header does not stick, so the
- * summary sits 24px from the top of the viewport. Below lg it is one column; `summaryFirst` puts
+ * summary sits 24px from the top of the viewport. The summary is 360px with a 40px gap from lg and
+ * 440px with 64px from xl, so at 1024 the step keeps ~500px instead of being narrower than the
+ * receipt beside it. Below lg it is one column; `summaryFirst` puts
  * the summary's toggle bar above the step (details and payment) instead of under it.
  */
 export function CheckoutColumns({
@@ -26,7 +28,7 @@ export function CheckoutColumns({
       tabIndex={0}
       aria-labelledby="order-summary-title"
       className={cn(
-        "w-full lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:w-[440px] lg:shrink-0 lg:overflow-y-auto lg:rounded-m",
+        "w-full lg:sticky lg:top-6 lg:max-h-[calc(100dvh-3rem)] lg:w-[360px] lg:shrink-0 lg:overflow-y-auto lg:rounded-m xl:w-[440px]",
         summaryFirst && "lg:order-last",
       )}
     >
@@ -36,7 +38,7 @@ export function CheckoutColumns({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-8 px-4 pt-8 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-16 lg:px-16 lg:pt-12 lg:pb-24",
+        "flex w-full flex-col gap-8 px-4 pt-8 pb-16 md:px-8 lg:flex-row lg:items-start lg:gap-10 lg:px-16 lg:pt-12 lg:pb-24 xl:gap-16",
         className,
       )}
     >

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { House, Smartphone, Store, Sunrise } from "lucide-react";
+import { School, ShoppingBag, Smartphone, Sunrise } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
 import { Chip } from "@/components/ui/badges";
 import { ButtonLink } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(storyMessages);
-  return { title: t.metaTitle, description: t.metaDescription };
+  return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/our-story" } };
 }
 
 const px = "px-4 sm:px-8 lg:px-16";
@@ -19,8 +19,8 @@ const sectionTitle = "type-section font-display text-balance font-bold text-fore
 
 /** One tint and icon per chapter of the timeline, oldest first. */
 const chapters = [
-  { icon: House, bg: "bg-tint-mustard" },
-  { icon: Store, bg: "bg-tint-lavender" },
+  { icon: School, bg: "bg-tint-mustard" },
+  { icon: ShoppingBag, bg: "bg-tint-lavender" },
   { icon: Smartphone, bg: "bg-tint-salmon" },
   { icon: Sunrise, bg: "bg-card" },
 ];
@@ -75,7 +75,7 @@ export default async function OurStoryPage() {
         </div>
       </section>
 
-      {/* Timeline: four chapters, oldest first. The year is the step marker. */}
+      {/* Timeline: four chapters, oldest first. The year is the step marker (two chapters can share one). */}
       <section className={cn("section-y flex w-full flex-col gap-8 lg:gap-12", px)} aria-labelledby="story-timeline">
         <div className="flex w-full flex-col gap-4">
           <h2 id="story-timeline" className={sectionTitle}>
@@ -89,7 +89,7 @@ export default async function OurStoryPage() {
           {t.timeline.map((chapter, i) => {
             const Icon = chapters[i].icon;
             return (
-              <li key={chapter.year} className={cn("flex flex-col gap-4 rounded-m p-5 lg:gap-4 lg:p-6", chapters[i].bg)}>
+              <li key={chapter.title} className={cn("flex flex-col gap-4 rounded-m p-5 lg:gap-4 lg:p-6", chapters[i].bg)}>
                 <div className="flex items-center justify-between gap-4">
                   <p className="font-display text-4xl leading-none lg:text-5xl font-bold tracking-[-1px] text-foreground">
                     {chapter.year}
@@ -111,7 +111,8 @@ export default async function OurStoryPage() {
         className={cn("flex w-full flex-col items-center gap-10 pb-12 lg:flex-row lg:gap-16 lg:pb-20", px)}
         aria-labelledby="story-founders"
       >
-        <div className="grid w-full max-w-[600px] shrink-0 grid-cols-2 gap-5 sm:gap-8 lg:w-[480px]">
+        {/* Phones: a 16px gap and a 12px chip keep "Olivia's brownie" on one line down to 320px. */}
+        <div className="grid w-full max-w-[600px] shrink-0 grid-cols-2 gap-4 sm:gap-8 lg:w-[480px]">
           <figure className="flex flex-col gap-4">
             <Snapshot
               src="/images/products/chocolate-chunk.png"
@@ -121,7 +122,7 @@ export default async function OurStoryPage() {
               imageClassName="scale-[1.25]"
             />
             <figcaption>
-              <Chip className="whitespace-nowrap">{t.firstCookie}</Chip>
+              <Chip className="whitespace-nowrap max-sm:px-2.5 max-sm:text-[12px]">{t.firstCookie}</Chip>
             </figcaption>
           </figure>
           <figure className="flex flex-col gap-4">
@@ -133,7 +134,7 @@ export default async function OurStoryPage() {
               imageClassName="scale-[1.15]"
             />
             <figcaption>
-              <Chip className="whitespace-nowrap">{t.firstBrownie}</Chip>
+              <Chip className="whitespace-nowrap max-sm:px-2.5 max-sm:text-[12px]">{t.firstBrownie}</Chip>
             </figcaption>
           </figure>
         </div>

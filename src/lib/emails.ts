@@ -67,7 +67,7 @@ export async function sendNewsletterWelcomeEmail(email: string, lang: Locale) {
   await sendMail({
     to: email,
     subject: t.subject,
-    text: `${t.body}\n${t.next}\n\n${menu}\n\nDroolbites · Surabaya\n\n${t.textUnsubscribe}: ${page}`,
+    text: `${t.title}\n\n${t.body}\n${t.next}\n\n${menu}\n\nDroolbites · Surabaya\n\n${t.textUnsubscribe}: ${page}`,
     html,
     headers: {
       "List-Unsubscribe": `<${oneClick}>`,

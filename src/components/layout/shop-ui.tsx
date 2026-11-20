@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 
 /** Which storefront overlay is open: the nav menu, the cart drawer or the search sheet. */
 type Panel = "menu" | "cart" | "search" | null;
@@ -102,9 +102,15 @@ function restoreFocus(el: HTMLElement | null) {
  * into the panel (a `[data-autofocus]` element first) and returns afterwards.
  * Modals stack (a confirm dialog over a drawer): the covered one pauses, and
  * gets focus back when the top one closes.
+ *
+ * `onClose` is read when Escape is pressed, not tracked as a dependency: callers
+ * often pass a new arrow function each render, and re-running the effect would
+ * hand focus back to the trigger and then to `[data-autofocus]` on every
+ * keystroke inside the panel.
  */
 export function useModal(isOpen: boolean, onClose: () => void) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const close = useEffectEvent(() => onClose());
 
   useEffect(() => {
     if (!isOpen) return;
@@ -135,7 +141,7 @@ export function useModal(isOpen: boolean, onClose: () => void) {
     const onKey = (e: KeyboardEvent) => {
       const panel = panelRef.current;
       if (!panel || !isTop()) return;
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") close();
       if (e.key !== "Tab") return;
       const items = tabbables(panel);
       if (items.length === 0) {
@@ -172,7 +178,7 @@ export function useModal(isOpen: boolean, onClose: () => void) {
       // A modal closing underneath another one leaves focus where it is.
       if (wasTop) restoreFocus(previouslyFocused);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   return panelRef;
 }

@@ -23,13 +23,13 @@ export const adminReportsMessages = defineMessages({
       label: "Custom dates",
       from: "From",
       to: "To",
-      apply: "Show",
+      apply: "SHOW",
       invalid: "Those dates can't be shown (a date is wrong or still to come), so this is the last 7 days.",
     },
     actions: {
-      print: "Print report",
+      print: "PRINT REPORT",
       printLabel: "Print this sales report",
-      export: "Export CSV",
+      export: "EXPORT CSV",
       exportLabel: "Download the orders placed in this period as a CSV file",
     },
     print: {
@@ -119,13 +119,13 @@ export const adminReportsMessages = defineMessages({
       label: "Tanggal pilihan",
       from: "Dari",
       to: "Sampai",
-      apply: "Tampilkan",
+      apply: "TAMPILKAN",
       invalid: "Tanggal itu tidak bisa ditampilkan (salah tulis atau belum terjadi), jadi ini 7 hari terakhir.",
     },
     actions: {
-      print: "Cetak laporan",
+      print: "CETAK LAPORAN",
       printLabel: "Cetak laporan penjualan ini",
-      export: "Ekspor CSV",
+      export: "EKSPOR CSV",
       exportLabel: "Unduh pesanan yang dibuat di periode ini sebagai file CSV",
     },
     print: {

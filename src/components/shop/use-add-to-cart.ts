@@ -17,18 +17,21 @@ export function useAddToCart() {
   const [pending, startTransition] = useTransition();
   const [failed, setFailed] = useState(false);
   const [left, setLeft] = useState<number | null>(null);
+  const [max, setMax] = useState<number | null>(null);
   const busy = useRef(false);
   const clearFailed = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => () => clearTimeout(clearFailed.current), []);
 
-  const fail = (stockLeft?: number) => {
+  const fail = (stockLeft?: number, cap?: number) => {
     setFailed(true);
     setLeft(stockLeft ?? null);
+    setMax(cap ?? null);
     clearTimeout(clearFailed.current);
     clearFailed.current = setTimeout(() => {
       setFailed(false);
       setLeft(null);
+      setMax(null);
     }, 4000);
   };
 
@@ -38,6 +41,7 @@ export function useAddToCart() {
     clearTimeout(clearFailed.current);
     setFailed(false);
     setLeft(null);
+    setMax(null);
     startTransition(async () => {
       try {
         const result = await addToCart(variantId, qty);
@@ -45,7 +49,7 @@ export function useAddToCart() {
           onAdded?.();
           openCart();
         } else {
-          fail(result.left);
+          fail(result.left, result.max);
         }
       } catch {
         fail();
@@ -55,5 +59,5 @@ export function useAddToCart() {
     });
   };
 
-  return { add, pending, failed, left };
+  return { add, pending, failed, left, max };
 }

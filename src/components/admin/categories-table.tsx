@@ -9,7 +9,7 @@ import { useMessages } from "@/i18n/client";
 import { adminCategoriesMessages } from "@/i18n/messages/admin-categories";
 import { cn } from "@/lib/cn";
 import { ConfirmDialog } from "./confirm-dialog";
-import { Card, CellLabel, listCardClasses, listThClasses, mobileCardRowClasses, smallButtonClasses } from "./ui";
+import { Card, CellLabel, listCardClasses, listScrollClasses, listThClasses, mobileCardRowClasses, smallButtonClasses } from "./ui";
 
 export type CategoryRow = { id: string; name: string; slug: string; visible: number; hidden: number };
 
@@ -30,17 +30,17 @@ export function CategoriesTable({ rows }: { rows: CategoryRow[] }) {
       <p role="status" className="sr-only">
         {announcement}
       </p>
-      <div className="relative w-full overflow-x-auto">
+      <div className={listScrollClasses}>
         <table aria-label={t.title} className="w-full border-separate border-spacing-0 max-xl:block xl:min-w-[640px]">
           <thead className="max-xl:hidden">
             <tr>
               <th scope="col" className={cn(listThClasses, "pl-4")}>
                 {t.col.category}
               </th>
-              <th scope="col" className={cn(listThClasses, "w-[220px]")}>
+              <th scope="col" className={cn(listThClasses, "w-[200px]")}>
                 {t.col.products}
               </th>
-              <th scope="col" className={cn(listThClasses, "w-[220px] pr-4")}>
+              <th scope="col" className={cn(listThClasses, "w-px pr-4 whitespace-nowrap")}>
                 <span className="sr-only">{t.col.action}</span>
               </th>
             </tr>
@@ -141,10 +141,11 @@ function CategoryTableRow({
         className="py-3 pr-4 pl-4 text-left align-top font-normal max-xl:order-1 max-xl:basis-full max-xl:p-0 xl:align-middle"
       >
         {editing ? (
-          <form onSubmit={onSubmit} noValidate className="flex w-full flex-col gap-2">
+          <form onSubmit={onSubmit} noValidate className="@container flex w-full flex-col gap-2">
             <label htmlFor={inputId} className="sr-only">
               {t.newName(row.name)}
             </label>
+            {/* In a narrow cell (phones, or beside the add form from 1400px) the buttons go under the field. */}
             <div className="flex w-full flex-wrap items-stretch gap-2">
               <input
                 ref={inputRef}
@@ -162,7 +163,7 @@ function CategoryTableRow({
                 required
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${inputId}-error` : `${inputId}-help`}
-                className={cn(inputClasses, "min-w-0 flex-1 py-2.5 text-[15px] max-sm:basis-full sm:max-w-[320px]")}
+                className={cn(inputClasses, "min-w-0 flex-1 py-2.5 text-[15px] @max-[400px]:basis-full @min-[400px]:max-w-[320px]")}
               />
               <button type="submit" disabled={pending} className={cn(smallButtonClasses, "disabled:opacity-50")}>
                 {pending ? t.saving : t.save}
@@ -190,7 +191,7 @@ function CategoryTableRow({
           </span>
         )}
       </th>
-      <td className="py-3 text-[15px] leading-[23px] font-medium max-xl:order-2 max-xl:min-w-0 max-xl:grow max-xl:p-0 max-xl:text-sm max-xl:leading-[21px]">
+      <td className="py-3 text-[15px] leading-[23px] font-medium max-xl:order-2 max-xl:min-w-0 max-xl:grow max-xl:p-0 max-sm:basis-full max-xl:text-sm max-xl:leading-[21px]">
         <CellLabel until="xl">{t.col.products}</CellLabel>
         {total === 0 ? (
           <span className="text-muted-foreground">{t.noProducts}</span>
@@ -201,7 +202,7 @@ function CategoryTableRow({
           </>
         )}
       </td>
-      <td className="py-3 pr-4 text-right max-xl:order-3 max-xl:p-0">
+      <td className="py-3 pr-4 text-right max-xl:order-3 max-xl:ml-auto max-xl:p-0">
         <span className="inline-flex gap-2">
           {editing ? null : (
             <button
@@ -276,7 +277,7 @@ function DeleteCategoryDialog({
       body={
         locked ? (
           <>
-            <p>{r.lockedBody(total > 0 ? r.products(total) : r.someProducts)}</p>
+            <p>{r.lockedBody(total > 0 ? r.products(total) : r.someProducts, total === 1)}</p>
             <p>{r.lockedHint}</p>
           </>
         ) : (

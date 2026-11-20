@@ -10,9 +10,10 @@ function clampQty(qty: number) {
 
 /**
  * `left` tells the shopper about stock: on a refusal, 0 means sold out and a number means the cart
- * already holds all that's left; on success, the add was cut down to that many.
+ * already holds all that's left; on success, the add was cut down to that many. `max` on a refusal:
+ * the line already holds the most one order takes (MAX_QTY).
  */
-export type AddToCartResult = { ok: true; left?: number } | { ok: false; left?: number };
+export type AddToCartResult = { ok: true; left?: number } | { ok: false; left?: number; max?: number };
 
 export async function addToCart(variantId: string, qty = 1): Promise<AddToCartResult> {
   if (!VARIANT_ID_RE.test(variantId) || !Number.isFinite(qty) || qty < 1) return { ok: false };
@@ -29,6 +30,8 @@ export async function addToCart(variantId: string, qty = 1): Promise<AddToCartRe
   const want = clampQty((existing?.q ?? 0) + qty) || 1;
   // A tracked size never goes into the cart beyond what's left.
   if (stock !== null && existing && existing.q >= stock) return { ok: false, left: stock };
+  // Already at the cap: say so instead of opening the drawer as if something was added.
+  if (existing && existing.q >= MAX_QTY) return { ok: false, max: MAX_QTY };
   const q = stock === null ? want : Math.min(want, stock);
   if (existing) existing.q = q;
   // A new line past the cookie's limit would make the whole cart fail validation.

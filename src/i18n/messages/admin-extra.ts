@@ -38,7 +38,7 @@ export const adminExtraMessages = defineMessages({
       thanks: "Thank you for ordering from us!",
     },
     export: {
-      button: "Export CSV",
+      button: "EXPORT CSV",
       label: "Export CSV of the orders that match these filters",
       col: {
         orderNumber: "Order number",
@@ -64,7 +64,7 @@ export const adminExtraMessages = defineMessages({
       sub: "Change the password you use to sign in to the admin.",
       current: "Current password",
       next: "New password",
-      nextHelp: "At least 8 characters.",
+      nextHelp: "8 to 72 characters.",
       confirm: "Confirm new password",
       show: "Show password",
       save: "CHANGE PASSWORD",
@@ -118,7 +118,7 @@ export const adminExtraMessages = defineMessages({
       thanks: "Terima kasih sudah pesan di kami!",
     },
     export: {
-      button: "Ekspor CSV",
+      button: "EKSPOR CSV",
       label: "Ekspor CSV pesanan yang cocok dengan filter ini",
       col: {
         orderNumber: "Nomor pesanan",
@@ -144,7 +144,7 @@ export const adminExtraMessages = defineMessages({
       sub: "Ganti kata sandi yang kamu pakai untuk masuk ke admin.",
       current: "Kata sandi saat ini",
       next: "Kata sandi baru",
-      nextHelp: "Minimal 8 karakter.",
+      nextHelp: "8 sampai 72 karakter.",
       confirm: "Konfirmasi kata sandi baru",
       show: "Tampilkan kata sandi",
       save: "GANTI KATA SANDI",

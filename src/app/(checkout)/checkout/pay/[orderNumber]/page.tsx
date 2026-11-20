@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { BellRing, CircleX, ExternalLink, Timer } from "lucide-react";
@@ -22,10 +23,12 @@ import { formatDateTime, formatRupiah } from "@/lib/format";
 import { fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { cancelledByStore, getOrderForViewer, itemCount, orderDeadline, payable, withOrderToken } from "@/lib/orders";
 import { canSimulatePayment, getPaymentOptions, getPaymentProvider } from "@/lib/payments";
+import { orderPageMetadata } from "@/lib/order-metadata";
 import { getStoreSettings } from "@/lib/settings";
 
-export async function generateMetadata(): Promise<Metadata> {
-  return { title: (await getMessages(checkoutMessages)).meta.pay, robots: { index: false } };
+export async function generateMetadata({ params, searchParams }: PageProps<"/checkout/pay/[orderNumber]">): Promise<Metadata> {
+  const { orderNumber } = await params;
+  return orderPageMetadata(orderNumber, (await searchParams).t, async () => (await getMessages(checkoutMessages)).meta.pay);
 }
 
 const SPECIFIC_HOW_TO = ["bca_va", "mandiri_va", "bni_va", "bri_va"] as const;
@@ -41,7 +44,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   if (order.paymentStatus === "paid") redirect(withOrderToken(`/checkout/success/${orderNumber}`, token));
 
   const [t, locale, settings] = await Promise.all([getMessages(checkoutMessages), getLocale(), getStoreSettings()]);
-  const { methods, logos } = await getPaymentOptions(settings);
+  const { methods, logos, belowMinimum } = await getPaymentOptions(settings, order.total);
   const p = t.pay;
   const payment = order.payments[0] ?? null;
   // Cancelled by the store: closed, even if a payment still looks open.
@@ -52,11 +55,13 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   const initialError =
     query.error === "unavailable"
       ? "gatewayUnavailable"
-      : query.error === "busy"
-        ? "gatewayBusy"
-        : query.error === "stock"
-          ? "stockGone"
-          : undefined;
+      : query.error === "minimum"
+        ? "gatewayMinimum"
+        : query.error === "busy"
+          ? "gatewayBusy"
+          : query.error === "stock"
+            ? "stockGone"
+            : undefined;
 
   const status = storeCancelled ? fulfilmentStatusInfo.cancelled : paymentStatusInfo[order.paymentStatus];
   const pay = payable(order, live);
@@ -90,7 +95,17 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
       <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <CheckoutColumns summaryFirst summary={summary}>
           <div className="flex w-full flex-col gap-8">
-            <CheckoutHeading lead={<StatusBadge tone={status.tone}>{status[locale]}</StatusBadge>} title={title} sub={sub} />
+            {/* The order number beside the badge: a customer paying later at an ATM or in a banking app has it to hand. */}
+            <CheckoutHeading
+              lead={
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <StatusBadge tone={status.tone}>{status[locale]}</StatusBadge>
+                  <span className="font-mono text-[13px] leading-[17px] font-semibold text-muted-foreground">{p.order(orderNumber)}</span>
+                </div>
+              }
+              title={title}
+              sub={sub}
+            />
             {body}
           </div>
         </CheckoutColumns>
@@ -150,6 +165,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         current={live?.method ?? null}
         methods={methods}
         logos={logos}
+        belowMinimum={belowMinimum}
         cancelHref={live ? payHref : null}
         initialError={initialError}
       />,
@@ -225,15 +241,26 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         </div>
 
         {live.vaNumber ? (
-          <div className="flex w-full flex-wrap items-center gap-x-4 gap-y-1.5 px-5 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:px-6">
-            {/* Same layout as the Amount row: Copy stays on the right; below sm the number wraps only if it must. */}
-            <div className="flex min-w-0 flex-1 flex-col gap-1">
+          // The number is sized to the card, not the screen (the card is narrow beside the summary at
+          // 1024 and wide on a tablet): 18px, 24px from a 384px row, 32px from 672px. Copy sits on the
+          // right while the whole number fits beside it and moves under it otherwise; a number too long
+          // for one line wraps between its 4-digit groups, never inside one.
+          <div className="@container flex w-full flex-wrap items-center gap-x-4 gap-y-3 px-5 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:px-6">
+            <div className="flex min-w-0 flex-[1_1_auto] flex-col gap-1">
               <p className="text-[13px] leading-5 text-muted-foreground">{info.kind === "retail" ? p.paymentCode : p.vaNumber}</p>
               <p
                 id="pay-va-number"
-                className="font-mono text-lg leading-[30px] font-semibold text-balance break-words text-foreground sm:text-[32px] sm:leading-[35px] sm:tracking-[1px] sm:whitespace-nowrap"
+                className="font-mono text-lg leading-[30px] font-semibold text-balance wrap-anywhere text-foreground @sm:text-2xl @sm:leading-8 @sm:tracking-[0.5px] @2xl:text-[32px] @2xl:leading-[35px] @2xl:tracking-[1px]"
               >
-                {live.vaNumber}
+                {live.vaNumber
+                  .trim()
+                  .split(/\s+/)
+                  .map((group, i) => (
+                    <Fragment key={i}>
+                      {i > 0 ? " " : null}
+                      <span className="inline-block">{group}</span>
+                    </Fragment>
+                  ))}
               </p>
             </div>
             <CopyButton

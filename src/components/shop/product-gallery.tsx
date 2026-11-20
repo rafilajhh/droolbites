@@ -93,7 +93,7 @@ export function ProductGallery({
   return (
     <section
       aria-label={t.gallery}
-      className="flex w-full flex-col gap-3 sm:gap-4 lg:w-[560px] lg:shrink-0 xl:w-[680px]"
+      className="flex w-full flex-col gap-3 sm:gap-4"
     >
       <div className="relative w-full">
         <div className={cn(photoFrame, "aspect-[680/640] w-full bg-oat")}>
@@ -102,7 +102,7 @@ export function ProductGallery({
             photo={current}
             alt={current.alt}
             priority={index === 0}
-            sizes="(min-width: 1280px) 680px, (min-width: 1024px) 560px, 100vw"
+            sizes="(min-width: 1280px) 680px, (min-width: 1024px) 46vw, 100vw"
           />
         </div>
         {badge && index === 0 ? (

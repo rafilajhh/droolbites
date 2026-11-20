@@ -38,6 +38,13 @@ export type PaymentSnapshot = {
   expiresAt: Date | null;
 };
 
+/**
+ * What the gateway is known to refuse as too small for a method: the minimum when its answer named one,
+ * else only that `refusedAt` was below it (the minimum is higher). Learned from AMOUNT_BELOW_MINIMUM
+ * answers, since the channel list carries no amounts.
+ */
+export type AmountFloor = { min: number | null; refusedAt: number };
+
 /** Channels the gateway currently accepts, with its logo per method. Null = no list (mock, or the API failed). */
 export type ChannelList = { methods: Set<PaymentMethod>; logos: Partial<Record<PaymentMethod, string>> } | null;
 
@@ -56,6 +63,8 @@ export interface PaymentProvider {
   /** Demo/sandbox only: pay it, then report the resulting status. */
   simulatePaid(payment: PaymentSnapshot): Promise<PaymentStatus>;
   channels(): Promise<ChannelList>;
+  /** Minimum amounts known so far, per method (absent: no limit known, e.g. the mock provider). */
+  amountFloors?(): Partial<Record<PaymentMethod, AmountFloor>>;
 }
 
 /** Gateway refused or could not be reached. `code` is the gateway's data.code (or TIMEOUT / NETWORK). */
@@ -64,6 +73,8 @@ export class PaymentGatewayError extends Error {
     readonly code: string,
     readonly httpStatus: number,
     message?: string,
+    /** The gateway's `data` on an error answer, for details such as a minimum amount. */
+    readonly data?: unknown,
   ) {
     super(message ?? `Payment gateway error ${httpStatus} ${code}`);
     this.name = "PaymentGatewayError";

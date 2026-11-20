@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin, QrCode, Store, Truck } from "lucide-react";
@@ -30,6 +31,9 @@ const heroCorners = [
   "right-0 bottom-0 [mask-image:radial-gradient(ellipse_330px_300px_at_100%_100%,#000_55%,transparent)]",
 ];
 
+// The title and description are the root layout's site defaults, in the visitor's language.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 /**
  * pen: Landing page (syGdV). Content sections carry `section-y`; the tinted panels between
  * them (brownies, story, reviews) carry no outer padding, so every gap is one section-y.
@@ -59,7 +63,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <div className="mx-auto flex w-full max-w-[1440px] flex-col">
+    <div className="flex w-full flex-col">
       {/* Hero */}
       <section className="w-full px-3 pb-3 sm:px-6 sm:pb-6">
         {/* A full-bleed panel with content over the photo: no photoFrame ring, its own edge is enough. */}
@@ -79,7 +83,9 @@ export default async function HomePage() {
               smaller copies, faded out with a mask, frame the copy from the top-left and bottom-right. */}
           {heroCorners.map((corner) => (
             <div key={corner} className={cn("absolute h-[461px] w-[691px] md:hidden", corner)} aria-hidden>
-              <Image src="/images/site/hero-background.png" alt="" fill quality={100} sizes="691px" />
+              {/* The hero's own sizes below md, so the browser reuses that file instead of fetching a second,
+                  larger one; the copies are masked and dimmed, so its resolution is plenty. */}
+              <Image src="/images/site/hero-background.png" alt="" fill quality={100} sizes="100vw" />
             </div>
           ))}
           <div
@@ -91,13 +97,14 @@ export default async function HomePage() {
           <p className="relative max-w-[600px] text-pretty text-[17px] leading-[26px] text-white lg:text-xl lg:leading-[30px]">
             {t.hero.sub}
           </p>
-          <div className="relative flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Link href="/menu" className={buttonClasses("inverse", "text-moss-deep!")}>
+          {/* On phones both buttons grow to fill the row, so a pair that wraps (the longer ID labels) stacks at one width. */}
+          <div className="relative flex flex-wrap items-center justify-center gap-4 pt-2 max-sm:w-full max-sm:max-w-[400px] max-sm:gap-3">
+            <Link href="/menu" className={buttonClasses("inverse", "text-moss-deep! max-sm:flex-auto")}>
               {t.hero.order}
             </Link>
             <Link
               href="/location"
-              className={buttonClasses("secondary", "text-white! inset-ring-white! hover:bg-white/10!")}
+              className={buttonClasses("secondary", "text-white! inset-ring-white! hover:bg-white/10! max-sm:flex-auto")}
             >
               {t.hero.visit}
             </Link>
@@ -177,20 +184,24 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* Tiramisu */}
+      {/* Tiramisu: on the cookie row's tracks, so the cards are the same size as the cookies above. From lg the
+          heading takes the first two columns and the cards the other two. */}
       {tiramisu.length ? (
-        <section className={cn("section-y flex w-full flex-col gap-6 lg:gap-8", px)} aria-labelledby="home-tiramisu">
+        <section
+          className={cn("section-y grid w-full grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4 lg:gap-6", px)}
+          aria-labelledby="home-tiramisu"
+        >
           <SectionHead
             id="home-tiramisu"
             eyebrowText={t.tiramisu.eyebrow}
             title={t.tiramisu.title}
             sub={t.tiramisu.sub}
+            link={<ArrowLink href="/menu?category=tiramisu">{t.tiramisu.link}</ArrowLink>}
+            className="col-span-2 lg:flex-col lg:items-start lg:justify-center lg:gap-6 lg:self-center lg:pr-10"
           />
-          <div className="grid w-full grid-cols-2 gap-x-4 gap-y-8 lg:gap-6">
-            {tiramisu.map((p) => (
-              <MenuItemCard key={p.id} product={p} size="lg" />
-            ))}
-          </div>
+          {tiramisu.map((p) => (
+            <MenuItemCard key={p.id} product={p} />
+          ))}
         </section>
       ) : null}
 
@@ -298,15 +309,22 @@ function SectionHead({
   title,
   sub,
   link,
+  className,
 }: {
   id: string;
   eyebrowText: string;
   title: string;
   sub?: string;
   link?: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-12">
+    <div
+      className={cn(
+        "flex w-full flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-12",
+        className,
+      )}
+    >
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <p className={eyebrow}>{eyebrowText}</p>
         <h2 id={id} className={sectionTitle}>

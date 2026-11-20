@@ -27,7 +27,7 @@ export async function CheckoutHeader({ step }: { step: 2 | 3 | 4 }) {
   return (
     <header className="w-full bg-background shadow-[inset_0_-1px_0_var(--border-subtle)]">
       {/* From md: three columns (left block, steps, an equal empty column) so the steps sit in the true centre. */}
-      <div className="flex h-16 w-full items-center justify-between gap-4 px-4 md:grid md:h-20 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:px-8 lg:px-16">
+      <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-4 px-4 md:grid md:h-20 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:px-8 lg:px-16">
         <div className="flex min-w-0 items-center gap-1 md:gap-4">
           <Link href="/" aria-label={t.home} className="shrink-0 rounded-pill">
             <Image
@@ -36,7 +36,7 @@ export async function CheckoutHeader({ step }: { step: 2 | 3 | 4 }) {
               width={48}
               height={48}
               quality={100}
-              priority
+              loading="eager"
               className="size-10 rounded-pill object-cover md:size-12"
             />
           </Link>

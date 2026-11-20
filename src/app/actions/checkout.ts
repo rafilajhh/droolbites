@@ -62,6 +62,7 @@ type ErrorKey =
   | "paymentUnavailable"
   | "gatewayUnavailable"
   | "gatewayBusy"
+  | "gatewayMinimum"
   | "cartChanged"
   | "stock"
   | "stockGone"
@@ -466,7 +467,10 @@ export async function changePaymentMethod(prev: ChangeMethodState, formData: For
   if (order.paymentStatus === "paid") redirect(successHref);
   if (order.paymentStatus !== "awaiting") redirect(payHref);
   if (!isPaymentMethod(method)) return { error: "payment", attempt };
-  if (!(await paymentEnabled(await getStoreSettings(), method))) return { error: "paymentUnavailable", attempt };
+  const options = await getPaymentOptions(await getStoreSettings(), order.total);
+  if (!options.methods.includes(method)) return { error: "paymentUnavailable", attempt };
+  // Known to be refused for this total: say so without cancelling the live payment first.
+  if (method in options.belowMinimum) return { error: "gatewayMinimum", attempt };
 
   const outcome = await withOrderLock(order.id, async () => {
     // Read again under the lock: a concurrent switch may have finished meanwhile.
@@ -504,7 +508,14 @@ export async function changePaymentMethod(prev: ChangeMethodState, formData: For
   revalidatePath(`/orders/${orderNumber}`);
   const { charged } = outcome;
   if (!charged.ok) {
-    const error = charged.error === "unavailable" ? "gatewayUnavailable" : charged.error === "stock" ? "stockGone" : "gatewayBusy";
+    const error =
+      charged.error === "unavailable"
+        ? "gatewayUnavailable"
+        : charged.error === "minimum"
+          ? "gatewayMinimum"
+          : charged.error === "stock"
+            ? "stockGone"
+            : "gatewayBusy";
     return { error, attempt };
   }
   redirect(payHref);

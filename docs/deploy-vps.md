@@ -218,9 +218,9 @@ Kalau dua-duanya kosong, tombol "Continue with Google" otomatis disembunyikan.
 **Belibayar**:
 
 1. Dashboard Belibayar › Kredensial: salin API key, secret key, dan webhook secret ke `BELIBAYAR_API_KEY`, `BELIBAYAR_SECRET_KEY`, `BELIBAYAR_WEBHOOK_SECRET` di `.env`. Key `byr_test_` = sandbox, `byr_live_` = uang sungguhan.
-2. Set **Webhook URL** di dashboard: `https://droolbites.biz.id/api/payments/belibayar/webhook`.
+2. Webhook: aplikasi mengirim `callback_url` = `${APP_URL}/api/payments/belibayar/webhook` di setiap pembayaran, jadi notifikasi Droolbites sampai ke sini tanpa mengubah Webhook URL di dashboard. **Jangan** mengganti Webhook URL dashboard kalau merchant itu dipakai layanan lain (saat ini merchant CosmosIn): webhook mereka akan rusak. Isi Webhook URL dashboard dengan alamat di atas hanya kalau Droolbites punya merchant sendiri.
 3. Masukkan IP VPS `140.245.102.131` ke IP whitelist Belibayar.
-4. Ganti `PAYMENT_PROVIDER="belibayar"` di `.env`, lalu `docker compose -f compose.yml -f compose.prod.yml up -d`.
+4. Ganti `PAYMENT_PROVIDER="belibayar"` di `.env`, lalu `docker compose -f compose.yml -f compose.prod.yml up -d` (membuat ulang container supaya `.env` baru terbaca; `restart` saja tidak cukup). Cek: `curl -X POST https://droolbites.biz.id/api/payments/belibayar/webhook` harus 401, bukan 503.
 5. Coba satu pesanan dengan key sandbox dulu sebelum pakai `byr_live_`.
 
 ## 11. Update ke versi terbaru
@@ -247,8 +247,12 @@ Backup manual:
 
 ```bash
 bash scripts/backup-db.sh
-# → backups/droolbites-20261101-0230.sql.gz  (14 file terbaru disimpan, yang lebih lama dihapus)
+# → backups/droolbites-20261101-0230.sql.gz  (database)
+# → backups/uploads-20261101-0230.tar.gz      (foto produk hasil upload, dari volume `uploads`)
+# Masing-masing 14 file terbaru disimpan, yang lebih lama dihapus.
 ```
+
+Foto upload dibaca lewat container `app` yang sedang jalan. Kalau container itu mati, backup database tetap jadi dan skrip hanya memberi peringatan.
 
 Backup otomatis tiap hari jam 02:30: `crontab -e` (sebagai user yang bisa menjalankan `docker` tanpa sudo), tambahkan baris ini:
 
@@ -259,16 +263,8 @@ Backup otomatis tiap hari jam 02:30: `crontab -e` (sebagai user yang bisa menjal
 Folder `backups/` ada di VPS yang sama, jadi sesekali salin ke laptop (dari laptop):
 
 ```bash
-scp <user>@140.245.102.131:/opt/droolbites/backups/droolbites-*.sql.gz .
+scp <user>@140.245.102.131:'/opt/droolbites/backups/{droolbites-*.sql.gz,uploads-*.tar.gz}' .
 ```
-
-Foto produk hasil upload ada di volume `uploads`. Kalau mau ikut dibackup:
-
-```bash
-docker run --rm -v droolbites_uploads:/u -v "$PWD/backups":/b alpine tar czf /b/uploads-$(date +%Y%m%d).tar.gz -C /u .
-```
-
-(Nama volume `droolbites_uploads` berasal dari nama folder repo; cek dengan `docker volume ls`.)
 
 ## 14. Restore dari backup
 
@@ -280,6 +276,12 @@ docker compose -f compose.yml -f compose.prod.yml stop app
 gunzip -c backups/droolbites-20261101-0230.sql.gz | \
   docker compose -f compose.yml -f compose.prod.yml exec -T db sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql -uroot'
 docker compose -f compose.yml -f compose.prod.yml start app
+```
+
+Foto upload dari backup yang sama (setelah `start app`, file yang namanya sama ditimpa):
+
+```bash
+docker compose -f compose.yml -f compose.prod.yml exec -T app tar xzf - -C /app/public/uploads < backups/uploads-20261101-0230.tar.gz
 ```
 
 ## 15. Troubleshooting

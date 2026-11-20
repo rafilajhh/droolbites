@@ -19,7 +19,7 @@ import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getMessages(faqMessages);
-  return { title: t.metaTitle, description: t.metaDescription };
+  return { title: t.metaTitle, description: t.metaDescription, alternates: { canonical: "/faq" } };
 }
 
 const contactLink = "flex w-fit items-center gap-2.5 text-[15px] leading-[23px] font-semibold text-foreground-inverse hover:underline";
@@ -168,7 +168,7 @@ export default async function FaqPage() {
                     fill
                     quality={100}
                     sizes="(min-width: 768px) 33vw, 96px"
-                    className="object-cover transition-[scale] duration-500 ease-out group-hover/pick:scale-[1.06] motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100"
+                    className="object-cover transition-[scale] duration-300 ease-out group-hover/pick:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover/pick:scale-100"
                   />
                 </div>
                 <figure className="hidden flex-1 flex-col gap-3 md:flex">
@@ -179,7 +179,7 @@ export default async function FaqPage() {
                     {review.name} · {review.area}
                   </figcaption>
                 </figure>
-                <div className="flex min-w-0 flex-1 items-center justify-between gap-3 md:items-baseline md:gap-4 md:pt-4 md:pb-2 md:shadow-[inset_0_1px_0_var(--border-divider)]">
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3 md:flex-none md:items-baseline md:gap-4 md:pt-4 md:pb-2 md:shadow-[inset_0_1px_0_var(--border-divider)]">
                   <div className="flex min-w-0 flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-4 md:flex-1">
                     <h3 className="font-display text-[20px] leading-[24px] font-bold text-foreground md:text-[22px] md:leading-[25px]">
                       <Link

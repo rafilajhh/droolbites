@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDateTime, formatDistance, formatRupiah } from "@/lib/format";
 import { paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { orderAddress, payable } from "@/lib/orders";
+import { orderAddress, otherRecipient, payable } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
@@ -64,6 +64,8 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
   const payment = order.payments.find((p) => p.status === "paid") ?? order.payments[0];
   const pay = payable(order, payment);
   const isDelivery = order.fulfilmentMethod === "delivery";
+  // Only when someone other than the billed customer receives it (Bill to already has their name and phone).
+  const recipient = isDelivery ? otherRecipient(order) : null;
   // The payment's own time only: the order's updatedAt moves with every status change.
   const paidAt =
     order.paymentStatus !== "paid" ? t.notPaid : payment?.paidAt ? `${formatDateTime(payment.paidAt, locale)} ${t.wib}` : "—";
@@ -147,10 +149,8 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
               <p className={cn("text-sm leading-[21px] break-words", muted)}>
                 {isDelivery ? orderAddress(order) : t.pickupAt(settings.address)}
               </p>
-              {isDelivery && order.recipientName ? (
-                <p className={cn("text-sm leading-[21px] break-words", muted)}>
-                  {t.recipient(order.recipientName, order.recipientPhone ?? order.phone)}
-                </p>
+              {recipient ? (
+                <p className={cn("text-sm leading-[21px] break-words", muted)}>{t.recipient(recipient.name, recipient.phone)}</p>
               ) : null}
               {isDelivery && order.deliveryNote ? (
                 <p className={cn("text-sm leading-[21px] break-words", muted)}>{t.note(order.deliveryNote)}</p>
@@ -201,7 +201,7 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
               </tbody>
             </table>
 
-            <dl className="ml-auto grid w-full grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 text-sm leading-[21px] break-inside-avoid sm:w-80">
+            <dl className="ml-auto grid w-full grid-cols-[1fr_auto] gap-y-1.5 text-sm leading-[21px] break-inside-avoid sm:w-80 [&>dd]:pl-6">
               <dt className={muted}>{t.subtotal}</dt>
               <dd className="text-right tabular-nums">{formatRupiah(order.subtotal)}</dd>
               {isDelivery || order.deliveryFee > 0 ? (

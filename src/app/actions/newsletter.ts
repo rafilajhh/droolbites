@@ -8,7 +8,8 @@ import { readUnsubscribeToken, sendNewsletterWelcomeEmail } from "@/lib/emails";
 import { deliverLater } from "@/lib/mail";
 import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
 
-export type NewsletterState = { status: "idle" | "ok" | "invalid" };
+/** An invalid address comes back with the state, so the form can show it again for the fix. */
+export type NewsletterState = { status: "idle" | "ok" } | { status: "invalid"; email: string };
 
 /** Sign-ups per 15 minutes (see allowRequest). */
 const MAX_PER_EMAIL = 3;
@@ -20,8 +21,9 @@ const MAX_PER_IP = 10;
  * email, so the form reveals nothing and can't be used to mail strangers.
  */
 export async function subscribeNewsletter(_prev: NewsletterState, formData: FormData): Promise<NewsletterState> {
-  const parsed = z.email().max(150).safeParse(String(formData.get("email") ?? "").trim().toLowerCase());
-  if (!parsed.success) return { status: "invalid" };
+  const raw = String(formData.get("email") ?? "").trim();
+  const parsed = z.email().max(150).safeParse(raw.toLowerCase());
+  if (!parsed.success) return { status: "invalid", email: raw.slice(0, 150) };
   const email = parsed.data;
 
   const ip = await clientIp();

@@ -7,6 +7,7 @@ import { categoryName } from "@/content/products";
 import { useLocale, useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
+import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { paymentStatusInfo } from "@/lib/order-status";
 import { Dropdown, FilterFace, toolbarFieldClasses, type DropdownOption } from "./dropdown";
@@ -99,7 +100,7 @@ export function OrdersToolbar({
         href={buildUrl("/admin/orders/export", { q, status, needs: needsAction ? "action" : undefined })}
         download
         aria-label={tx.label}
-        className={cn(toolbarFieldClasses, "min-h-11 text-sm leading-[21px] font-semibold text-foreground")}
+        className={buttonClasses("secondary", "min-h-11 px-5 py-3")}
       >
         <Download className="size-4" aria-hidden />
         {tx.button}

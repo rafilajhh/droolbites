@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentStatus } from "@/generated/prisma/enums";
 import { requireAdmin } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { containsText, db } from "@/lib/db";
 import { roundedKm } from "@/lib/format";
 import { fulfilmentBadgeInfo, needsActionWhere, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
 import { rangeWhere, resolveReportRange } from "@/lib/reports";
@@ -31,12 +31,24 @@ function jakarta(date: Date) {
   return { stamp: `${parts.year}-${parts.month}-${parts.day} ${hour}:${parts.minute}`, day: `${parts.year}${parts.month}${parts.day}` };
 }
 
+/** A value a spreadsheet must keep as typed (a phone number: its leading 0 or +62 and its spaces). */
+type Text = { text: string };
+const PHONE_CHARS = /^\+?[0-9][0-9 ()-]*$/;
+
 /**
  * One CSV cell. Text that a spreadsheet would read as a formula (= + - @, or a
  * leading tab/CR) gets a ' in front; quotes, separators and line breaks are quoted.
+ * A phone number made only of phone characters is written as ="…", which Excel,
+ * LibreOffice and Google Sheets all show as that exact text: no lost leading 0, no
+ * +62 read as a number, no ' on show. Nothing else can be in it, so it can't
+ * become a formula of its own.
  */
-function cell(value: string | number, sep: string) {
+function cell(value: string | number | Text, sep: string) {
   if (typeof value === "number") return String(value);
+  if (typeof value === "object") {
+    if (PHONE_CHARS.test(value.text)) return `"=""${value.text}"""`;
+    value = value.text;
+  }
   const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
   return safe.includes(sep) || /["\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 }
@@ -67,7 +79,7 @@ export async function GET(request: NextRequest) {
     ...(dated ? rangeWhere(dated) : {}),
     ...(needsAction ? needsActionWhere : status ? { paymentStatus: status } : {}),
     ...(q
-      ? { OR: [{ orderNumber: { contains: q } }, { customerName: { contains: q } }, { email: { contains: q } }] }
+      ? { OR: [{ orderNumber: containsText(q) }, { customerName: containsText(q) }, { email: containsText(q) }] }
       : {}),
   };
 
@@ -122,7 +134,7 @@ export async function GET(request: NextRequest) {
       jakarta(o.createdAt).stamp,
       o.customerName,
       o.email,
-      o.phone,
+      { text: o.phone },
       o.fulfilmentMethod === "delivery" ? t.delivery : t.pickup,
       payment ? paymentMethodInfo[payment.method].name : "",
       paymentStatusInfo[o.paymentStatus][locale],

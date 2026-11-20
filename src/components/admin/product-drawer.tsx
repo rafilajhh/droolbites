@@ -102,18 +102,33 @@ export function ProductDrawer({
   const slug = categories.find((c) => c.id === categoryId)?.slug;
   const image = preview ?? product?.imageUrl ?? null;
 
+  // The latest picked file: a slower decode of an earlier pick must not win.
+  const photoPick = useRef(0);
   const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.currentTarget;
+    const file = input.files?.[0];
+    const pick = ++photoPick.current;
     setPhotoError(null);
     if (!file) return;
-    if (!UPLOAD_TYPES[file.type]) setPhotoError("photoType");
-    else if (file.size > MAX_UPLOAD_BYTES) setPhotoError("photoSize");
-    if (!UPLOAD_TYPES[file.type] || file.size > MAX_UPLOAD_BYTES) {
-      e.target.value = "";
+    const reject = (error: ProductErrorKey) => {
+      input.value = "";
       setPreview(null);
-      return;
-    }
-    setPreview(URL.createObjectURL(file));
+      setPhotoError(error);
+    };
+    if (!UPLOAD_TYPES[file.type]) return reject("photoType");
+    if (file.size > MAX_UPLOAD_BYTES) return reject("photoSize");
+    // The type comes from the file name, so a renamed text file passes it: only a file the browser can
+    // actually decode becomes the preview (the server checks the bytes again on save).
+    const url = URL.createObjectURL(file);
+    const img = new window.Image();
+    img.src = url;
+    img.decode().then(
+      () => (pick === photoPick.current ? setPreview(url) : URL.revokeObjectURL(url)),
+      () => {
+        URL.revokeObjectURL(url);
+        if (pick === photoPick.current) reject("photoType");
+      },
+    );
   };
 
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -135,14 +150,14 @@ export function ProductDrawer({
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${id}-title`}
-        className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col bg-background"
+        className="absolute inset-y-0 right-0 flex w-full max-w-[560px] flex-col bg-background [@media(max-height:500px)]:overflow-y-auto"
       >
         <form
           ref={formRef}
           onSubmit={onSubmit}
           onChange={markDirty}
           noValidate
-          className="flex min-h-0 flex-1 flex-col"
+          className="flex min-h-0 flex-1 flex-col [@media(max-height:500px)]:flex-none"
           encType="multipart/form-data"
         >
           {product ? <input type="hidden" name="id" value={product.id} /> : null}
@@ -166,7 +181,9 @@ export function ProductDrawer({
             </button>
           </div>
 
-          <div className="flex min-h-0 w-full flex-1 flex-col gap-5 overflow-y-auto px-5 py-6 sm:px-7">
+          {/* On a short screen (a phone on its side) the whole panel scrolls, header included, and the
+              Save bar sticks to its bottom, so the fields get the height instead of a 130px window. */}
+          <div className="flex min-h-0 w-full flex-1 flex-col gap-5 overflow-y-auto px-5 py-6 sm:px-7 [@media(max-height:500px)]:flex-none [@media(max-height:500px)]:overflow-visible">
             <div className="flex w-full items-center gap-4">
               <div
                 className={cn(
@@ -350,7 +367,7 @@ export function ProductDrawer({
                     </div>
                     {rowErrId ? (
                       <p id={rowErrId} role="alert" className="text-[13px] leading-5 text-error">
-                        {err(rowErr?.name) ?? err(rowErr?.price) ?? err(rowErr?.stock)}
+                        {[rowErr?.name, rowErr?.price, rowErr?.stock].map(err).filter(Boolean).join(" ")}
                       </p>
                     ) : null}
                   </div>
@@ -401,7 +418,7 @@ export function ProductDrawer({
             ) : null}
           </div>
 
-          <div className="flex w-full gap-3 px-5 py-5 shadow-[inset_0_1px_0_var(--border-subtle)] sm:px-7">
+          <div className="flex w-full gap-3 px-5 py-5 shadow-[inset_0_1px_0_var(--border-subtle)] sm:px-7 [@media(max-height:500px)]:sticky [@media(max-height:500px)]:bottom-0 [@media(max-height:500px)]:z-10 [@media(max-height:500px)]:bg-background [@media(max-height:500px)]:py-3">
             {product ? (
               <button
                 type="button"
@@ -420,11 +437,12 @@ export function ProductDrawer({
                 e.preventDefault();
                 setDiscarding(true);
               }}
-              className={buttonClasses("secondary", "min-w-0 flex-1 px-4")}
+              className={buttonClasses("secondary", "min-w-0 flex-1 px-4 max-sm:flex-none max-sm:px-5")}
             >
               {t.cancel}
             </Link>
-            <Button type="submit" disabled={pending} className="min-w-0 flex-1 px-4">
+            {/* Below sm Cancel takes only its width, so "SIMPAN PRODUK" stays on one line beside it. */}
+            <Button type="submit" disabled={pending} className="min-w-0 flex-1 px-4 whitespace-nowrap">
               {pending ? t.saving : product ? t.save : t.create}
             </Button>
           </div>

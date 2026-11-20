@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, IBM_Plex_Mono, Manrope } from "next/font/google";
 import { LocaleProvider } from "@/i18n/client";
-import { getLocale } from "@/i18n/server";
+import { getLocale, getMessages } from "@/i18n/server";
+import { commonMessages } from "@/i18n/messages/common";
+import { siteOpenGraph } from "@/lib/og";
 import "./globals.css";
 
 // Same families and weights the pen file uses (see design/html exports).
@@ -29,15 +31,20 @@ const plexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
-  title: {
-    default: "Droolbites — Soft cookies, fudgy brownies & tiramisu in Surabaya",
-    template: "%s · Droolbites",
-  },
-  description:
-    "Thick, soft-centered cookies, fudgy brownies and creamy tiramisu — made in small batches in Surabaya for delivery or store pickup.",
-};
+/**
+ * Site-wide defaults in the visitor's language, with the shared link preview (src/lib/og.ts; a product
+ * page swaps in its own photo). og:title is left out so previews use each page's own <title>.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const [t, locale] = await Promise.all([getMessages(commonMessages), getLocale()]);
+  return {
+    metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+    title: { default: t.site.title, template: "%s · Droolbites" },
+    description: t.site.description,
+    openGraph: siteOpenGraph(locale),
+    twitter: { card: "summary_large_image" },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#FBF6EC",

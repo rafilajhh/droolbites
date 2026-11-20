@@ -5,8 +5,8 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
 import { OrderSteps } from "@/components/ui/order-steps";
 import { cn } from "@/lib/cn";
-import { formatDate, formatDateTime, formatRupiah } from "@/lib/format";
-import { getAccountOrders, getOrderCounts, itemNames, type AccountOrder } from "./account-orders";
+import { formatDate, formatDateTime } from "@/lib/format";
+import { getAccountOrders, getOrderCounts, type AccountOrder } from "./account-orders";
 
 type StepState = "done" | "current" | "todo";
 
@@ -42,7 +42,6 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
   const steps = labels.map((label, i) => ({ label, state: (i < at ? "done" : i === at ? "current" : "todo") as StepState }));
 
   const now = statusLine(order, a, locale);
-  const names = itemNames(order);
   const href = `/orders/${order.orderNumber}`;
 
   return (
@@ -73,14 +72,11 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
         </div>
       </div>
 
-      <OrderSteps steps={steps} label={a.progress} doneLabel={a.stepDone} currentLabel={a.stepCurrent} />
+      <OrderSteps steps={steps} label={a.progress} doneLabel={a.stepDone} currentLabel={a.stepCurrent} stepOf={a.stepOf} />
 
-      <div className="flex w-full flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="truncate text-[15px] leading-[23px] text-foreground">{names.join(", ")}</p>
-          <p className="font-display text-xl leading-6 font-bold text-foreground">{formatRupiah(order.total)}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+      {/* The items and total are in the history row below; here only the action that moves the order on. */}
+      <div className="flex w-full justify-end pt-1">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 max-sm:w-full">
           {unpaid ? (
             <>
               <ArrowLink href={href} className="max-sm:order-last">

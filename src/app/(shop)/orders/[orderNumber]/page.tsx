@@ -24,12 +24,12 @@ import {
   paymentStatusInfo,
 } from "@/lib/order-status";
 import { cancelledByStore, getOrderForViewer, itemCount, orderAddress, orderDeadline, payable, withOrderToken } from "@/lib/orders";
+import { orderPageMetadata } from "@/lib/order-metadata";
 import { getStoreSettings } from "@/lib/settings";
 
-export async function generateMetadata({ params }: PageProps<"/orders/[orderNumber]">): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps<"/orders/[orderNumber]">): Promise<Metadata> {
   const { orderNumber } = await params;
-  const t = await getMessages(ordersMessages);
-  return { title: t.title(orderNumber), robots: { index: false } };
+  return orderPageMetadata(orderNumber, (await searchParams).t, async () => (await getMessages(ordersMessages)).title(orderNumber));
 }
 
 /**
@@ -162,7 +162,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           <ol className="flex flex-wrap items-center gap-2 text-sm leading-[21px] font-medium text-muted-foreground">
             {crumbs.map((c) => (
               <li key={c.href} className="flex items-center gap-2">
-                <Link href={c.href} className="hover:text-foreground">
+                <Link href={c.href} className="relative after:absolute after:-inset-x-1.5 after:-inset-y-2.5 after:content-[''] hover:text-foreground">
                   {c.label}
                 </Link>
                 <ChevronRight className="size-3.5" aria-hidden />
@@ -190,12 +190,12 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           view from lg. Below lg the summary comes before the actions, so the items are read before "what next". */}
       <div className="grid w-full grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:grid-rows-[auto_1fr] lg:gap-x-12 lg:gap-y-8 xl:grid-cols-[minmax(0,1fr)_440px]">
         <div className="flex min-w-0 flex-col gap-8 lg:col-start-1 lg:row-start-1">
-          <section aria-labelledby="order-progress" className="flex w-full flex-col gap-5 rounded-m bg-card p-5 sm:p-7">
+          <section aria-labelledby="order-progress" className="flex w-full flex-col gap-5">
             <h2 id="order-progress" className="sr-only">
               {t.progress}
             </h2>
             {closed ? null : (
-              <OrderSteps steps={steps} doneLabel={t.stepDone} currentLabel={t.stepCurrent} />
+              <OrderSteps steps={steps} doneLabel={t.stepDone} currentLabel={t.stepCurrent} stepOf={t.stepOf} />
             )}
             <div
               className={cn(
@@ -239,12 +239,13 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           fee={order.deliveryFee}
           serviceFee={pay.serviceFee}
           total={pay.amount}
-          className="self-start rounded-none bg-transparent p-0 sm:p-0 lg:sticky lg:top-[88px] lg:col-start-2 lg:row-span-2 lg:row-start-1"
+          className="self-start lg:sticky lg:top-[88px] lg:col-start-2 lg:row-span-2 lg:row-start-1"
         />
 
         {/* Order again only once the order is done (as in the order history); until then the way on is the history. */}
         <div className="flex w-full min-w-0 flex-col gap-4 self-start pt-8 shadow-[inset_0_1px_0_var(--border-subtle)] lg:col-start-1 lg:row-start-2">
-          <div className="grid w-full items-start gap-4 sm:grid-cols-2">
+          {/* Two actions share the row in halves; a lone one keeps its own width. */}
+          <div className={cn("grid w-full items-start gap-4", completed ? "sm:grid-cols-2" : "sm:flex")}>
             {completed ? (
               <ReorderButton
                 orderNumber={orderNumber}

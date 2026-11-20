@@ -93,7 +93,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
 
       {/* One card, one section per topic: the heading and its note on the left, the fields on the right (lg). */}
       <Card className="flex w-full min-w-0 flex-col">
-        <SettingsSection id="settings-info" title={t.info}>
+        <SettingsSection id="settings-info" title={t.info} help={t.infoHelp}>
           <div className="flex w-full flex-col gap-4 sm:flex-row">
             <Field label={t.storeName} htmlFor="settings-storeName" error={err("storeName")} className="flex-1">
               <TextInput
@@ -173,7 +173,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           </Field>
         </SettingsSection>
 
-        <SettingsSection id="settings-fulfilment" title={t.fulfilment}>
+        <SettingsSection id="settings-fulfilment" title={t.fulfilment} help={t.fulfilmentHelp}>
           <div className="flex w-full flex-col">
             <ToggleRow
               id="settings-pickup"
@@ -259,7 +259,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
 
         <DeliverySection rates={rates} setRates={setRates} coords={coords} setCoords={setCoords} err={err} invalid={invalid} />
 
-        <SettingsSection id="settings-payments" title={t.payments}>
+        <SettingsSection id="settings-payments" title={t.payments} help={t.paymentsHelp}>
           <div className="flex w-full flex-col">
             <PaymentToggle id="settings-va" name="vaEnabled" title={t.va} sub={t.vaSub} defaultChecked={values.vaEnabled} />
             <PaymentToggle
