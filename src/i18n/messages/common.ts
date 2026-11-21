@@ -13,6 +13,17 @@ export const commonMessages = defineMessages({
       label: "Store news",
       hoursLabel: "Hours:",
       hours: (hours: string) => `${hours} WIB`,
+      /** Outside ordering hours (WIB), in the bar and by the cart drawer's CHECKOUT: when orders open again. */
+      closed: (reopens: { inDays: number; day: number; time: string } | null) =>
+        reopens
+          ? `Closed now · orders open ${
+              reopens.inDays === 0
+                ? "today"
+                : reopens.inDays === 1
+                  ? "tomorrow"
+                  : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][reopens.day]
+            } at ${reopens.time}`
+          : "Closed now",
     },
     header: {
       openMenu: "Open menu",
@@ -62,6 +73,8 @@ export const commonMessages = defineMessages({
       short: (n: number) => `Only ${n} left. Lower the quantity to check out.`,
       last: (n: number) => (n === 1 ? "That's the last one." : `That's all ${n} we have left.`),
       fixFirst: "Some items ran low. Fix the marked lines before you check out.",
+      /** Outside ordering hours, under the subtotal while CHECKOUT is off: the announce line, then this. */
+      closedNote: "You can check out once we open.",
     },
     footer: {
       tagline: "Soft cookies, fudgy brownies and creamy tiramisu from Sememi, Surabaya.",
@@ -79,6 +92,7 @@ export const commonMessages = defineMessages({
       shipping: "Shipping policy",
       returns: "Returns & refunds",
       privacy: "Privacy policy",
+      findOrder: "Find an order",
       account: "My account",
       newsTitle: "Be first to try new flavors.",
       newsSub: "Monthly drops, seasonal specials and no spam.",
@@ -99,6 +113,16 @@ export const commonMessages = defineMessages({
       label: "Info toko",
       hoursLabel: "Jam buka:",
       hours: (hours: string) => `${hours} WIB`,
+      closed: (reopens: { inDays: number; day: number; time: string } | null) =>
+        reopens
+          ? `Lagi tutup · pemesanan buka ${
+              reopens.inDays === 0
+                ? "hari ini"
+                : reopens.inDays === 1
+                  ? "besok"
+                  : `hari ${["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"][reopens.day]}`
+            } pukul ${reopens.time}`
+          : "Lagi tutup",
     },
     header: {
       openMenu: "Buka menu",
@@ -146,6 +170,7 @@ export const commonMessages = defineMessages({
       short: (n: number) => `Sisa ${n}. Kurangi jumlahnya untuk checkout.`,
       last: (n: number) => (n === 1 ? "Ini yang terakhir." : `Sisa ${n}, semuanya sudah di keranjangmu.`),
       fixFirst: "Ada item yang stoknya menipis. Perbaiki yang ditandai dulu sebelum checkout.",
+      closedNote: "Checkout bisa dilakukan begitu kami buka.",
     },
     footer: {
       tagline: "Soft cookies, brownies fudgy dan tiramisu yang creamy dari Sememi, Surabaya.",
@@ -163,6 +188,7 @@ export const commonMessages = defineMessages({
       shipping: "Kebijakan pengiriman",
       returns: "Retur & refund",
       privacy: "Kebijakan privasi",
+      findOrder: "Cari pesanan",
       account: "Akun saya",
       newsTitle: "Jadi yang pertama coba rasa baru.",
       newsSub: "Menu baru tiap bulan, edisi musiman, tanpa spam.",

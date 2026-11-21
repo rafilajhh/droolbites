@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
 import { CANCEL_REASONS } from "@/lib/order-status";
 import { ConfirmDialog } from "./confirm-dialog";
 
-type Reason = (typeof CANCEL_REASONS)[number] | "other";
+export type CancelReason = (typeof CANCEL_REASONS)[number] | "other";
 
 /**
  * A paid order the store hasn't confirmed yet: accept it (it goes to Baking) or decline it with a
@@ -30,7 +30,8 @@ export function OrderDecision({
   const d = t.decision;
   const [state, action, pending] = useActionState<DecisionState, FormData>(decideOrder, { status: "idle" });
   const [declining, setDeclining] = useState(false);
-  const [reason, setReason] = useState<Reason>("sold_out");
+  // Nothing preselected: the customer reads this reason, so the store picks it.
+  const [reason, setReason] = useState<CancelReason | null>(null);
   const [other, setOther] = useState("");
   const [missing, setMissing] = useState(false);
 
@@ -38,14 +39,14 @@ export function OrderDecision({
     const data = new FormData();
     data.set("orderNumber", orderNumber);
     data.set("decision", decision);
-    if (decision === "decline") {
+    if (decision === "decline" && reason) {
       data.set("reason", reason);
       data.set("other", other);
     }
     startTransition(() => action(data));
   };
   const confirmDecline = () => {
-    if (reason === "other" && other.trim().length < 3) return setMissing(true);
+    if (!reason || (reason === "other" && other.trim().length < 3)) return setMissing(true);
     setDeclining(false);
     send("decline");
   };
@@ -85,54 +86,84 @@ export function OrderDecision({
         body={
           <div className="flex flex-col gap-4 text-left">
             <p>{paidAmount === null ? t.demo.declineBody : d.declineBody(paidAmount)}</p>
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-1 text-sm leading-[18px] font-semibold text-foreground">{d.reasonLabel}</legend>
-              {[...CANCEL_REASONS, "other" as const].map((key) => (
-                <label
-                  key={key}
-                  className={cn(
-                    "flex min-h-11 cursor-pointer items-center gap-3 rounded-sm px-3.5 py-2.5 text-[15px] leading-[21px] text-foreground transition-colors",
-                    reason === key ? "bg-mint inset-ring-[1.5px] inset-ring-primary" : "bg-white inset-ring-[1.25px] inset-ring-border-subtle hover:bg-card",
-                  )}
-                >
-                  <input
-                    type="radio"
-                    name="decline-reason"
-                    value={key}
-                    checked={reason === key}
-                    onChange={() => {
-                      setReason(key);
-                      setMissing(false);
-                    }}
-                    className="size-4 accent-(--primary)"
-                  />
-                  {key === "other" ? d.other : d.reasons[key]}
-                </label>
-              ))}
-              {reason === "other" ? (
-                <input
-                  aria-label={d.other}
-                  value={other}
-                  onChange={(e) => {
-                    setOther(e.target.value.slice(0, 200));
-                    setMissing(false);
-                  }}
-                  placeholder={d.otherPlaceholder}
-                  maxLength={200}
-                  autoFocus
-                  aria-invalid={missing ? true : undefined}
-                  className={cn(inputClasses, "mt-1")}
-                />
-              ) : null}
-            </fieldset>
+            <CancelReasonFields
+              reason={reason}
+              other={other}
+              missing={missing}
+              onReason={(key) => {
+                setReason(key);
+                setMissing(false);
+              }}
+              onOther={(text) => {
+                setOther(text);
+                setMissing(false);
+              }}
+            />
           </div>
         }
-        error={missing ? d.otherMissing : undefined}
+        error={missing ? (reason ? d.otherMissing : d.reasonMissing) : undefined}
         cancelLabel={d.back}
         confirmLabel={pending ? d.declining : d.confirmDecline}
         onConfirm={confirmDecline}
         pending={pending}
       />
     </div>
+  );
+}
+
+/**
+ * The reason the customer sees when the store declines or cancels a paid order: the preset reasons as
+ * radio rows plus "Another reason" with a short text field. Used in the decline dialog and in the
+ * status form's cancel dialog.
+ */
+export function CancelReasonFields({
+  reason,
+  other,
+  missing,
+  onReason,
+  onOther,
+}: {
+  reason: CancelReason | null;
+  other: string;
+  missing: boolean;
+  onReason: (reason: CancelReason) => void;
+  onOther: (text: string) => void;
+}) {
+  const d = useMessages(adminMessages).order.decision;
+  return (
+    <fieldset className="flex flex-col gap-2" aria-invalid={missing && !reason ? true : undefined}>
+      <legend className="mb-1 text-sm leading-[18px] font-semibold text-foreground">{d.reasonLabel}</legend>
+      {[...CANCEL_REASONS, "other" as const].map((key) => (
+        <label
+          key={key}
+          className={cn(
+            "flex min-h-11 cursor-pointer items-center gap-3 rounded-sm px-3.5 py-2.5 text-[15px] leading-[21px] text-foreground transition-colors",
+            reason === key ? "bg-mint inset-ring-[1.5px] inset-ring-primary" : "bg-white inset-ring-[1.25px] inset-ring-border-subtle hover:bg-card",
+          )}
+        >
+          <input
+            type="radio"
+            name="cancel-reason"
+            value={key}
+            checked={reason === key}
+            onChange={() => onReason(key)}
+            className="size-4 accent-(--primary)"
+          />
+          {key === "other" ? d.other : d.reasons[key]}
+        </label>
+      ))}
+      {reason === "other" ? (
+        <input
+          aria-label={d.other}
+          value={other}
+          onChange={(e) => onOther(e.target.value.slice(0, 200))}
+          placeholder={d.otherPlaceholder}
+          maxLength={200}
+          autoFocus
+          aria-invalid={missing ? true : undefined}
+          className={cn(inputClasses, "mt-1")}
+        />
+      ) : null}
+    </fieldset>
   );
 }

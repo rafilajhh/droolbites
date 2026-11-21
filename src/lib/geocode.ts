@@ -22,6 +22,8 @@ export type Place = {
   /** One line for the result list: "Jalan Raya Darmo, Wonokromo, Surabaya". */
   label: string;
   street: string;
+  /** The road alone ("Jalan Raya Darmo"), without the landmark, house number and area; "" when unnamed. */
+  road: string;
   /** Kecamatan, when OpenStreetMap knows it ("Genteng"); else "". */
   district: string;
   city: string;
@@ -126,7 +128,7 @@ function toPlace(p: NominatimPlace, city: string): Place | null {
   const street = [landmark, road, area].filter(Boolean).join(", ");
   const postal = /^\d{5}$/.test(a.postcode ?? "") ? a.postcode! : "";
   const label = [street, city].filter(Boolean).join(", ") || p.display_name || "";
-  return { lat, lng, label, street: street.slice(0, 180), district: districtOf(a, city), city: city.slice(0, 100), postal };
+  return { lat, lng, label, street: street.slice(0, 180), road: a.road ?? "", district: districtOf(a, city), city: city.slice(0, 100), postal };
 }
 
 /** A result with its city; when the result doesn't say, the city at its point (a coarse reverse lookup). */

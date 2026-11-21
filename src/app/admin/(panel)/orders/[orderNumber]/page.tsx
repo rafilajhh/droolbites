@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CircleAlert, Info, MapPin, Printer, Store, Truck, User } from "lucide-react";
+import { ArrowLeft, CircleAlert, CircleCheck, Info, MapPin, Printer, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
 import { DemoPay } from "@/components/admin/demo-pay";
+import { MarkRefunded } from "@/components/admin/mark-refunded";
 import { OrderDecision } from "@/components/admin/order-decision";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
@@ -15,7 +16,7 @@ import { requireAdmin } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
-import { cancelReasonText, fulfilmentBadgeInfo, notPaidInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
+import { cancelReasonText, fulfilmentBadgeInfo, notPaidInfo, paymentMethodInfo, paymentStatusInfo, refundedInfo } from "@/lib/order-status";
 import { cancelledByCustomer, cancelledByStore, orderAddress, otherRecipient, payable } from "@/lib/orders";
 import { canMarkPaidDemo } from "@/lib/demo-payment";
 import { DEMO_PROVIDER, demoPaymentsEnabled, shownPayment } from "@/lib/payments";
@@ -91,7 +92,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const fs = fulfilmentBadgeInfo(order);
   // Cancelled from the admin before any payment arrived: the payment didn't fail, it was never made.
   const storeCancelledUnpaid = !refund && order.paymentStatus !== "paid" && cancelledByStore(order);
-  const ps = storeCancelledUnpaid ? notPaidInfo : paymentStatusInfo[refund ? "paid" : order.paymentStatus];
+  const ps = order.refundedAt ? refundedInfo : storeCancelledUnpaid ? notPaidInfo : paymentStatusInfo[refund ? "paid" : order.paymentStatus];
   const isDelivery = order.fulfilmentMethod === "delivery";
   const methodLabel = isDelivery ? t.common.delivery : t.common.pickup;
   // Completed and Cancelled are final: the status shows as information, not as a disabled form.
@@ -127,6 +128,23 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const address = orderAddress(order);
   const recipient = isDelivery ? otherRecipient(order) : null;
   const subParts = [o.placed(formatDate(order.createdAt, locale)), methodLabel, payment ? paymentMethodInfo[payment.method].name : null];
+  // What happened when, oldest first; steps without a time (orders from before it was recorded) are left out.
+  const tl = o.timeline;
+  const firstPaid = order.payments.filter((p) => p.status === "paid").at(-1);
+  const expiredUnpaid = order.paymentStatus === "expired" && !cancelledByStore(order);
+  const steps: [string, Date | null | undefined][] = [
+    [tl.placed, order.createdAt],
+    [tl.paid, firstPaid?.paidAt],
+    [tl.accepted, order.acceptedAt],
+    [isDelivery ? tl.out : tl.ready, order.handedOffAt],
+    [tl.completed, order.completedAt],
+    [expiredUnpaid ? tl.expired : tl.cancelled, order.cancelledAt],
+    [tl.refunded, order.refundedAt],
+  ];
+  const timeline = steps
+    .filter((entry): entry is [string, Date] => entry[1] instanceof Date)
+    .toSorted((a, b) => a[1].getTime() - b[1].getTime());
+
   const cancelWhy =
     order.fulfilmentStatus === "cancelled" && order.cancelReason
       ? o.cancelReason(cancelReasonText(order.cancelReason, o.decision.reasons) ?? order.cancelReason)
@@ -188,8 +206,17 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
         </div>
       </div>
 
-      {refund ? (
-        <div role="alert" className="flex w-full items-start gap-4 rounded-m bg-tint-salmon px-6 py-[18px]">
+      {refund && order.refundedAt ? (
+        // Marked refunded: no longer something to do, just what happened.
+        <p className="flex w-full items-start gap-2.5 text-[15px] leading-[23px] text-muted-foreground">
+          <CircleCheck className="mt-0.5 size-[18px] shrink-0 text-success" aria-hidden />
+          <span>
+            {o.refund.done(formatRupiah(refundAmount), formatDateTime(order.refundedAt, locale))}
+            {order.refundNote ? <span className="text-foreground"> {order.refundNote}</span> : null}
+          </span>
+        </p>
+      ) : refund ? (
+        <div role="alert" className="flex w-full flex-wrap items-start gap-4 rounded-m bg-tint-salmon px-6 py-[18px]">
           <CircleAlert className="mt-0.5 size-6 shrink-0 text-error" aria-hidden />
           <div className="flex min-w-0 flex-1 flex-col gap-1">
             <p className="text-base leading-6 font-bold text-foreground">{paidLate ? o.refundTitle : o.refundCancelledTitle}</p>
@@ -200,6 +227,9 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                 formatDateTime(refund.paidAt ?? refund.createdAt, locale),
               )}
             </p>
+          </div>
+          <div className="w-full pl-10 sm:w-auto sm:pl-0">
+            <MarkRefunded orderNumber={order.orderNumber} amount={formatRupiah(refundAmount)} />
           </div>
         </div>
       ) : null}
@@ -335,6 +365,19 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               </div>
             </dl>
           </section>
+          <section aria-labelledby="order-timeline-title" className={sectionClasses}>
+            <SectionTitle id="order-timeline-title">{tl.title}</SectionTitle>
+            <ol className="flex w-full flex-col">
+              {timeline.map(([label, at]) => (
+                <li key={label} className={rowClasses}>
+                  <span className={dtClasses}>{label}</span>
+                  <time dateTime={at.toISOString()} className="tabular-nums">
+                    {formatDateTime(at, locale)} {t.common.wib}
+                  </time>
+                </li>
+              ))}
+            </ol>
+          </section>
         </Card>
 
         {/* From md to xl the side card spans the page with status and payment side by side. */}
@@ -369,6 +412,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                     : undefined
                 }
                 paidAmount={order.paymentStatus === "paid" && !demoPaid ? formatRupiah(pay.amount) : undefined}
+                paid={order.paymentStatus === "paid"}
               />
             )}
             {/* Always in this slot while demo mode is on, so its result line outlives the refresh into the paid order. */}

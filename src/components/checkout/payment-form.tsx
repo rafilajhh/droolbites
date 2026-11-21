@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { FlaskConical } from "lucide-react";
-import { placeOrder, type PlaceOrderState } from "@/app/actions/checkout";
+import { placeOrder, type PlaceOrderState, type ShortItem } from "@/app/actions/checkout";
 import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { useMessages } from "@/i18n/client";
@@ -11,9 +11,12 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import { paymentMethodInfo } from "@/lib/order-status";
+import type { StoreClosed } from "@/lib/store-hours";
 import { CheckoutColumns, CheckoutHeading, CheckoutSection, ReviewRows } from "./checkout-section";
+import { ClosedNotice } from "./closed-notice";
+import { StockNotice } from "./stock-notice";
 import { OrderSummary, type SummaryLine } from "./order-summary";
-import { PaymentMethodGroups, type BelowMinimum, type PaymentLogos } from "./payment-methods";
+import { PaymentMethodGroups, type BelowMinimum, type PaymentFees, type PaymentLogos } from "./payment-methods";
 import { SummaryToggle } from "./summary-toggle";
 
 const initialState: PlaceOrderState = { attempt: 0 };
@@ -26,10 +29,23 @@ export function PaymentForm({
   belowMinimum,
   defaultMethod,
   feeMayApply,
+  fees,
+  storeClosed,
+  short,
   demo,
   summary,
 }: {
-  review: { email: string; fulfilment: "delivery" | "pickup"; address: string; distance: string | null; fee: number };
+  review: {
+    name: string;
+    phone: string;
+    email: string;
+    /** Delivery to someone other than the contact. */
+    recipient: { name: string; phone: string } | null;
+    fulfilment: "delivery" | "pickup";
+    address: string;
+    distance: string | null;
+    fee: number;
+  };
   methods: PaymentMethod[];
   logos: PaymentLogos;
   belowMinimum: BelowMinimum;
@@ -39,6 +55,15 @@ export function PaymentForm({
    * doesn't promise a total, and a line beside it says the exact amount comes before paying.
    */
   feeMayApply: boolean;
+  /**
+   * While a fee may apply: the fee each method adds to this total, when it's known before the charge. The
+   * tiles show it, and PAY and the summary include the chosen method's.
+   */
+  fees: PaymentFees;
+  /** Outside ordering hours: the notice under the heading says when orders open again, and nothing can be placed. */
+  storeClosed: StoreClosed | null;
+  /** Cart lines asking for more than is left: the notice under the heading names them, and nothing can be placed. */
+  short: ShortItem[];
   /** DEMO_PAYMENTS on: a quiet "Skip payment (demo)" under PAY places the order and marks it paid without the gateway. */
   demo: boolean;
   summary: { lines: SummaryLine[]; itemCount: number; subtotal: number; total: number };
@@ -86,6 +111,11 @@ export function PaymentForm({
   ) : null;
   const errorClass = "rounded-sm bg-tint-salmon px-4 py-3 text-sm leading-normal text-foreground outline-hidden";
 
+  // Closed, or the cart asks for more than is left: PAY and the demo skip wait.
+  const closed = storeClosed !== null || short.length > 0;
+  // The chosen method's fee when it's known ahead: PAY and the summary then name the total with it.
+  const methodFee = method ? fees[method] : undefined;
+  const payTotal = summary.total + (methodFee ?? 0);
   const delivery = review.fulfilment === "delivery";
   // A long email wraps after the @, not in the middle of the domain.
   const at = review.email.lastIndexOf("@");
@@ -100,7 +130,15 @@ export function PaymentForm({
       review.email
     );
   const rows = [
-    { label: p.contact, value: email },
+    {
+      label: p.contact,
+      value: (
+        <>
+          {review.name} · {review.phone} · {email}
+        </>
+      ),
+    },
+    ...(delivery && review.recipient ? [{ label: p.recipient, value: `${review.recipient.name} · ${review.recipient.phone}` }] : []),
     { label: delivery ? p.deliverTo : p.pickupAt, value: review.address },
     {
       label: p.fulfilment,
@@ -121,7 +159,7 @@ export function PaymentForm({
         "lg:pb-24",
       )}
       summary={
-        <SummaryToggle id="payment-summary" labels={t.summary} total={formatRupiah(summary.total)}>
+        <SummaryToggle id="payment-summary" labels={t.summary} total={formatRupiah(payTotal)}>
           <OrderSummary
             t={t.summary}
             lines={summary.lines}
@@ -129,7 +167,8 @@ export function PaymentForm({
             subtotal={summary.subtotal}
             fulfilment={review.fulfilment}
             fee={review.fee}
-            total={summary.total}
+            serviceFee={methodFee}
+            total={payTotal}
           />
         </SummaryToggle>
       }
@@ -138,6 +177,8 @@ export function PaymentForm({
         {/* The delivery fee shown here; if the store's rates changed since, the order asks first. */}
         <input type="hidden" name="fee" value={review.fee} />
         <CheckoutHeading title={p.title} sub={p.sub} />
+        {storeClosed ? <ClosedNotice id="payment-closed" t={t.closed} closed={storeClosed} /> : null}
+        {short.length > 0 ? <StockNotice id="payment-stock" t={t.stock} short={short} /> : null}
 
         {/* What the details step saved, with the one way back to it in the heading row. */}
         <CheckoutSection
@@ -158,6 +199,10 @@ export function PaymentForm({
 
         {defaultMethod ? (
           <PaymentMethodGroups
+            // React resets the form once the action returns, putting each radio back to the one it was first
+            // rendered checked. A fresh set per attempt starts out checked at the chosen method, so the reset
+            // keeps it and the radio still agrees with "Paying with".
+            key={state.attempt}
             t={p}
             methods={methods}
             logos={logos}
@@ -165,6 +210,7 @@ export function PaymentForm({
             onSelect={chooseMethod}
             leadMethod={defaultMethod}
             belowMinimum={belowMinimum}
+            fees={fees}
           />
         ) : (
           <p className="pt-8 text-[15px] leading-normal text-muted-foreground shadow-[inset_0_1px_0_var(--border-subtle)]">{p.none}</p>
@@ -196,17 +242,30 @@ export function PaymentForm({
                 type="submit"
                 onClick={() => setSkipping(false)}
                 className="shrink-0 px-5 sm:px-7"
-                disabled={pending || !method}
-                aria-describedby={feeMayApply ? "payment-fee-note" : undefined}
+                disabled={pending || !method || closed}
+                aria-describedby={
+                  [storeClosed && "payment-closed", short.length > 0 && "payment-stock", feeMayApply && "payment-fee-note"].filter(Boolean).join(" ") ||
+                  undefined
+                }
               >
-                {pending && !skipping ? p.placing : feeMayApply ? p.placeOrder : p.pay(formatRupiah(summary.total))}
+                {pending && !skipping
+                  ? p.placing
+                  : feeMayApply && methodFee === undefined
+                    ? p.placeOrder
+                    : p.pay(formatRupiah(payTotal))}
               </Button>
             </div>
             {feeMayApply ? (
               <p id="payment-fee-note" className="text-[13px] leading-5 text-pretty text-muted-foreground lg:max-w-[600px] lg:text-sm lg:leading-[21px]">
-                {/* Below lg the bar is pinned over the page, so it carries the one-line version. */}
-                <span className="lg:hidden">{p.feeNoteShort}</span>
-                <span className="max-lg:hidden">{p.feeNote}</span>
+                {methodFee !== undefined ? (
+                  p.feeIncluded(formatRupiah(methodFee))
+                ) : (
+                  <>
+                    {/* Below lg the bar is pinned over the page, so it carries the one-line version. */}
+                    <span className="lg:hidden">{p.feeNoteShort}</span>
+                    <span className="max-lg:hidden">{p.feeNote}</span>
+                  </>
+                )}
               </p>
             ) : null}
           </div>
@@ -226,7 +285,7 @@ export function PaymentForm({
               name="demo"
               value="1"
               onClick={() => setSkipping(true)}
-              disabled={pending || !method}
+              disabled={pending || !method || closed}
               className="min-h-11 shrink-0 rounded-sm px-4 py-2.5 text-sm leading-[21px] font-bold text-foreground inset-ring-[1.25px] inset-ring-border transition-colors hover:bg-card disabled:opacity-50"
             >
               {pending && skipping ? p.demoSkipping : p.demoSkip}

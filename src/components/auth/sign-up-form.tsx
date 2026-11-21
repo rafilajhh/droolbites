@@ -8,7 +8,7 @@ import { useMessages } from "@/i18n/client";
 import { authMessages } from "@/i18n/messages/auth";
 import { describedBy, FormAlert, PasswordInput, useFocusFirstError } from "./form-bits";
 
-export function SignUpForm({ next }: { next?: string }) {
+export function SignUpForm({ next, email }: { next?: string; email?: string }) {
   const t = useMessages(authMessages);
   const f = t.fields;
   const [state, action, pending] = useActionState<AuthState, FormData>(signUp, {});
@@ -46,7 +46,7 @@ export function SignUpForm({ next }: { next?: string }) {
           required
           maxLength={150}
           placeholder={f.emailPlaceholder}
-          defaultValue={state.values?.email}
+          defaultValue={state.values?.email ?? email}
           aria-invalid={Boolean(err("email")) || undefined}
           aria-describedby={describedBy("email", { error: err("email") })}
         />

@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
         orderNumber: true,
         createdAt: true,
         updatedAt: true,
+        refundedAt: true,
         customerName: true,
         email: true,
         phone: true,

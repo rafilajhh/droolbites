@@ -179,6 +179,17 @@ model Order {
   stockDeducted     Boolean          @default(false) @map("stock_deducted")
   /// Paid when a tracked size had fewer left than ordered: the stock stopped at 0 and the store is warned.
   stockShort        Boolean          @default(false) @map("stock_short")
+  /// Timeline: when the store accepted it, handed it off (ready for pickup / out for delivery),
+  /// completed it, and when it was cancelled (store, customer or payment deadline). Null on orders
+  /// from before these were recorded, or for a step not reached.
+  acceptedAt        DateTime?        @map("accepted_at")
+  handedOffAt       DateTime?        @map("handed_off_at")
+  completedAt       DateTime?        @map("completed_at")
+  cancelledAt       DateTime?        @map("cancelled_at")
+  /// The store marked the money of a cancelled, really paid order as sent back (never for demo payments).
+  refundedAt        DateTime?        @map("refunded_at")
+  /// The store's own note on that refund (e.g. "BCA transfer, ref 1234"); shown to the store only.
+  refundNote        String?          @map("refund_note") @db.VarChar(200)
   createdAt         DateTime         @default(now()) @map("created_at")
   updatedAt         DateTime?        @updatedAt @map("updated_at")
 

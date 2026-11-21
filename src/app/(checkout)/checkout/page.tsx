@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import { DetailsForm, type DetailsValues, type SavedAddress } from "@/components/checkout/details-form";
-import { cartSummaryLines } from "@/components/checkout/summary-lines";
+import { cartShortItems, cartSummaryLines } from "@/components/checkout/summary-lines";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCurrentUser } from "@/lib/auth";
@@ -10,6 +10,7 @@ import { getCart } from "@/lib/cart";
 import { deliveryFeeFor, quotePin, savedPin, withinRange } from "@/lib/delivery";
 import { readCheckoutDetails, shortStoreAddress } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
+import { checkoutClosed } from "@/lib/store-hours";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages(checkoutMessages)).meta.details, robots: { index: false } };
@@ -103,6 +104,8 @@ export default async function CheckoutDetailsPage() {
           saved={saved}
           signInHref={user ? null : "/sign-in?next=/checkout"}
           options={{ delivery: settings.deliveryEnabled, pickup: settings.pickupEnabled }}
+          storeClosed={checkoutClosed(settings)}
+          short={cartShortItems(cart)}
           store={{
             city: settings.city,
             shortAddress: shortStoreAddress(settings.address, settings.city),

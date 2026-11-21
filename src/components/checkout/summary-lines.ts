@@ -1,3 +1,4 @@
+import type { ShortItem } from "@/app/actions/checkout";
 import type { Locale } from "@/i18n/config";
 import type { Cart } from "@/lib/cart";
 import type { FullOrder } from "@/lib/orders";
@@ -12,6 +13,23 @@ export function cartSummaryLines(cart: Cart, locale: Locale): SummaryLine[] {
     lineTotal: line.lineTotal,
     imageUrl: line.imageUrl,
   }));
+}
+
+/**
+ * Cart lines asking for more than is left, named like the stock error PAY returns ("Fudgy Brownies · 15 × 15 cm",
+ * a one-size product alone): both checkout steps warn about them before anything is placed.
+ */
+export function cartShortItems(cart: Cart): ShortItem[] {
+  return cart.lines.flatMap((line) =>
+    line.stock !== null && line.qty > line.stock
+      ? [
+          {
+            name: /^1 (piece|portion)$/.test(line.variantName) ? line.productName : `${line.productName} · ${line.variantName}`,
+            left: Math.max(line.stock, 0),
+          },
+        ]
+      : [],
+  );
 }
 
 export function orderSummaryLines(order: FullOrder, locale: Locale): SummaryLine[] {

@@ -10,8 +10,9 @@ import { menuMessages } from "@/i18n/messages/menu";
 import { productMessages } from "@/i18n/messages/product";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
+import { stockLevel } from "@/lib/stock";
 import type { ShopProduct } from "./shop-product";
-import { SizeSub, StockBadge, useAddError, useSizeChoice } from "./stock";
+import { SizeSub, StockNote, useAddError, useSizeChoice } from "./stock";
 import { useAddToCart } from "./use-add-to-cart";
 
 /**
@@ -83,14 +84,18 @@ export function ProductBuy({
       <div className="flex w-full flex-col gap-3.5">
         <p className="font-mono text-[13px] leading-[20px] font-semibold tracking-[1px] text-primary">{eyebrow}</p>
         <h1 className="type-page font-display text-balance font-bold text-foreground">{product.name}</h1>
-        <p className="flex items-end gap-2.5">
+        <p className="flex flex-wrap items-end gap-x-2.5 gap-y-1.5">
           <span className="font-display text-[28px] leading-[31px] font-bold text-foreground lg:text-[32px] lg:leading-[35px]">
             {formatRupiah(variant.price)}
           </span>
           {unit ? <span className="text-[15px] leading-[23px] text-muted-foreground">{unit}</span> : null}
-          {/* One size running low: the note sits with the price (sold out is the photo's sticker and the
-              button; several sizes show it on each tile). */}
-          {!multi && variant.left ? <StockBadge left={variant.left} className="mb-[3px]" /> : null}
+          {/* The chosen size's stock sits with its price and changes with it (sold out is the photo's sticker
+              and the button). Polite live region: picking another size reads the new count. */}
+          {soldOut ? null : (
+            <span aria-live="polite" className="mb-[3px] inline-flex">
+              <StockNote level={stockLevel(variant.stock)} />
+            </span>
+          )}
         </p>
         {rating ? (
           <a

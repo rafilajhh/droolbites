@@ -32,6 +32,7 @@ export default async function SignInPage({ searchParams }: PageProps<"/sign-in">
       {isGoogleConfigured() ? <GoogleSignIn href={googleHref} label={t.google.continue} or={t.google.or} /> : null}
       <SignInForm next={nextPath} />
       <AuthSwitch text={t.signIn.switchText} linkLabel={t.signIn.switchLink} href={signUpHref} />
+      <AuthSwitch text={t.signIn.guestText} linkLabel={t.signIn.guestLink} href="/orders/find" />
     </AuthShell>
   );
 }

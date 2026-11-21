@@ -3,12 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { ArrowRight, Trash2, X } from "lucide-react";
+import { ArrowRight, Clock, Trash2, X } from "lucide-react";
 import { setCartQty, removeFromCart } from "@/app/actions/cart";
 import { useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { isTrayCategory } from "@/content/products";
-import { buttonClasses } from "@/components/ui/button";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
 import { StockBadge } from "@/components/shop/stock";
@@ -17,6 +17,7 @@ import { photoFrame } from "@/components/ui/snapshot";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import type { Cart } from "@/lib/cart";
+import type { StoreClosed } from "@/lib/store-hours";
 import { useModal, useShopUI } from "./shop-ui";
 
 type Line = Cart["lines"][number];
@@ -28,8 +29,18 @@ type Line = Cart["lines"][number];
 const singleUnit = /^1 (piece|portion)$/;
 
 /** pen: Cart drawer (wSMRO) → Cart Drawer (My6z7), 480px from the right. */
-export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: number }) {
-  const t = useMessages(commonMessages).cart;
+export function CartDrawer({
+  cart,
+  deliveryFee,
+  storeClosed,
+}: {
+  cart: Cart;
+  deliveryFee: number;
+  /** Outside ordering hours: a note says when orders open again and CHECKOUT is off, as on the checkout steps. */
+  storeClosed: StoreClosed | null;
+}) {
+  const messages = useMessages(commonMessages);
+  const t = messages.cart;
   const { panel, open, close } = useShopUI();
   const isOpen = panel === "cart";
 
@@ -228,10 +239,25 @@ export function CartDrawer({ cart, deliveryFee }: { cart: Cart; deliveryFee: num
                 />
                 <p className="text-[13px] leading-5 text-pretty text-muted-foreground">{t.note(formatRupiah(deliveryFee))}</p>
               </div>
-              <Link href="/checkout" onClick={close} className={buttonClasses("primary", "w-full")}>
-                {t.checkout}
-                <ArrowRight className="size-4" aria-hidden />
-              </Link>
+              {storeClosed ? (
+                <>
+                  <p id="cart-closed" className="flex items-start gap-2 text-[13px] leading-5 text-pretty text-foreground">
+                    <Clock className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    <span>
+                      <span className="font-semibold">{messages.announce.closed(storeClosed.reopens)}.</span> {t.closedNote}
+                    </span>
+                  </p>
+                  <Button disabled aria-describedby="cart-closed" className="w-full">
+                    {t.checkout}
+                    <ArrowRight className="size-4" aria-hidden />
+                  </Button>
+                </>
+              ) : (
+                <Link href="/checkout" onClick={close} className={buttonClasses("primary", "w-full")}>
+                  {t.checkout}
+                  <ArrowRight className="size-4" aria-hidden />
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={close}

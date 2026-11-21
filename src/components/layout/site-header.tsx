@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getMenu } from "@/lib/catalog";
 import { getCart } from "@/lib/cart";
 import { getStoreSettings } from "@/lib/settings";
+import { checkoutClosed } from "@/lib/store-hours";
 import { AnnouncementBar } from "./announcement-bar";
 import { HeaderBar } from "./header-bar";
 import { NavMenu } from "./nav-menu";
@@ -26,7 +27,7 @@ export async function SiteHeader() {
       <AnnouncementBar />
       <HeaderBar cartCount={cart.count} accountHref={accountHref} />
       <NavMenu accountHref={accountHref} />
-      <CartDrawer cart={cart} deliveryFee={settings.deliveryFee} />
+      <CartDrawer cart={cart} deliveryFee={settings.deliveryFee} storeClosed={checkoutClosed(settings)} />
       <SearchOverlay categories={toShopCategories(menu, locale)} />
     </>
   );

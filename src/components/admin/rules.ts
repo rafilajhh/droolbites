@@ -5,7 +5,8 @@ import { paymentMethodInfo } from "@/lib/order-status";
  * Which fulfilment statuses an order may move to (the current one first).
  * Orders only move forward; pickup orders use "Ready for pickup", delivery
  * orders use "Out for delivery". Unpaid orders can only be cancelled. A paid order that is still
- * new is accepted or declined with a reason (decideOrder), not moved here.
+ * new is accepted or declined with a reason (decideOrder), not moved here. A paid order in progress
+ * can still be cancelled by the store, with a reason the customer sees (its payment is then owed back).
  */
 export function fulfilmentOptions(order: {
   fulfilmentMethod: FulfilmentMethod;
@@ -20,9 +21,9 @@ export function fulfilmentOptions(order: {
     case "pending":
       return ["pending"];
     case "baking":
-      return ["baking", handOff, "completed"];
+      return ["baking", handOff, "completed", "cancelled"];
     default:
-      return [current, "completed"];
+      return [current, "completed", "cancelled"];
   }
 }
 

@@ -9,7 +9,9 @@ import { orderSummaryLines } from "@/components/checkout/summary-lines";
 import { ButtonLink } from "@/components/ui/button";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
+import { getCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/cn";
+import { db } from "@/lib/db";
 import { getOrderForViewer, itemCount, orderAddress, payable, withOrderToken } from "@/lib/orders";
 import { paymentMethodInfo } from "@/lib/order-status";
 import { orderPageMetadata } from "@/lib/order-metadata";
@@ -33,8 +35,11 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
   if (!order) notFound();
   if (order.paymentStatus !== "paid") redirect(withOrderToken(`/checkout/pay/${orderNumber}`, token));
 
-  const [t, locale, settings] = await Promise.all([getMessages(checkoutMessages), getLocale(), getStoreSettings()]);
+  const [t, locale, settings, user] = await Promise.all([getMessages(checkoutMessages), getLocale(), getStoreSettings(), getCurrentUser()]);
   const s = t.success;
+  // A guest without an account for this email is offered one, with the email filled in.
+  const offerAccount =
+    !user && order.userId === null && !(await db.user.findUnique({ where: { email: order.email }, select: { id: true } }));
   const delivery = order.fulfilmentMethod === "delivery";
   const payment = order.payments.find((pay) => pay.status === "paid") ?? order.payments[0];
   const pay = payable(order, payment);
@@ -107,6 +112,7 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
                 },
               ]}
             />
+            <p className="-mt-4 text-[15px] leading-normal break-words text-muted-foreground">{s.emailed(order.email)}</p>
 
             {/* The end of the column, under a hairline like the other steps. */}
             <div className="flex w-full flex-col gap-4 pt-8 shadow-[inset_0_1px_0_var(--border-subtle)]">
@@ -124,6 +130,18 @@ export default async function SuccessPage({ params, searchParams }: PageProps<"/
                 emailLabel={t.fulfilment.email}
               />
             </div>
+
+            {offerAccount ? (
+              <div className="flex w-full flex-col gap-3 pt-8 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <div className="flex flex-col gap-1">
+                  <h2 className="font-display text-lg leading-6 font-bold text-foreground">{s.saveTitle}</h2>
+                  <p className="text-[15px] leading-normal text-pretty text-muted-foreground">{s.saveBody}</p>
+                </div>
+                <ButtonLink href={`/sign-up?email=${encodeURIComponent(order.email)}`} variant="secondary" className="shrink-0">
+                  {s.saveCta}
+                </ButtonLink>
+              </div>
+            ) : null}
           </div>
         </CheckoutColumns>
       </main>

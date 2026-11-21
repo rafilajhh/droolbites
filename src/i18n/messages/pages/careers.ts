@@ -30,14 +30,14 @@ export const careersMessages = defineMessages({
       {
         title: "Counter crew",
         type: "Part-time",
-        shift: "10:00–15:30 or 15:30–21:00",
+        shift: "07:00–14:00 or 14:00–21:00",
         body: "Welcome walk-ins, hand over pickup orders and help people choose between Red Velvet and Double Chocolate.",
         fit: "You like chatting with people and stay calm in the evening rush.",
       },
       {
         title: "Packing & delivery crew",
         type: "Part-time",
-        shift: "10:00–15:30 or 15:30–21:00",
+        shift: "07:00–14:00 or 14:00–21:00",
         body: "Box and label every online order, check it against its order number, then ride it across Surabaya.",
         fit: "You ride your own motorbike and have a valid SIM C.",
       },
@@ -110,14 +110,14 @@ export const careersMessages = defineMessages({
       {
         title: "Kru counter",
         type: "Paruh waktu",
-        shift: "10:00–15:30 atau 15:30–21:00",
+        shift: "07:00–14:00 atau 14:00–21:00",
         body: "Menyambut pembeli yang datang, menyerahkan pesanan ambil di toko, dan membantu memilih antara Red Velvet dan Double Chocolate.",
         fit: "Kamu senang ngobrol dengan orang dan tetap tenang saat ramai malam.",
       },
       {
         title: "Kru packing & antar",
         type: "Paruh waktu",
-        shift: "10:00–15:30 atau 15:30–21:00",
+        shift: "07:00–14:00 atau 14:00–21:00",
         body: "Mengemas dan memberi label tiap pesanan online, mencocokkannya dengan nomor pesanan, lalu mengantarnya keliling Surabaya.",
         fit: "Kamu punya motor sendiri dan SIM C yang masih berlaku.",
       },

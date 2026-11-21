@@ -5,15 +5,15 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { safeNext } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { sendAccountWelcomeEmail } from "@/lib/emails";
+import { claimOrdersEmail, passwordResetEmail, sendAccountWelcomeEmail } from "@/lib/emails";
 import { appUrl, deliverLater, emailFooter, sendMail } from "@/lib/mail";
-import { button, fallbackLink, paragraph, renderEmail } from "@/lib/email-template";
 import { allowRequest, clientIp, isSignInLocked, perClientMax, recordSignInFailure, resetSignInFailures } from "@/lib/rate-limit";
 import { clearCheckoutDetails, forgetRecentOrders } from "@/lib/orders";
 import { createSession, deleteSession } from "@/lib/session";
-import { getLocale, getMessages } from "@/i18n/server";
-import { authMessages } from "@/i18n/messages/auth";
+import { getLocale } from "@/i18n/server";
+import type { Locale } from "@/i18n/config";
 import { createResetToken, findResetUser } from "@/app/(auth)/reset-password/reset-token";
+import { createClaimToken } from "@/app/auth/claim-orders/claim-token";
 
 /** Keys into authMessages.errors; the client renders them in the active language. */
 export type AuthErrorKey =
@@ -51,6 +51,13 @@ const SIGN_UP_MAX_PER_IP = 5;
 const RESET_MAX_PER_EMAIL = 3;
 const RESET_MAX_PER_IP = 10;
 const passwordSchema = z.string().min(8).max(72); // bcrypt only reads the first 72 bytes
+
+/**
+ * The welcome email goes to an address nobody has verified yet, so a name typed at sign-up only appears in
+ * it when it looks like a name: letters (any script), spaces and . ' -, up to 40 characters, no digits and
+ * no "word.word" that could read as a link. Anything else gets a plain "Hi".
+ */
+const GREETABLE_NAME = /^(?!.*\.\p{L})[\p{L}\p{M}][\p{L}\p{M} .'’-]{0,39}$/u;
 
 function text(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -129,9 +136,27 @@ export async function signUp(_prev: AuthState, formData: FormData): Promise<Auth
   }
 
   const lang = await getLocale();
-  deliverLater(() => sendAccountWelcomeEmail({ email }, lang));
+  deliverLater(() => sendAccountWelcomeEmail({ email, fullName: GREETABLE_NAME.test(fullName) ? fullName : null }, lang));
+  // Guest orders placed with this email join the account only once its owner, signed in, confirms them
+  // from the emailed link (/account/claim).
+  const guestOrders = await db.order.count({ where: { userId: null, email } });
+  if (guestOrders > 0) deliverLater(() => sendClaimOrdersEmail({ id: userId, email }, guestOrders, lang));
   await createSession({ userId: userId.toString(), role: "customer" });
-  redirect(safeNext(text(formData, "next")));
+  const next = safeNext(text(formData, "next"));
+  // Landing on the account: after every sign-up (orders or not, so it says nothing about the email) its
+  // notice says that guest orders placed with this email get a link by email (?claim=1).
+  if (next.split(/[?#]/)[0] === "/account") {
+    const url = new URL(next, "http://x");
+    url.searchParams.set("claim", "1");
+    redirect(url.pathname + url.search + url.hash);
+  }
+  redirect(next);
+}
+
+/** "Verify your email to add your N past orders": the link (/account/claim) asks, signed in, to add them. */
+async function sendClaimOrdersEmail(user: { id: bigint; email: string }, count: number, lang: Locale) {
+  const link = appUrl(`/account/claim?t=${encodeURIComponent(await createClaimToken(user))}`);
+  await sendMail({ to: user.email, ...claimOrdersEmail(lang, { count, link }, await emailFooter()) });
 }
 
 export async function requestPasswordReset(_prev: AuthState, formData: FormData): Promise<AuthState> {
@@ -151,28 +176,9 @@ export async function requestPasswordReset(_prev: AuthState, formData: FormData)
   });
   if (user) {
     const token = await createResetToken(user);
-    const [t, lang, footer] = await Promise.all([
-      getMessages(authMessages).then((m) => m.reset),
-      getLocale(),
-      emailFooter(),
-    ]);
+    const [lang, footer] = await Promise.all([getLocale(), emailFooter()]);
     const link = appUrl(`/reset-password/${token}`);
-    const html = renderEmail({
-      lang,
-      baseUrl: appUrl("/"),
-      preheader: t.mail.preheader,
-      eyebrow: t.mail.eyebrow,
-      title: t.mail.title,
-      body: [
-        paragraph(t.mail.intro(user.fullName)),
-        button(t.mail.button, link),
-        paragraph(t.mail.expiry, { muted: true }),
-        fallbackLink(t.mail.fallback, link),
-      ].join("\n"),
-      footer,
-      reason: t.mail.reason,
-    });
-    await sendMail({ to: user.email, subject: t.mailSubject, text: t.mailText(user.fullName, link), html });
+    await sendMail({ to: user.email, ...passwordResetEmail(lang, { name: user.fullName, link }, footer) });
   }
   // Same answer whether or not the account exists (no account enumeration).
   return { sent: true, values: { email }, attempt };
@@ -203,8 +209,9 @@ export async function resetPassword(_prev: AuthState, formData: FormData): Promi
  * Signing out also forgets this browser's recent orders and saved checkout
  * details, so the next person on a shared device can't open them. A guest who
  * never signs in keeps both (that is how they track their order). A guest order
- * that was never linked to the account (only Google sign-in links them) can
- * still be opened from the link in its confirmation email after signing out.
+ * that was never linked to the account (Google sign-in links them, password
+ * sign-up once the emailed link is opened) can still be opened from the link in
+ * its confirmation email, or found on /orders/find, after signing out.
  */
 export async function signOut() {
   await Promise.all([deleteSession(), forgetRecentOrders(), clearCheckoutDetails()]);

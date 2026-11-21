@@ -15,7 +15,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 /** pen: Sign up (mjLE0). */
 export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">) {
-  const { next } = await searchParams;
+  const { next, email } = await searchParams;
   await redirectIfSignedIn(next);
   const t = await getMessages(authMessages);
   const nextPath = typeof next === "string" ? safeNext(next) : undefined;
@@ -26,7 +26,8 @@ export default async function SignUpPage({ searchParams }: PageProps<"/sign-up">
     <AuthShell photo="gift-box" quote={t.signUp.quote}>
       <AuthHead eyebrow={t.signUp.eyebrow} title={t.signUp.title} sub={t.signUp.sub} />
       {isGoogleConfigured() ? <GoogleSignIn href={googleHref} label={t.google.continue} or={t.google.or} /> : null}
-      <SignUpForm next={nextPath} />
+      {/* ?email= from the checkout success page's offer to save the guest's details. */}
+      <SignUpForm next={nextPath} email={typeof email === "string" && email.length <= 150 ? email : undefined} />
       <AuthSwitch text={t.signUp.switchText} linkLabel={t.signUp.switchLink} href={signInHref} />
     </AuthShell>
   );

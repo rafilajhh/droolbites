@@ -35,7 +35,11 @@ export async function signInWithGoogle(claims: GoogleClaims) {
   const result = await linkGoogleAccount(db, claims);
   if (result.ok && result.created) {
     const lang = await getLocale();
-    deliverLater(() => sendAccountWelcomeEmail({ email: claims.email }, lang));
+    deliverLater(async () => {
+      // The name the account was created with (the Google profile's, or the email's first part).
+      const user = await db.user.findUniqueOrThrow({ where: { id: result.userId }, select: { email: true, fullName: true } });
+      await sendAccountWelcomeEmail(user, lang);
+    });
   }
   return result;
 }

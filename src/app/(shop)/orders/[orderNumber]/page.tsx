@@ -8,14 +8,14 @@ import { OrderSummary } from "@/components/checkout/order-summary";
 import { ReorderButton } from "@/components/checkout/reorder-button";
 import { orderSummaryLines } from "@/components/checkout/summary-lines";
 import { StatusBadge } from "@/components/ui/badges";
-import { ButtonLink } from "@/components/ui/button";
+import { ArrowLink, ButtonLink } from "@/components/ui/button";
 import { OrderSteps, type OrderStep } from "@/components/ui/order-steps";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { ordersMessages } from "@/i18n/messages/orders";
 import { getCurrentUser } from "@/lib/auth";
 import { cn } from "@/lib/cn";
-import { formatDate, formatDateTime, formatItemCount } from "@/lib/format";
+import { formatDate, formatDateTime, formatItemCount, formatTime } from "@/lib/format";
 import {
   awaitingConfirmationInfo,
   cancelReasonText,
@@ -82,14 +82,15 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const declinedWhy = f === "cancelled" ? cancelReasonText(order.cancelReason, t.reasons) : null;
   const closed = cancelledByStore(order) || f === "cancelled" || (!paid && !awaiting);
   const deadline = payment?.status === "awaiting" ? (payment.expiresAt ?? orderDeadline(order)) : orderDeadline(order);
+  // What happens to the money: refunded on a date once the store marked it, else the promise to refund.
+  const refundLine = order.refundedAt ? t.refundedOn(formatDateTime(order.refundedAt, locale)) : t.refundPromise;
   const message = closed
     ? f === "cancelled" || cancelledByStore(order)
       ? declinedWhy && paidSomething
-        ? refundOwed
-          ? t.declinedBody(declinedWhy)
-          : t.declinedNoRefundBody(declinedWhy)
+        ? // Declined while new, or cancelled after the shop had accepted it.
+          `${(order.acceptedAt ? t.storeCancelledBody : t.declinedBody)(declinedWhy)} ${refundOwed ? refundLine : t.questions}`
         : paidSomething && refundOwed
-          ? t.cancelledPaidBody
+          ? `${t.cancelledPaidBody} ${refundLine}`
           : cancelledByCustomer(order)
             ? t.cancelledByYouBody
             : t.cancelledBody
@@ -115,13 +116,25 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   // Five steps, as on the account page: 0 paying, 1 waiting for the shop, 2 baking, 3 on its way / ready,
   // 4 delivered / picked up; a completed order has them all done.
   const at = awaiting ? 0 : f === "pending" ? 1 : f === "baking" ? 2 : completed ? 5 : 3;
+  // When each step was reached: the time alone on the day the order was placed, else with its date.
+  // Orders from before the timeline was recorded have no times; Baking starts when it's confirmed.
+  const placedDay = formatDate(order.createdAt, locale);
+  const stamp = (date: Date | null | undefined) =>
+    date ? (formatDate(date, locale) === placedDay ? formatTime(date) : formatDateTime(date, locale)) : undefined;
+  const times = [paidPayment?.paidAt, order.acceptedAt, null, order.handedOffAt, order.completedAt];
   const steps = [
     t.steps.payment,
     t.steps.confirmed,
     t.steps.baking,
     delivery ? t.steps.out : t.steps.ready,
     delivery ? t.steps.delivered : t.steps.collected,
-  ].map((label, i): OrderStep => ({ label, state: i < at ? "done" : i === at ? "current" : "todo" }));
+  ].map(
+    (label, i): OrderStep => ({
+      label,
+      state: i < at ? "done" : i === at ? "current" : "todo",
+      time: i <= at ? stamp(times[i]) : undefined,
+    }),
+  );
 
   const badge = confirming
     ? awaitingConfirmationInfo
@@ -167,7 +180,14 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
     { label: t.method, value: methodName },
     {
       label: t.status,
-      value: paidPayment?.paidAt ? t.paidOn(formatDateTime(paidPayment.paidAt, locale)) : awaiting ? t.notPaidYet : t.notPaid,
+      // Once the store sent the money back, that is where the payment stands.
+      value: order.refundedAt
+        ? t.refundedStatus(formatDateTime(order.refundedAt, locale))
+        : paidPayment?.paidAt
+          ? t.paidOn(formatDateTime(paidPayment.paidAt, locale))
+          : awaiting
+            ? t.notPaidYet
+            : t.notPaid,
     },
   ];
 
@@ -190,7 +210,9 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           </ol>
         </nav>
         <div className="flex flex-col items-start gap-2">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+          {/* Below sm the badge has its own line under the title in both languages ("Pesanan DB-0017" leaves no
+              room beside it), instead of wrapping there in one language and not the other. */}
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
             <h1 className="font-display type-page font-bold text-foreground">{t.title(orderNumber)}</h1>
             <StatusBadge tone={badge.tone} className="shrink-0">
               {badge[locale]}
@@ -239,9 +261,13 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           </section>
 
           <section aria-labelledby="order-payment" className="flex w-full flex-col gap-3">
-            <h2 id="order-payment" className="font-display text-xl leading-7 font-bold text-foreground sm:text-[22px]">
-              {t.payment}
-            </h2>
+            <div className="flex w-full flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+              <h2 id="order-payment" className="font-display text-xl leading-7 font-bold text-foreground sm:text-[22px]">
+                {t.payment}
+              </h2>
+              {/* The printable receipt, once the order is paid. */}
+              {paid ? <ArrowLink href={withOrderToken(`/orders/${orderNumber}/invoice`, token)}>{t.receipt}</ArrowLink> : null}
+            </div>
             <ReviewRows rows={paymentRows} />
           </section>
         </div>

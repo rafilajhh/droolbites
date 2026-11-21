@@ -21,6 +21,8 @@ export type ShopVariant = {
   serves?: string;
   /** Units left when 0 to LOW_STOCK (0 = sold out); absent when not tracked or plenty are left. */
   left?: number;
+  /** Units in stock (0 or more); null when the size isn't tracked. */
+  stock: number | null;
 };
 
 export type ShopProduct = {
@@ -64,6 +66,7 @@ export function toShopProduct(product: ProductInput, locale: Locale): ShopProduc
     price: v.price,
     serves: brownieServings[v.name]?.[locale],
     left: stockLeft(v.stock),
+    stock: v.stock === null ? null : Math.max(v.stock, 0),
   }));
   const soldOut = variants.length > 0 && variants.every((v) => v.left === 0);
   const multi = variants.length > 1;

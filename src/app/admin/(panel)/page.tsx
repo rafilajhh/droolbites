@@ -3,13 +3,13 @@ import Link from "next/link";
 import { BellRing, CircleAlert, CircleCheck, Cookie, Hourglass, Receipt, Wallet } from "lucide-react";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badges";
-import { AdminMain, CellLabel, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
+import { AdminMain, CellLabel, DemoBadge, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
 import { categoryStyle, isTrayCategory } from "@/components/admin/rules";
 import { categoryName } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { formatDate, formatRupiah, formatTime } from "@/lib/format";
-import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere } from "@/lib/order-status";
+import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere, overdueMinutes } from "@/lib/order-status";
 import { orderPaymentInfo, payable } from "@/lib/orders";
 import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { keptOrderWhere, rangeWhere, resolveReportRange } from "@/lib/reports";
@@ -85,6 +85,7 @@ export default async function AdminOverviewPage() {
         paymentStatus: true,
         createdAt: true,
         updatedAt: true,
+        refundedAt: true,
         total: true,
         payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true, provider: true } },
       },
@@ -122,6 +123,8 @@ export default async function AdminOverviewPage() {
   const paidAt = first ? (first.payments[0]?.paidAt ?? first.createdAt) : null;
   const paidDate = paidAt && dayKey(paidAt) !== dayKey(new Date()) ? formatDate(paidAt, locale) : null;
   const single = needsAction.length === 1;
+  // The oldest new order, once it has waited past the half hour the customer was told to expect.
+  const waited = newOrders.length > 0 && first ? overdueMinutes(first.payments[0]?.paidAt, new Date()) : null;
 
   return (
     <AdminMain className="gap-7">
@@ -153,6 +156,7 @@ export default async function AdminOverviewPage() {
                 : single
                   ? o.paidAt
                   : o.paidAtMany)(first.orderNumber, formatTime(paidAt), paidDate)}
+              {waited !== null ? <span className="font-semibold text-error"> {t.orders.waiting(waited)}.</span> : null}
             </p>
           </div>
           <Link
@@ -265,10 +269,10 @@ export default async function AdminOverviewPage() {
                   <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
                     {t.orders.col.order}
                   </th>
-                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
+                  <th scope="col" className={cn(thClasses, "w-[26%] py-2.5 pr-4")}>
                     {t.orders.col.payment}
                   </th>
-                  <th scope="col" className={cn(thClasses, "py-2.5 pr-4")}>
+                  <th scope="col" className={cn(thClasses, "w-[26%] py-2.5 pr-4")}>
                     {t.orders.col.status}
                   </th>
                   <th scope="col" className={cn(thClasses, "py-2.5 pr-4 text-right")}>
@@ -285,7 +289,8 @@ export default async function AdminOverviewPage() {
                   const status = fulfilmentBadgeInfo(order);
                   const payment = orderPaymentInfo(order);
                   // What the customer pays or paid, as on the orders list (the fee line is left to it).
-                  const amount = payable(order, shownPayment(order.payments)).amount;
+                  const shown = shownPayment(order.payments);
+                  const amount = payable(order, shown).amount;
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
                   return (
                     <tr
@@ -305,9 +310,13 @@ export default async function AdminOverviewPage() {
                       </th>
                       <td className="py-3.5 pr-4 max-md:order-3 max-md:p-0">
                         <CellLabel>{t.orders.col.payment}</CellLabel>
-                        <StatusBadge tone={payment.tone} className="whitespace-nowrap">
-                          {payment[locale]}
-                        </StatusBadge>
+                        {/* The Demo chip beside it, as on the orders list. */}
+                        <span className="inline-flex flex-wrap items-center gap-1.5">
+                          <StatusBadge tone={payment.tone} className="whitespace-nowrap">
+                            {payment[locale]}
+                          </StatusBadge>
+                          {shown?.provider === DEMO_PROVIDER ? <DemoBadge label={t.common.demo} title={t.common.demoLabel} /> : null}
+                        </span>
                       </td>
                       {/* Unpaid: no status yet. The dash keeps the table column; on phones the payment badge says it alone. */}
                       <td className={cn("py-3.5 pr-4 max-md:order-4 max-md:p-0", unpaid && "max-md:hidden")}>

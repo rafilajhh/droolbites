@@ -59,16 +59,17 @@ export function PayActions({ orderNumber, token, cancellable = false }: { orderN
             <p className="text-[15px] leading-[23px] text-pretty text-foreground">{t.cancelConfirmBody}</p>
           </div>
         </div>
+        {/* As in the admin's confirm dialogs: the safe way out first, the cancel itself in the error color. */}
         <div className="grid w-full gap-3 sm:grid-cols-2">
-          <form action={cancelAction} className="flex">
-            {hidden}
-            <button type="submit" disabled={cancelling} className={buttonClasses("primary", "w-full")}>
-              {cancelling ? t.cancelling : t.cancelConfirm}
-            </button>
-          </form>
           <Button variant="secondary" onClick={() => setConfirming(false)} disabled={cancelling}>
             {t.cancelKeep}
           </Button>
+          <form action={cancelAction} className="flex">
+            {hidden}
+            <button type="submit" disabled={cancelling} className={buttonClasses("primary", "w-full bg-error hover:bg-error/85")}>
+              {cancelling ? t.cancelling : t.cancelConfirm}
+            </button>
+          </form>
         </div>
         {cancelState.error ? (
           <p key={cancelState.attempt} role="alert" className="text-sm leading-[21px] text-error">

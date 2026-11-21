@@ -44,6 +44,7 @@ export async function Footer() {
         { href: "/shipping-policy", label: f.shipping },
         { href: "/returns-refunds", label: f.returns },
         { href: "/privacy-policy", label: f.privacy },
+        { href: "/orders/find", label: f.findOrder },
         { href: "/account", label: f.account },
       ],
     },

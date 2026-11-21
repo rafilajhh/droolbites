@@ -1,5 +1,7 @@
 // Acceptance check for PRD US-002 (storefront), US-005 (admin), US-007 (integration), US-008 (Google)
-// and US-009 (demo payments, adaptive to the server's DEMO_PAYMENTS).
+// US-009 (demo payments, adaptive to the server's DEMO_PAYMENTS) and US-010 (store hours, payment fee hints,
+// guest order lookup by emailed link, sign-up claim of guest orders confirmed while signed in). Store hours are set round the clock for the run.
+// US-011: order handling (method-change email, customer receipt, timeline, store cancel of a paid order, refund).
 //
 //   node scripts/e2e.mjs            (E2E_BASE defaults to http://localhost:3000)
 //
@@ -130,6 +132,17 @@ try {
   const mobile = await newCtx({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const alya = await newCtx();
   const admin = await newCtx();
+
+  // Checkout only takes orders while the shop is open (WIB, last order 30 min before closing). The run may
+  // happen at any hour, so the hours become round the clock (00:00–23:59, every day) and are restored at the
+  // end; US-010.1 closes the shop on purpose.
+  const storeHours = await one("SELECT opens_at, closes_at, open_days FROM store_settings WHERE id=1");
+  const alwaysOpen = () => q("UPDATE store_settings SET opens_at='00:00', closes_at='23:59', open_days='mon,tue,wed,thu,fri,sat,sun' WHERE id=1");
+  await alwaysOpen();
+  undo.push(async () => {
+    await q("UPDATE store_settings SET opens_at=?, closes_at=?, open_days=? WHERE id=1", [storeHours.opens_at, storeHours.closes_at, storeHours.open_days]);
+    cleanupLog.push(`store hours restored to ${storeHours.opens_at}-${storeHours.closes_at} (${storeHours.open_days})`);
+  });
 
   // ============================================================ US-002 storefront
   await check("US-002.1", "GET /, /menu, /menu/chocolate-chunk, /menu/fudgy-brownies -> 200", async () => {
@@ -333,7 +346,7 @@ try {
   await check("US-005.6", "Orders list status filter (?status=) works", async () => {
     const out = [];
     for (const s of ["paid", "awaiting", "expired"]) {
-      // Unpaid orders the store cancelled read "Not paid" and stay out of "Awaiting payment" / "Payment failed"
+      // Unpaid orders the store cancelled read "Not paid" and stay out of "Awaiting payment" / "Expired"
       // (cancelledByStore: still awaiting, or closed before the 24 h payment window ended).
       const storeCancelled =
         s === "paid" ? "" : " AND NOT (fulfilment_status='cancelled' AND (payment_status<>'expired' OR updated_at IS NULL OR updated_at < created_at + INTERVAL 86400 SECOND))";
@@ -346,10 +359,10 @@ try {
   });
 
   await check("US-005.7", "Order detail changes fulfilment status; customer /orders/<n> reflects it (restored afterwards)", async () => {
-    const o = await one("SELECT order_number, fulfilment_status FROM orders WHERE order_number='DB-0001'");
+    const o = await one("SELECT order_number, fulfilment_status, handed_off_at FROM orders WHERE order_number='DB-0001'");
     assert(o && o.fulfilment_status === "baking", `DB-0001 not in baking (${o?.fulfilment_status}); cannot run`);
     undo.push(async () => {
-      await q("UPDATE orders SET fulfilment_status=? WHERE order_number='DB-0001'", [o.fulfilment_status]);
+      await q("UPDATE orders SET fulfilment_status=?, handed_off_at=? WHERE order_number='DB-0001'", [o.fulfilment_status, o.handed_off_at]);
       cleanupLog.push(`DB-0001 fulfilment_status restored to ${o.fulfilment_status}`);
     });
     await setFulfilment(admin, "DB-0001", "Out for delivery");
@@ -548,8 +561,14 @@ try {
     orderNumber = new URL(page.url()).pathname.split("/").pop();
     assert(/^DB-\d+$/.test(orderNumber), `order number from URL: ${orderNumber}`);
     undo.push(async () => {
+      // Paying took its items from stock: put them back before the order goes.
+      const back = await q(
+        `UPDATE product_variants v JOIN order_items i ON i.variant_id = v.id JOIN orders o ON o.id = i.order_id
+         SET v.stock = v.stock + i.qty WHERE o.order_number = ? AND o.stock_deducted = 1 AND v.stock IS NOT NULL`,
+        [orderNumber],
+      );
       await q("DELETE FROM orders WHERE order_number=?", [orderNumber]);
-      cleanupLog.push(`order ${orderNumber} deleted (items/payments cascade)`);
+      cleanupLog.push(`order ${orderNumber} deleted (items/payments cascade)${back.affectedRows ? `, stock of ${back.affectedRows} variant(s) put back` : ""}`);
       try {
         const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
         const ids = msgs.filter((m) => m.Subject.includes(orderNumber)).map((m) => m.ID);
@@ -589,7 +608,7 @@ try {
   });
   await check("US-007.3", "Mailpit received confirmation + paid emails for that order", async () => {
     assert(orderNumber, "no order from previous check");
-    const want = [`Your Droolbites order ${orderNumber}`, `Payment received for ${orderNumber}`];
+    const want = [`Order ${orderNumber} is awaiting payment`, `Order ${orderNumber} is paid`];
     let subjects = [];
     for (let i = 0; i < 15; i++) {
       const j = await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json();
@@ -775,10 +794,10 @@ try {
       let mail = null;
       for (let i = 0; i < 20 && !mail; i++) {
         const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
-        mail = msgs.find((m) => m.Subject === `Payment received for ${demoA.number}`) ?? null;
+        mail = msgs.find((m) => m.Subject === `Order ${demoA.number} is paid`) ?? null;
         if (!mail) await sleep(500);
       }
-      assert(mail, "no 'Payment received' email");
+      assert(mail, "no 'Order … is paid' email");
       const body = await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
       assert(/BCA Virtual Account/.test(body.Text) && !/demo/i.test(body.Text + body.HTML), "email names no method or says demo");
       return `page and "${mail.Subject}" email: BCA Virtual Account, no demo`;
@@ -890,13 +909,179 @@ try {
     let mail = null;
     for (let i = 0; i < 20 && !mail; i++) {
       const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
-      mail = msgs.find((m) => m.Subject === `Order ${c.number} cancelled`) ?? null;
+      mail = msgs.find((m) => m.Subject === `Order ${c.number} was cancelled`) ?? null;
       if (!mail) await sleep(500);
     }
     assert(mail, "no 'Order … cancelled' email");
     const body = await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
-    assert(/As you asked/.test(body.Text) && !/had to cancel/.test(body.Text), "email doesn't say the customer cancelled");
+    assert(/as you asked/i.test(body.Text) && !/had to cancel/.test(body.Text), "email doesn't say the customer cancelled");
     return `${c.number}: cancelled, ${p[0].reference} expired; order page + "${mail.Subject}" email`;
+  });
+
+  // ============================================================ US-011 order handling (refund, timeline, receipt)
+  // Orders come from demoOrder (Alya, pickup, 2 Red Velvet, a live mock BCA VA payment) and are deleted
+  // with their emails afterwards. The paid one is paid through the mock gateway's simulate button, so its
+  // payment is real money as far as the app knows (provider mock): it owes a refund once cancelled.
+  const mailsFor = async (number) =>
+    ((await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? []).filter((m) => m.Subject.includes(number));
+  const waitMail = async (subject) => {
+    for (let i = 0; i < 30; i++) {
+      const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
+      const mail = msgs.find((m) => m.Subject === subject);
+      if (mail) return { ...mail, body: await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json() };
+      await sleep(500);
+    }
+    throw new Error(`no "${subject}" email`);
+  };
+  const timesOf = (id) => one("SELECT accepted_at, handed_off_at, completed_at, cancelled_at, refunded_at, refund_note, cancel_reason FROM orders WHERE id=?", [id]);
+
+  await check("US-011.1", "Customer changes payment method: a 'New payment details' email with the new VA only (old VA not in it)", async () => {
+    const c = await demoOrder();
+    const page = await open(alya, `/checkout/pay/${c.number}?change=1`);
+    await settle(page);
+    await page.locator('input[name="method"][value="mandiri_va"]').check({ force: true });
+    await Promise.all([
+      page.waitForURL((u) => u.pathname === `/checkout/pay/${c.number}` && !u.search.includes("change=1"), { timeout: 60_000 }),
+      page.getByRole("button", { name: "USE THIS METHOD", exact: true }).click(),
+    ]);
+    await page.close();
+    const p = await paymentsOf(c.id);
+    const live = p.at(-1);
+    assert(p.length === 2 && p[0].status === "expired" && live.status === "awaiting" && live.method === "mandiri_va", `payments ${JSON.stringify(p)}`);
+    const mail = await waitMail(`Order ${c.number} has new payment details`);
+    const va = (await one("SELECT va_number FROM payments WHERE reference=?", [live.reference])).va_number;
+    assert(va && mail.body.Text.includes(va), `email lacks the new VA ${va}`);
+    assert(!mail.body.Text.includes("8077 1234 5678 9012"), "email still has the old VA");
+    assert(/Mandiri/.test(mail.body.Text), "email doesn't name the new method");
+    return `${c.number}: ${p[0].reference} expired, ${live.reference} (mandiri_va) live; "${mail.Subject}" has ${va}`;
+  });
+
+  // One order through the whole paid life: paid (mock) -> waiting marker -> accepted -> ready -> cancelled by the store -> refunded.
+  const life = await demoOrder();
+  let lifeStock = null;
+  await check("US-011.2", "Paid order: receipt for the customer (no gateway ids), 404 for others and unpaid orders; paid email has the breakdown and the receipt link; 'Waiting … min' after 30 min", async () => {
+    const unpaidStatus = (await alya.request.get(`${BASE}/orders/${life.number}/invoice`)).status();
+    assert(unpaidStatus === 404, `unpaid order receipt -> ${unpaidStatus}`);
+    lifeStock = await variantStock();
+    const pay = await open(alya, `/checkout/pay/${life.number}`);
+    await settle(pay);
+    await Promise.all([pay.waitForURL(/\/checkout\/success\//, { timeout: 60_000 }), pay.getByRole("button", { name: /Simulate payment/i }).click()]);
+    await pay.close();
+    const o = await orderOf(life.id);
+    assert(o.payment_status === "paid" && o.fulfilment_status === "pending" && o.stock_deducted === 1, JSON.stringify(o));
+    assert((await variantStock()) === lifeStock - 2, "stock not taken");
+
+    const receipt = await open(alya, `/orders/${life.number}/invoice`);
+    await settle(receipt);
+    const txt = await receipt.locator("main").innerText();
+    await receipt.close();
+    assert(/Receipt/.test(txt) && txt.includes(life.number) && /Paid/.test(txt) && txt.includes(rp(10000)), "receipt lacks title, number, status or total");
+    assert(!txt.includes(`${life.number}-1`) && !/demo/i.test(txt), "receipt shows a gateway reference or demo wording");
+    const guest = await get(`/orders/${life.number}/invoice`);
+    assert(guest.status === 404, `guest without token got ${guest.status}`);
+
+    const paid = await waitMail(`Order ${life.number} is paid`);
+    const link = paid.body.Text.match(/https?:\/\/\S+\/orders\/DB-\d+\/invoice\?t=\S+/)?.[0];
+    assert(link, "paid email has no receipt link");
+    assert(/Subtotal: /.test(paid.body.Text) && /Pickup: /.test(paid.body.Text) && /Total paid: /.test(paid.body.Text), "paid email lacks Subtotal / Pickup / Total paid rows");
+    const viaToken = await get(new URL(link).pathname + new URL(link).search);
+    assert(viaToken.status === 200 && viaToken.text.includes(life.number), `receipt link from the email -> ${viaToken.status}`);
+
+    // Paid 45 minutes ago and still new: the orders list marks it.
+    await q("UPDATE payments SET paid_at = DATE_SUB(UTC_TIMESTAMP(3), INTERVAL 45 MINUTE) WHERE order_id=? AND status='paid'", [life.id]);
+    const list = await open(admin, `/admin/orders?q=${life.number}`);
+    const row = await list.locator("tbody tr").filter({ hasText: life.number }).innerText();
+    await list.close();
+    assert(/Waiting 4\d min/.test(row), `no "Waiting 45 min" in the row: ${row.replace(/\s+/g, " ")}`);
+    return `${life.number}: paid (mock), receipt 200 for Alya / via email link, 404 for a guest and while unpaid; row says "${row.match(/Waiting \d+ min/)[0]}"`;
+  });
+
+  await check("US-011.3", "Store accepts, hands off, then cancels the paid order with a reason: timeline times set, stock back once, cancel email promises the refund within 1×24 hours", async () => {
+    await acceptOrder(admin, life.number);
+    await setFulfilment(admin, life.number, "Ready for pickup");
+    let t = await timesOf(life.id);
+    assert(t.accepted_at && t.handed_off_at && !t.cancelled_at, `times after hand-off ${JSON.stringify(t)}`);
+
+    const page = await open(admin, `/admin/orders/${life.number}`);
+    await settle(page);
+    await page.locator('button[aria-haspopup="listbox"]').first().click();
+    await page.getByRole("option", { name: "Cancelled", exact: true }).click();
+    await page.locator("form:has(input[name=orderNumber]) button[type=submit]").click();
+    const dialog = page.getByRole("alertdialog");
+    await dialog.getByText("Another reason").click();
+    await dialog.getByRole("button", { name: "CANCEL ORDER", exact: true }).click();
+    await dialog.getByText("Write the reason, or pick one above.").first().waitFor({ timeout: 10_000 });
+    await dialog.getByRole("textbox").fill("Oven broke down");
+    await dialog.getByRole("button", { name: "CANCEL ORDER", exact: true }).click();
+    for (let i = 0; i < 30 && (await orderOf(life.id)).fulfilment_status !== "cancelled"; i++) await sleep(1000);
+    await page.close();
+    const o = await orderOf(life.id);
+    t = await timesOf(life.id);
+    assert(o.fulfilment_status === "cancelled" && o.payment_status === "paid" && o.stock_deducted === 0, JSON.stringify(o));
+    assert(t.cancelled_at && t.cancel_reason === "Oven broke down", `times ${JSON.stringify(t)}`);
+    assert((await variantStock()) === lifeStock, `stock ${await variantStock()} vs ${lifeStock} before payment`);
+
+    const mail = await waitMail(`Order ${life.number} was cancelled`);
+    assert(/Oven broke down/.test(mail.body.Text) && /within 1×24 hours to refund the full amount/.test(mail.body.Text), "cancel email lacks the reason or the refund promise");
+    const cust = await open(alya, `/orders/${life.number}`);
+    const txt = await cust.locator("main").innerText();
+    await cust.close();
+    assert(/The shop had to cancel this order: Oven broke down\. We'll contact you within 1×24 hours/.test(txt), "customer page lacks the store-cancel + refund sentence");
+    return `${life.number}: baking -> ready -> cancelled ("Oven broke down"); stock back to ${lifeStock}; email + order page promise the refund`;
+  });
+
+  await check("US-011.4", "Mark as refunded (in-page confirm, optional note): refunded_at set once, one 'Refund sent' email, admin shows a quiet line + timeline, customer page and receipt say refunded", async () => {
+    const page = await open(admin, `/admin/orders/${life.number}`);
+    await settle(page);
+    await page.getByRole("button", { name: "MARK AS REFUNDED", exact: true }).click();
+    const dialog = page.getByRole("alertdialog");
+    await dialog.getByRole("button", { name: "GO BACK", exact: true }).click();
+    assert(!(await timesOf(life.id)).refunded_at, "refunded without confirming");
+    await page.getByRole("button", { name: "MARK AS REFUNDED", exact: true }).click();
+    await dialog.getByRole("textbox").fill("BCA transfer e2e");
+    await dialog.getByRole("button", { name: "MARK REFUNDED", exact: true }).click();
+    for (let i = 0; i < 30 && !(await timesOf(life.id)).refunded_at; i++) await sleep(500);
+    await page.reload();
+    await settle(page);
+    const adminTxt = await page.locator("main").innerText();
+    await page.close();
+    const t = await timesOf(life.id);
+    assert(t.refunded_at && t.refund_note === "BCA transfer e2e", JSON.stringify(t));
+    assert(/Refunded Rp10\.000 on .* WIB\./.test(adminTxt) && !/MARK AS REFUNDED/.test(adminTxt), "admin page still shows the alert / lacks the refunded line");
+    for (const label of ["Placed", "Paid", "Accepted", "Ready for pickup", "Cancelled", "Refunded"]) {
+      assert(new RegExp(`${label}\\s+\\d+ \\w+ \\d{4}, \\d{2}:\\d{2} WIB`).test(adminTxt), `timeline lacks ${label}`);
+    }
+    const mail = await waitMail(`Order ${life.number} was refunded`);
+    assert(/Rp10\.000/.test(mail.body.Text) && !/BCA transfer e2e/.test(mail.body.Text), "refund email lacks the amount or shows the store's note");
+    const cust = await open(alya, `/orders/${life.number}`);
+    const txt = await cust.locator("main").innerText();
+    await cust.close();
+    assert(/Your payment was refunded on .* WIB\./.test(txt), "customer page lacks 'refunded on'");
+    const receipt = await open(alya, `/orders/${life.number}/invoice`);
+    await settle(receipt);
+    const rtxt = await receipt.locator("main").innerText();
+    await receipt.close();
+    assert(/Cancelled · refunded .* WIB/.test(rtxt), "receipt lacks 'Cancelled · refunded'");
+    await sleep(1500);
+    const sent = (await mailsFor(life.number)).filter((m) => m.Subject === `Order ${life.number} was refunded`).length;
+    assert(sent === 1, `${sent} refund emails`);
+    return `${life.number}: refunded_at + note saved; 1 refund email; admin line + timeline (6 steps); customer page + receipt say refunded`;
+  });
+
+  await check("US-011.5", "Customer order page: step times under finished steps; 'usually within 30 minutes' while waiting for the shop", async () => {
+    const c = await demoOrder();
+    await q("UPDATE payments SET status='paid', paid_at=UTC_TIMESTAMP(3) WHERE order_id=?", [c.id]);
+    await q("UPDATE orders SET payment_status='paid' WHERE id=?", [c.id]);
+    const page = await open(alya, `/orders/${c.number}`);
+    const waiting = await page.locator("main").innerText();
+    await q("UPDATE orders SET fulfilment_status='baking', accepted_at=UTC_TIMESTAMP(3) WHERE id=?", [c.id]);
+    await page.reload();
+    const steps = await page.locator("section[aria-labelledby=order-progress] ol").innerText();
+    await page.close();
+    assert(/usually within 30 minutes during opening hours/.test(waiting), "confirming text lacks the 30 minutes");
+    const times = steps.match(/\d{2}:\d{2}/g) ?? [];
+    assert(times.length === 2, `expected 2 step times (payment, confirmed), saw ${times.length}: ${steps.replace(/\s+/g, " ")}`);
+    return `${c.number}: steps show ${times.join(", ")}`;
   });
 
   await check("US-007.4", "Internal links on /, /menu, /our-story (header, nav menu, footer, CTAs) return non-404", async () => {
@@ -1011,6 +1196,313 @@ try {
       return "clean";
     });
   }
+
+  // ============================================================ US-010 store hours, fees, review, guest orders
+  // Guest checkout of one Red Velvet (pickup) up to the payment step; a guest's paid order (inserted) for the
+  // lookup, success page and sign-up claim. Everything created is deleted afterwards with its emails.
+  const WEEK = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+  const mailsTo = async (address) =>
+    ((await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? []).filter((m) => m.To.some((t) => t.Address === address));
+  const deleteMailsTo = async (address) => {
+    const ids = (await mailsTo(address)).map((m) => m.ID);
+    if (ids.length) await fetch(`${MAILPIT}/api/v1/messages`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ IDs: ids }) });
+    return ids.length;
+  };
+  const closedEmail = `e2e-closed-${RUN}@example.test`;
+  const checkoutCtx = await newCtx();
+  undo.push(async () => {
+    await checkoutCtx.close().catch(() => {});
+    const placed = await q("DELETE FROM orders WHERE email=?", [closedEmail]);
+    cleanupLog.push(`US-010 checkout: ${placed.affectedRows} order(s) deleted (expected 0)`);
+  });
+  let payPage = null;
+
+  await check("US-010.1", "Shop closed (today not an open day): both checkout steps say when orders open again, Continue / PAY / demo skip are disabled, a forced submit places nothing", async () => {
+    await checkoutCtx.addCookies([{ name: "db_cart", value: encodeURIComponent(JSON.stringify([{ v: String(DEMO_VARIANT), q: 1 }])), url: BASE }]);
+    payPage = await open(checkoutCtx, "/checkout");
+    await settle(payPage);
+    await payPage.locator('input[name="fulfilment"][value="pickup"]').check({ force: true });
+    await payPage.locator("#checkout-email").fill(closedEmail);
+    await payPage.locator("#checkout-fullName").fill("Closed Test");
+    await payPage.locator("#checkout-phone").fill("0812-3456-7890");
+    await Promise.all([payPage.waitForURL(/\/checkout\/payment/, { timeout: 60_000 }), payPage.locator("form button[type=submit]").first().click()]);
+    // Only tomorrow (WIB) open, 07:00–21:00: closed now, opens tomorrow at 07:00, last order 20:30.
+    const today = (new Date(Date.now() + 7 * 3600e3).getUTCDay() + 6) % 7;
+    await q("UPDATE store_settings SET opens_at='07:00', closes_at='21:00', open_days=? WHERE id=1", [WEEK[(today + 1) % 7]]);
+    try {
+      await payPage.reload();
+      await settle(payPage);
+      const notice = (await payPage.locator("#payment-closed").innerText()).replace(/\s+/g, " ");
+      assert(/We're closed right now\. Orders open again tomorrow \(\w+\) at 07:00\. Open 07:00–21:00 WIB · last order 20:30\./.test(notice), `notice: ${notice}`);
+      const pay = payPage.locator("[data-pinned-bar] button[type=submit]");
+      assert(await pay.isDisabled(), "PAY enabled while closed");
+      const skip = payPage.getByRole("button", { name: "Skip payment (demo)", exact: true });
+      if (await skip.count()) assert(await skip.isDisabled(), "demo skip enabled while closed");
+      // The server refuses too: enable the button by hand and submit.
+      await pay.evaluate((b) => {
+        b.disabled = false;
+      });
+      await pay.click();
+      await payPage.getByText("We're not taking orders right now").waitFor({ timeout: 30_000 });
+      const placed = (await one("SELECT COUNT(*) n FROM orders WHERE email=?", [closedEmail])).n;
+      assert(placed === 0, `${placed} order(s) placed while closed`);
+      const details = await open(checkoutCtx, "/checkout");
+      await settle(details);
+      const detailsNotice = await details.locator("#checkout-closed").isVisible();
+      const cont = await details.locator("[data-pinned-bar] button[type=submit]").isDisabled();
+      await details.close();
+      assert(detailsNotice && cont, `details step: notice ${detailsNotice}, Continue disabled ${cont}`);
+      return `"${notice}"; refused server-side, 0 orders`;
+    } finally {
+      await alwaysOpen();
+    }
+  });
+
+  await check("US-010.2", "Payment step: review shows name · phone · email; fee hints only when the gateway adds a fee, and PAY names the total with it", async () => {
+    assert(payPage, "no payment page from US-010.1");
+    await payPage.reload();
+    await settle(payPage);
+    const main = (await payPage.locator("main").innerText()).replace(/\s+/g, " ");
+    assert(main.includes(`Closed Test · 0812-3456-7890 · ${closedEmail}`), "contact row lacks name · phone · email");
+    assert((await payPage.locator("#payment-closed").count()) === 0, "closed notice while open");
+    await payPage.locator('input[name="method"][value="bca_va"]').check({ force: true });
+    const label = await payPage.locator("[data-pinned-bar] button[type=submit]").innerText();
+    const hints = await payPage.getByText(/^\+ Rp[\d.]+ service fee$/).count();
+    const note = (await payPage.locator("#payment-fee-note").count()) ? await payPage.locator("#payment-fee-note").innerText() : null;
+    if (note === null) {
+      assert(hints === 0 && /^PAY Rp[\d.]+$/.test(label.trim()), `no fee: ${hints} hints, button "${label}"`);
+      return `no service fee (mock): no hints, button "${label.trim()}"`;
+    }
+    assert(hints > 0 && /^PAY Rp[\d.]+$/.test(label.trim()) && /Includes the Rp[\d.]+ payment service fee/.test(note), `fee: ${hints} hints, "${label}", note "${note}"`);
+    return `${hints} fee hints, button "${label.trim()}", note "${note}"`;
+  });
+  if (payPage) await payPage.close().catch(() => {});
+
+  // A paid guest order (no account) for the lookup, success page and claim, plus one with the same email
+  // that already belongs to Alya: the claim must leave that one alone.
+  const guestEmail = `e2e-guest-${RUN}@example.test`;
+  async function guestOrder(userId) {
+    const max = (await one("SELECT MAX(CAST(SUBSTRING(order_number, 4) AS UNSIGNED)) n FROM orders WHERE order_number LIKE 'DB-%'")).n ?? 0;
+    const number = `DB-${String(Number(max) + 1).padStart(4, "0")}`;
+    const r = await q(
+      `INSERT INTO orders (order_number, user_id, customer_name, email, phone, fulfilment_method, subtotal, delivery_fee, total, payment_status, created_at)
+       VALUES (?, ?, 'Guest Test', ?, '0812-3456-7890', 'pickup', 10000, 0, 10000, 'paid', UTC_TIMESTAMP(3))`,
+      [number, userId, guestEmail],
+    );
+    await q("INSERT INTO order_items (order_id, variant_id, qty, unit_price) VALUES (?, ?, 2, 5000)", [r.insertId, DEMO_VARIANT]);
+    await q(
+      `INSERT INTO payments (order_id, method, amount, status, provider, reference, charged_amount, fee, fee_bearer, created_at)
+       VALUES (?, 'bca_va', 10000, 'paid', 'mock', ?, 10000, 0, 'merchant', UTC_TIMESTAMP(3))`,
+      [r.insertId, `${number}-1`],
+    );
+    return { id: r.insertId, number };
+  }
+  const guestA = await guestOrder(null);
+  const alyaSame = await guestOrder(2);
+  undo.push(async () => {
+    await q("DELETE FROM orders WHERE id IN (?, ?)", [guestA.id, alyaSame.id]);
+    const user = await one("SELECT id FROM users WHERE email=?", [guestEmail]);
+    if (user) await q("DELETE FROM users WHERE id=?", [user.id]);
+    const mails = await deleteMailsTo(guestEmail).catch(() => 0);
+    cleanupLog.push(`US-010 guest orders ${guestA.number}, ${alyaSame.number}${user ? ", their test account" : ""} and ${mails} email(s) deleted`);
+  });
+
+  const lookupCtx = await newCtx();
+  undo.push(() => lookupCtx.close().catch(() => {}));
+  let orderToken = null;
+  await check("US-010.3", "/orders/find: wrong email, unknown number and the right pair all get the same 'if they match, we've emailed you a link' answer; only the match emails the order link, which opens the order", async () => {
+    const page = await open(lookupCtx, "/orders/find");
+    const submit = async (number, email) => {
+      await page.locator("#find-order-number").fill(number);
+      await page.locator("#find-order-email").fill(email);
+      await Promise.all([page.waitForResponse((r) => r.request().method() === "POST"), page.locator("form:has(#find-order-number) button[type=submit]").click()]);
+      await page.locator("#find-order-sent").waitFor();
+      await sleep(300);
+      return page.locator("#find-order-sent").innerText();
+    };
+    const wrongEmail = await submit(guestA.number, `nobody-${RUN}@example.test`);
+    const unknown = await submit("DB-999999999", guestEmail);
+    // Lowercase number without the zeros, email in capitals: still a match.
+    const match = await submit(guestA.number.toLowerCase().replace(/-0+/, " "), guestEmail.toUpperCase());
+    const stayed = new URL(page.url()).pathname;
+    await page.close();
+    assert(wrongEmail === unknown && unknown === match && /If that order number and email match, we've emailed you a link to it\./.test(match), `"${wrongEmail}" / "${unknown}" / "${match}"`);
+    assert(stayed === "/orders/find", `left the lookup page for ${stayed}`);
+    const subject = `Your link to order ${guestA.number}`;
+    let mails = [];
+    for (let i = 0; i < 30; i++) {
+      mails = (await mailsTo(guestEmail)).filter((m) => m.Subject === subject);
+      if (mails.length) break;
+      await sleep(500);
+    }
+    await sleep(1500); // a stray second email (from the unknown-number try) would have arrived by now
+    mails = (await mailsTo(guestEmail)).filter((m) => m.Subject === subject);
+    const others = (await mailsTo(`nobody-${RUN}@example.test`)).length;
+    assert(mails.length === 1 && others === 0, `${mails.length} link email(s) to the order's address, ${others} to the wrong one`);
+    const body = await (await fetch(`${MAILPIT}/api/v1/message/${mails[0].ID}`)).json();
+    const link = body.Text.match(new RegExp(`https?://\\S+/orders/${guestA.number}\\?t=\\S+`))?.[0];
+    assert(link, "no order link in the email");
+    orderToken = new URL(link).searchParams.get("t");
+    // A fresh browser (not the one that asked) opens the order from the emailed link.
+    const fresh = await newCtx();
+    try {
+      const order = await open(fresh, new URL(link).pathname + new URL(link).search);
+      const txt = await order.locator("main").innerText();
+      assert(txt.includes(guestA.number), "order page lacks the order number");
+    } finally {
+      await fresh.close();
+    }
+    const signIn = await get("/sign-in");
+    const footer = await get("/");
+    assert(/Ordered as a guest\?/.test(signIn.text) && signIn.text.includes('href="/orders/find"'), "sign-in lacks the guest lookup link");
+    assert(footer.text.includes('href="/orders/find"'), "footer lacks the lookup link");
+    return `same answer "${match}"; one "${subject}" email, its link opens ${guestA.number}; linked from sign-in + footer`;
+  });
+
+  await check("US-010.4", "Guest success page: 'emailed the details to <email>' and a Create account offer that prefills sign-up", async () => {
+    assert(orderToken, "no token from US-010.3");
+    const page = await open(lookupCtx, `/checkout/success/${guestA.number}?t=${encodeURIComponent(orderToken)}`);
+    const txt = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+    assert(txt.includes(`We've emailed the details to ${guestEmail}.`), "no emailed line");
+    assert(txt.includes("Save your details for next time"), "no account offer");
+    const offer = page.getByRole("link", { name: "Create account" });
+    assert((await offer.getAttribute("href")) === `/sign-up?email=${encodeURIComponent(guestEmail)}`, `href ${await offer.getAttribute("href")}`);
+    await Promise.all([page.waitForURL(/\/sign-up\?email=/), offer.click()]);
+    const prefilled = await page.locator("#email").inputValue();
+    await page.close();
+    assert(prefilled === guestEmail, `sign-up email "${prefilled}"`);
+    return `emailed line + offer; sign-up prefilled with ${prefilled}`;
+  });
+
+  // US-010.5–7: the guest signs up with a password (the claim link is emailed); a second account
+  // ("another account", whose sign-up name looks like a link) must not be able to take the orders.
+  const otherEmail = `e2e-other-${RUN}@example.test`;
+  undo.push(async () => {
+    const r = await q("DELETE FROM users WHERE email=?", [otherEmail]);
+    const mails = await deleteMailsTo(otherEmail).catch(() => 0);
+    cleanupLog.push(`US-010 other account: ${r.affectedRows} user(s) and ${mails} email(s) deleted`);
+  });
+  const signUp = async (ctx, email, name, password) => {
+    const page = await open(ctx, `/sign-up?email=${encodeURIComponent(email)}`);
+    await page.locator("#fullName").fill(name);
+    await page.locator("#password").fill(password);
+    await page.locator("#confirm").fill(password);
+    await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/sign-up"), { timeout: 60_000 }), page.locator("form button[type=submit]").click()]);
+    return page;
+  };
+  const waitMailTo = async (address, subject) => {
+    for (let i = 0; i < 30; i++) {
+      const mail = (await mailsTo(address)).find((m) => m.Subject === subject);
+      if (mail) return await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
+      await sleep(500);
+    }
+    return null;
+  };
+  const NEUTRAL = "If you've ordered as a guest with this email, we've emailed you a link to add those orders to your account.";
+  const ownerCtx = await newCtx();
+  const otherCtx = await newCtx();
+  undo.push(async () => {
+    await ownerCtx.close().catch(() => {});
+    await otherCtx.close().catch(() => {});
+  });
+  let claimPath = null;
+  const guestOwner = async () => (await one("SELECT user_id FROM orders WHERE id=?", [guestA.id])).user_id;
+
+  await check("US-010.5", "Password sign-up: /account shows the same neutral 'if you ordered as a guest' notice with or without guest orders (no count); the claim email states the count; the welcome greets a plain name, and no name when it looks like a link", async () => {
+    const page = await signUp(ownerCtx, guestEmail, "Guest Test", "guest12345");
+    assert(new URL(page.url()).pathname === "/account" && new URL(page.url()).search === "?claim=1", `after sign-up: ${page.url()}`);
+    const notice = await page.locator("#account-linked").innerText();
+    await page.close();
+    assert(notice === NEUTRAL, `sign-up notice "${notice}"`);
+    assert((await guestOwner()) === null, "guest order linked before the email was verified");
+    const other = await signUp(otherCtx, otherEmail, "Visit evil.com now", "other12345");
+    const otherUrl = new URL(other.url());
+    const otherNotice = await other.locator("#account-linked").innerText();
+    await other.close();
+    assert(otherUrl.pathname === "/account" && otherUrl.search === "?claim=1" && otherNotice === NEUTRAL, `no guest orders: ${otherUrl.pathname}${otherUrl.search} "${otherNotice}"`);
+    const claimMail = await waitMailTo(guestEmail, "Add your past order to your Droolbites account");
+    assert(claimMail, "no 'Add your past order' email");
+    const link = claimMail.Text.match(/https?:\/\/\S+\/account\/claim\?t=\S+/)?.[0];
+    assert(link, "no /account/claim link in the email");
+    claimPath = new URL(link).pathname + new URL(link).search;
+    const welcome = await waitMailTo(guestEmail, "Welcome to Droolbites");
+    assert(welcome?.Text.includes("Hi Guest Test, your Droolbites account is ready."), "welcome email doesn't greet by name");
+    const otherWelcome = await waitMailTo(otherEmail, "Welcome to Droolbites");
+    assert(otherWelcome?.Text.includes("Hi, your Droolbites account is ready.") && !otherWelcome.Text.includes("evil"), "link-like name appears in the welcome email");
+    const otherClaim = (await mailsTo(otherEmail)).filter((m) => /past order/.test(m.Subject)).length;
+    assert(otherClaim === 0, `${otherClaim} claim email(s) for an address without guest orders`);
+    return `neutral notice for both; "${claimMail.Subject}" -> ${new URL(link).pathname}; welcome "Hi Guest Test" / plain "Hi"`;
+  });
+
+  await check("US-010.6", "Claim link changes nothing unless the account it was sent for confirms: signed out it asks to sign in (also via the old /auth/claim-orders URL); another account sees 'for another account' and no button; a confirm page left open then submitted as another account adds nothing", async () => {
+    assert(claimPath, "no claim link from US-010.5");
+    const anon = await newCtx();
+    try {
+      const page = await open(anon, claimPath);
+      const signInUrl = new URL(page.url());
+      assert(signInUrl.pathname === "/sign-in" && signInUrl.searchParams.get("next") === claimPath, `signed out: ${page.url()}`);
+      await page.goto(`/auth/claim-orders${new URL(claimPath, BASE).search}`);
+      assert(new URL(page.url()).pathname === "/sign-in", `old URL signed out: ${page.url()}`);
+      await page.close();
+    } finally {
+      await anon.close();
+    }
+    assert((await guestOwner()) === null, "opening the link signed out moved the order");
+    const other = await open(otherCtx, claimPath);
+    const otherText = (await other.locator("main").innerText()).replace(/\s+/g, " ");
+    const buttons = await other.getByRole("button", { name: "ADD TO MY ACCOUNT" }).count();
+    await other.close();
+    assert(otherText.includes("This link is for another account.") && buttons === 0, `another account: ${buttons} button(s), "${otherText.slice(0, 120)}"`);
+    assert((await guestOwner()) === null, "opening the link as another account moved the order");
+    // The owner's confirm page, then the session becomes the other account's before the button is pressed.
+    const stale = await open(ownerCtx, claimPath);
+    await stale.getByRole("button", { name: "ADD TO MY ACCOUNT" }).waitFor();
+    const ownerCookies = await ownerCtx.cookies();
+    const otherSession = (await otherCtx.cookies()).find((c) => c.name === "db_session");
+    assert(otherSession, "no session cookie for the other account");
+    await ownerCtx.addCookies([otherSession]);
+    await stale.getByRole("button", { name: "ADD TO MY ACCOUNT" }).click();
+    await stale.getByText("This link is for another account.").waitFor({ timeout: 30_000 });
+    await stale.close();
+    await ownerCtx.clearCookies();
+    await ownerCtx.addCookies(ownerCookies);
+    assert((await guestOwner()) === null, "the stale confirm moved the order to another account");
+    return "signed out -> sign-in (new and old URL); other account: notice, no button; stale confirm as other account refused; order still a guest order";
+  });
+
+  await check("US-010.7", "Claim flow: link opened signed out -> sign in -> 'Add 1 past order to your account?' -> confirm adds the guest order (not Alya's), /account says so and lists it; again says they're already there; a bad token says the link doesn't work", async () => {
+    assert(claimPath, "no claim link from US-010.5");
+    const ctx = await newCtx();
+    try {
+      const page = await open(ctx, claimPath);
+      assert(new URL(page.url()).pathname === "/sign-in", `signed out: ${page.url()}`);
+      await page.locator("#email").fill(guestEmail);
+      await page.locator("#password").fill("guest12345");
+      await Promise.all([page.waitForURL((u) => u.pathname === "/account/claim", { timeout: 60_000 }), page.locator("form button[type=submit]").click()]);
+      const title = await page.locator("#claim-title").innerText();
+      const sub = (await page.locator("main").innerText()).replace(/\s+/g, " ");
+      assert(title === "Add 1 past order to your account?" && sub.includes(`placed with ${guestEmail}`), `confirm page "${title}"`);
+      assert((await guestOwner()) === null, "the confirm page moved the order before the button");
+      await Promise.all([page.waitForURL(/\/account\?linked=1/, { timeout: 60_000 }), page.getByRole("button", { name: "ADD TO MY ACCOUNT" }).click()]);
+      const notice = await page.locator("#account-linked").innerText();
+      const listed = (await page.locator("main").innerText()).includes(guestA.number);
+      const user = await one("SELECT id FROM users WHERE email=?", [guestEmail]);
+      const alyas = await one("SELECT user_id FROM orders WHERE id=?", [alyaSame.id]);
+      assert((await guestOwner()) === user.id, `guest order not in account ${user.id}`);
+      assert(alyas.user_id === 2, `Alya's order moved to ${alyas.user_id}`);
+      assert(/past order is now in your account/.test(notice) && listed, `notice "${notice}", listed ${listed}`);
+      await page.goto(claimPath);
+      await page.waitForURL(/\/account\?linked=0/, { timeout: 60_000 });
+      const again = await page.locator("#account-linked").innerText();
+      await page.goto("/account/claim?t=nope");
+      const bad = await page.locator("#claim-title").innerText();
+      await page.close();
+      assert(/already in your account/.test(again) && /doesn't work anymore/.test(bad), `again "${again}", bad "${bad}"`);
+      return `"${title}" -> ${guestA.number} in user ${user.id}, listed on /account; ${alyaSame.number} stays Alya's; again: "${again}"`;
+    } finally {
+      await ctx.close();
+    }
+  });
 } finally {
   for (const fn of undo.reverse()) {
     try {

@@ -11,7 +11,7 @@ import { sendOrderCancelledEmail, sendOrderPaidEmail, sendStoreNewOrderEmail } f
 import { getPaymentProvider, PAYMENT_WINDOW_MS, PaymentGatewayError } from "./payments";
 import { signToken, verifyToken } from "./session";
 import { deductOrderStock, findShortLines } from "./stock";
-import { CUSTOMER_CANCEL_REASON, notPaidInfo, paymentStatusInfo } from "./order-status";
+import { CUSTOMER_CANCEL_REASON, notPaidInfo, paymentStatusInfo, refundedInfo } from "./order-status";
 
 export const ORDER_NUMBER_RE = /^DB-\d{4,9}$/;
 
@@ -313,7 +313,10 @@ export async function expireOrder(orderId: bigint) {
   const [, expired, cancelled] = await db.$transaction([
     db.payment.updateMany({ where: { orderId, status: "awaiting" }, data: { status: "expired" } }),
     db.order.updateMany({ where: { id: orderId, paymentStatus: "awaiting" }, data: { paymentStatus: "expired" } }),
-    db.order.updateMany({ where: { id: orderId, paymentStatus: "expired", fulfilmentStatus: "pending" }, data: { fulfilmentStatus: "cancelled" } }),
+    db.order.updateMany({
+      where: { id: orderId, paymentStatus: "expired", fulfilmentStatus: "pending" },
+      data: { fulfilmentStatus: "cancelled", cancelledAt: new Date() },
+    }),
   ]);
   if (expired.count > 0 && cancelled.count > 0) {
     deliverLater(async () => {
@@ -356,13 +359,14 @@ export function cancelledByCustomer(order: { fulfilmentStatus: FulfilmentStatus;
  * The payment badge for an order in the admin lists and the CSV: an unpaid order the store cancelled
  * reads "Not paid" (nothing failed), the same as on its order page and in the sales report.
  */
-export function orderPaymentInfo(order: Parameters<typeof cancelledByStore>[0]) {
+export function orderPaymentInfo(order: Parameters<typeof cancelledByStore>[0] & { refundedAt: Date | null }) {
+  if (order.refundedAt) return refundedInfo;
   return order.paymentStatus !== "paid" && cancelledByStore(order) ? notPaidInfo : paymentStatusInfo[order.paymentStatus];
 }
 
 /**
  * The payment filter of the admin orders list and its CSV, matching the badge above: "Awaiting
- * payment" and "Payment failed" leave out the unpaid orders the store cancelled (cancelledByStore,
+ * payment" and "Expired" leave out the unpaid orders the store cancelled (cancelledByStore,
  * in SQL), which show as "Not paid".
  */
 export async function paymentStatusWhere(status: PaymentStatus): Promise<Prisma.OrderWhereInput> {
@@ -417,7 +421,7 @@ export async function markOrderPaid(orderId: bigint, paymentId: bigint, paidAt =
     // A paid order waits as a new order until the store accepts (baking) or declines it. A late
     // payment for an order that had expired on its own reopens it the same way.
     if (order.paymentStatus === "expired" && order.fulfilmentStatus === "cancelled") {
-      await tx.order.update({ where: { id: orderId }, data: { fulfilmentStatus: "pending" } });
+      await tx.order.update({ where: { id: orderId }, data: { fulfilmentStatus: "pending", cancelledAt: null } });
     }
     // Stock goes down with the paid transition, in this transaction, once per order.
     const { short } = await deductOrderStock(tx, orderId);

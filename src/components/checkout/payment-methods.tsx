@@ -12,6 +12,8 @@ import { PAYMENT_GROUPS, PRIMARY_VA_COUNT, paymentMethodInfo } from "@/lib/order
 export type PaymentLogos = Partial<Record<PaymentMethod, string>>;
 /** Methods the gateway refuses for this total: the minimum, or null when it isn't known. */
 export type BelowMinimum = Partial<Record<PaymentMethod, number | null>>;
+/** The service fee each method adds to this order, where it's known before the charge. */
+export type PaymentFees = Partial<Record<PaymentMethod, number>>;
 
 /**
  * The E-wallet / QRIS / Virtual account / Retail groups with their radio tiles, each straight on the
@@ -33,6 +35,7 @@ export function PaymentMethodGroups({
   onSelect,
   leadMethod = null,
   belowMinimum = {},
+  fees = {},
   className,
 }: {
   t: CheckoutMessages["payment"];
@@ -43,6 +46,8 @@ export function PaymentMethodGroups({
   leadMethod?: PaymentMethod | null;
   /** Shown disabled with "Min. RpX" instead of the hint, so the customer sees why. */
   belowMinimum?: BelowMinimum;
+  /** A "+ Rp4.000 service fee" line under the hint, for the methods listed. */
+  fees?: PaymentFees;
   className?: string;
 }) {
   const groups = PAYMENT_GROUPS.map((g) => ({ key: g.key, methods: g.methods.filter((m) => methods.includes(m)) })).filter(
@@ -75,6 +80,7 @@ export function PaymentMethodGroups({
                 const info = paymentMethodInfo[method];
                 const tooSmall = method in belowMinimum;
                 const min = belowMinimum[method];
+                const fee = fees[method];
                 return (
                   <PaymentOption
                     key={method}
@@ -97,9 +103,14 @@ export function PaymentMethodGroups({
                       )
                     }
                     sub={
-                      <span className="block leading-[18px]">
-                        {tooSmall ? (typeof min === "number" ? t.minimum(formatRupiah(min)) : t.belowMinimum) : t.hints[method]}
-                      </span>
+                      <>
+                        <span className="block leading-[18px]">
+                          {tooSmall ? (typeof min === "number" ? t.minimum(formatRupiah(min)) : t.belowMinimum) : t.hints[method]}
+                        </span>
+                        {fee !== undefined && !tooSmall ? (
+                          <span className="block pt-0.5 leading-[18px] font-semibold">{t.feeHint(formatRupiah(fee))}</span>
+                        ) : null}
+                      </>
                     }
                   />
                 );

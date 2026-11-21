@@ -41,6 +41,7 @@ import { sendOrderCancelledEmail, sendOrderPlacedEmail } from "@/lib/order-email
 import { findShortLines, type ShortLine } from "@/lib/stock";
 import { canSimulatePayment, demoPaymentsEnabled, getPaymentOptions, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { getStoreSettings, type StoreSettings } from "@/lib/settings";
+import { checkoutClosed } from "@/lib/store-hours";
 import { getLocale } from "@/i18n/server";
 
 /** Keys of checkoutMessages.errors. */
@@ -68,6 +69,7 @@ type ErrorKey =
   | "cartChanged"
   | "stock"
   | "stockGone"
+  | "storeClosed"
   | "generic";
 
 export type DetailsState = {
@@ -167,6 +169,11 @@ export async function saveCheckoutDetails(prev: DetailsState, formData: FormData
   const entries = await readCartEntries();
   if (entries.length === 0) redirect("/menu");
   const settings = await getStoreSettings();
+  // Outside ordering hours nothing is saved: the refreshed page shows when orders open again and disables Continue.
+  if (checkoutClosed(settings)) {
+    revalidatePath("/checkout");
+    return { errors: {}, attempt: prev.attempt + 1 };
+  }
 
   const parsed = checkoutDetailsSchema.safeParse({
     email: str(formData, "email"),
@@ -268,6 +275,11 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   ]);
   if (entries.length === 0) redirect("/menu");
   if (!details) redirect("/checkout");
+  // Outside ordering hours nothing is placed, demo skip included; the page then shows when orders open again.
+  if (checkoutClosed(settings)) {
+    revalidatePath("/checkout/payment");
+    return { error: "storeClosed", attempt };
+  }
   if (!fulfilmentEnabled(settings, details.fulfilment)) return { error: "methodUnavailable", attempt };
   // No distance on file, or now beyond the store's range: back to the details step to re-pin.
   const fee = checkoutDeliveryFee(settings, details);
@@ -550,7 +562,7 @@ export async function cancelOrder(prev: CancelOrderState, formData: FormData): P
     const count = await db.$transaction(async (tx) => {
       const { count } = await tx.order.updateMany({
         where: { id: fresh.id, paymentStatus: "awaiting", fulfilmentStatus: "pending" },
-        data: { fulfilmentStatus: "cancelled", paymentStatus: "expired", cancelReason: CUSTOMER_CANCEL_REASON },
+        data: { fulfilmentStatus: "cancelled", paymentStatus: "expired", cancelReason: CUSTOMER_CANCEL_REASON, cancelledAt: new Date() },
       });
       // Unpaid, so nothing was taken from stock: nothing to give back.
       if (count > 0) await tx.payment.updateMany({ where: { orderId: fresh.id, status: "awaiting" }, data: { status: "expired" } });
@@ -644,6 +656,11 @@ export async function changePaymentMethod(prev: ChangeMethodState, formData: For
             : "gatewayBusy";
     return { error, attempt };
   }
+  // The new method's details by email too (the old VA or code is closed and isn't in it).
+  after(async () => {
+    const full = await getOrderByNumber(orderNumber);
+    if (full) await sendOrderPlacedEmail(full, { changed: true });
+  });
   redirect(payHref);
 }
 

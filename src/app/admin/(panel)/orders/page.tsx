@@ -11,7 +11,7 @@ import { AdminMain, Card, CellLabel, DemoBadge, listCardClasses, listScrollClass
 import { requireAdmin } from "@/lib/auth";
 import { containsText, db } from "@/lib/db";
 import { formatDate, formatRupiah } from "@/lib/format";
-import { fulfilmentBadgeInfo, needsActionWhere } from "@/lib/order-status";
+import { fulfilmentBadgeInfo, needsActionWhere, overdueMinutes } from "@/lib/order-status";
 import { orderPaymentInfo, payable, paymentStatusWhere } from "@/lib/orders";
 import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { cn } from "@/lib/cn";
@@ -74,10 +74,12 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
       paymentStatus: true,
       createdAt: true,
       updatedAt: true,
+      refundedAt: true,
       total: true,
-      payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true, provider: true } },
+      payments: { orderBy: { id: "desc" }, select: { status: true, chargedAmount: true, provider: true, paidAt: true } },
     },
   });
+  const now = new Date();
 
   const c = t.orders.col;
   const cell = "py-3 text-[15px] leading-[23px] font-medium max-xl:p-0";
@@ -85,8 +87,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   // Below md a row stacks its cells (flex-wrap, placed with max-md:order-*). From md to xl, where the table
   // doesn't fit beside the sidebar yet, a row is two lines on four tracks: number, payment, status, total
   // over customer, date, method, View. Fixed tracks so the columns line up from row to row.
+  // From xl the cells line up on their first line (baseline), so a "Waiting 5 d" under the status badge
+  // hangs below the row's badges instead of lifting its own badge above the others.
   const row =
-    "max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:items-center md:max-xl:gap-x-5 md:max-xl:gap-y-1.5";
+    "xl:align-baseline max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:items-center md:max-xl:gap-x-5 md:max-xl:gap-y-1.5";
 
   return (
     <AdminMain>
@@ -110,7 +114,8 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                 <th scope="col" className={cn(listThClasses, "w-[124px] pr-3")}>
                   {c.method}
                 </th>
-                <th scope="col" className={cn(listThClasses, "w-[110px] pr-3")}>
+                {/* Wide enough for "Paid" (or "Lunas") with the Demo chip on one line, so a demo row is no taller. */}
+                <th scope="col" className={cn(listThClasses, "w-[148px] pr-3")}>
                   {c.payment}
                 </th>
                 <th scope="col" className={cn(listThClasses, "w-[124px] pr-3")}>
@@ -140,6 +145,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                   const payment = shownPayment(order.payments);
                   const pay = payable(order, payment);
                   const unpaid = order.paymentStatus !== "paid" && order.fulfilmentStatus === "pending";
+                  // Paid and still not accepted past the half hour the customer was told to expect.
+                  const waited =
+                    order.paymentStatus === "paid" && order.fulfilmentStatus === "pending"
+                      ? overdueMinutes(order.payments.find((p) => p.status === "paid")?.paidAt, now)
+                      : null;
                   return (
                     <tr key={order.orderNumber} className={row}>
                       <th
@@ -178,6 +188,11 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         ) : (
                           <StatusBadge tone={fs.tone} className="whitespace-nowrap">{fs[locale]}</StatusBadge>
                         )}
+                        {waited !== null ? (
+                          <span className="mt-1 block text-[13px] leading-5 font-semibold text-error">
+                            {t.orders.waiting(waited)}
+                          </span>
+                        ) : null}
                       </td>
                       <td className={cn(cell, "pr-6 text-right whitespace-nowrap tabular-nums max-xl:order-2 max-xl:grow max-xl:basis-[calc(45%-0.5rem)] max-xl:text-base max-xl:font-bold md:max-xl:col-start-4 md:max-xl:row-start-1")}>
                         <CellLabel until="xl">{c.total}</CellLabel>

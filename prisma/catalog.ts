@@ -77,7 +77,7 @@ export const storeSettings = {
   email: "hello@droolbites.biz.id",
   phone: "+62 896 7562 4486",
   address: "Jl. Palem Sememi Raya F16, Sememi, Benowo, Surabaya",
-  opensAt: "10:00",
+  opensAt: "07:00",
   closesAt: "21:00",
   deliveryFee: 10000,
 };

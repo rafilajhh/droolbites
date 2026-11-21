@@ -77,6 +77,20 @@ export async function getPaymentOptions(settings: StoreSettings, amount?: number
 }
 
 /**
+ * The service fee each method is expected to add to `amount`, for the payment step's tiles and PAY total.
+ * Call it only while serviceFeeMayApply(); methods whose rate isn't known ahead are left out.
+ */
+export function serviceFeeEstimates(methods: readonly PaymentMethod[], amount: number) {
+  const provider = getPaymentProvider();
+  const fees: Partial<Record<PaymentMethod, number>> = {};
+  for (const method of methods) {
+    const fee = provider.serviceFee?.(method, amount);
+    if (typeof fee === "number" && fee > 0) fees[method] = fee;
+  }
+  return fees;
+}
+
+/**
  * Whether a payment service fee may be added to the order total for the customer. The gateway names
  * the fee (flat per channel, or a percentage) only in its answer to a charge, so before that we can
  * only say whether one may apply: never with a provider that charges none, and, where who bears it

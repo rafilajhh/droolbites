@@ -6,7 +6,15 @@ import "dotenv/config";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { mariadbUrl } from "../src/lib/db-url";
-import { deductOrderStock, findShortLines, restoreOrderStock, stockLeft, stockStatus } from "../src/lib/stock";
+import {
+  deductOrderStock,
+  findShortLines,
+  productStockLevel,
+  restoreOrderStock,
+  stockLeft,
+  stockLevel,
+  stockStatus,
+} from "../src/lib/stock";
 
 const prisma = new PrismaClient({ adapter: new PrismaMariaDb(mariadbUrl()) });
 const RUN = Date.now().toString(36);
@@ -78,6 +86,23 @@ async function main() {
       assert(stockStatus([0, 0]) === "soldOut", "all out");
       assert(stockStatus([0, null]) === "low", "one out, an untracked size still orderable");
       assert(stockLeft(null) === undefined && stockLeft(6) === undefined && stockLeft(5) === 5 && stockLeft(0) === 0, "stockLeft");
+    });
+
+    await check("stockLevel / productStockLevel: a count per size, no total across sizes", async () => {
+      const eq = (a: unknown, b: unknown, msg: string) => assert(JSON.stringify(a) === JSON.stringify(b), `${msg}: ${JSON.stringify(a)}`);
+      eq(stockLevel(null), { tone: "plenty", count: null }, "untracked");
+      eq(stockLevel(20), { tone: "plenty", count: 20 }, "plenty");
+      eq(stockLevel(6), { tone: "plenty", count: 6 }, "just above low");
+      eq(stockLevel(5), { tone: "low", count: 5 }, "low");
+      eq(stockLevel(0), { tone: "soldOut", count: 0 }, "sold out");
+      eq(stockLevel(-2), { tone: "soldOut", count: 0 }, "negative");
+      eq(productStockLevel([50]), { tone: "plenty", count: 50 }, "one size keeps its count");
+      eq(productStockLevel([3]), { tone: "low", count: 3 }, "one size low");
+      eq(productStockLevel([20, 15, 10, 8]), { tone: "plenty", count: null }, "several sizes: no number");
+      eq(productStockLevel([2, 15]), { tone: "plenty", count: null }, "one size low, another plenty");
+      eq(productStockLevel([0, 3, 2]), { tone: "low", count: null }, "every orderable size low");
+      eq(productStockLevel([0, null]), { tone: "plenty", count: null }, "an untracked size is orderable");
+      eq(productStockLevel([0, 0]), { tone: "soldOut", count: 0 }, "all out");
     });
 
     let first: bigint;

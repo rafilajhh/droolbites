@@ -8,9 +8,10 @@ import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
 import { formatRupiah } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { productStockLevel } from "@/lib/stock";
 import type { ShopProduct } from "./shop-product";
 import { AddButton } from "./add-to-cart";
-import { StockBadge } from "./stock";
+import { StockBadge, StockNote } from "./stock";
 
 type CardSize = "md" | "sm";
 
@@ -60,8 +61,10 @@ export function MenuItemCard({
   const price = formatRupiah(product.fromPrice);
   const badge = showBadge ? product.badge : undefined;
   const banner = layout === "banner";
-  // A one-size product running low says so on the card (sold out is the sticker).
-  const left = !multi && !product.soldOut ? product.variants[0]?.left : undefined;
+  // Every card says its stock: one size its count, several sizes "In stock" (see productStockLevel).
+  // Sold out is the photo's sticker, so the line only says it on cards without one.
+  const stock = productStockLevel(product.variants.map((v) => v.stock));
+  const showStock = !(stock.tone === "soldOut" && badge);
 
   const text = (
     <>
@@ -78,7 +81,7 @@ export function MenuItemCard({
           </Link>
         </h3>
         <p className={cn("text-muted-foreground", s.desc)}>{product.description}</p>
-        {left !== undefined ? <StockBadge left={left} className="mt-0.5" /> : null}
+        {showStock ? <StockNote level={stock} className="mt-0.5" /> : null}
       </div>
       {/* A landscape card has the height of a portrait one beside it. Its sizes and the price row sit together
           at the bottom (level with the neighbours' prices), and any spare height goes under the description. */}

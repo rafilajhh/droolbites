@@ -2,14 +2,15 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CheckoutHeader } from "@/components/checkout/checkout-header";
 import { PaymentForm } from "@/components/checkout/payment-form";
-import { cartSummaryLines } from "@/components/checkout/summary-lines";
+import { cartShortItems, cartSummaryLines } from "@/components/checkout/summary-lines";
 import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCart } from "@/lib/cart";
 import { formatDistance } from "@/lib/format";
-import { checkoutDeliveryFee, formatAddress, joinStreet, readCheckoutDetails } from "@/lib/orders";
-import { demoPaymentsEnabled, getPaymentOptions, serviceFeeMayApply } from "@/lib/payments";
+import { checkoutDeliveryFee, formatAddress, joinStreet, otherRecipient, readCheckoutDetails } from "@/lib/orders";
+import { demoPaymentsEnabled, getPaymentOptions, serviceFeeEstimates, serviceFeeMayApply } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
+import { checkoutClosed } from "@/lib/store-hours";
 
 export async function generateMetadata(): Promise<Metadata> {
   return { title: (await getMessages(checkoutMessages)).meta.payment, robots: { index: false } };
@@ -36,6 +37,16 @@ export default async function CheckoutPaymentPage() {
   // BCA VA first, unless the gateway refuses it for this total: then the first method it takes.
   const usable = methods.filter((m) => !(m in belowMinimum));
   const defaultMethod = usable.includes("bca_va") ? "bca_va" : (usable[0] ?? null);
+  // The fee each method adds to this total, where it's known before the charge (only while a fee may apply).
+  const fees = feeMayApply ? serviceFeeEstimates(usable, total) : {};
+  const recipient = delivery
+    ? otherRecipient({
+        customerName: details.fullName,
+        phone: details.phone,
+        recipientName: details.recipientName || null,
+        recipientPhone: details.recipientPhone || null,
+      })
+    : null;
 
   return (
     <>
@@ -43,7 +54,10 @@ export default async function CheckoutPaymentPage() {
       <main id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-hidden">
         <PaymentForm
           review={{
+            name: details.fullName,
+            phone: details.phone,
             email: details.email,
+            recipient,
             fulfilment: details.fulfilment,
             address: delivery
               ? formatAddress({
@@ -61,6 +75,9 @@ export default async function CheckoutPaymentPage() {
           belowMinimum={belowMinimum}
           defaultMethod={defaultMethod}
           feeMayApply={feeMayApply}
+          fees={fees}
+          storeClosed={checkoutClosed(settings)}
+          short={cartShortItems(cart)}
           demo={demoPaymentsEnabled()}
           summary={{
             lines: cartSummaryLines(cart, locale),

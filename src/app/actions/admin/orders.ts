@@ -6,15 +6,37 @@ import { FulfilmentStatus } from "@/generated/prisma/enums";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { deliverLater } from "@/lib/mail";
-import { NOTIFIED_STATUSES, sendOrderCancelledEmail, sendOrderStatusEmail, type NotifiedStatus } from "@/lib/order-emails";
+import {
+  NOTIFIED_STATUSES,
+  sendOrderCancelledEmail,
+  sendOrderRefundedEmail,
+  sendOrderStatusEmail,
+  type NotifiedStatus,
+} from "@/lib/order-emails";
 import { getOrderByNumber, markOrderPaid, paymentSnapshot, withOrderLock } from "@/lib/orders";
-import { demoPaymentsEnabled, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
+import { DEMO_PROVIDER, demoPaymentsEnabled, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { fulfilmentOptions } from "@/components/admin/rules";
 import { CANCEL_REASONS } from "@/lib/order-status";
 import { restoreOrderStock } from "@/lib/stock";
 import { markOrderPaidDemo, type DemoPaidResult } from "@/lib/demo-payment";
 
-export type FulfilmentState = { status: "idle" | "saved" | "unchanged" | "invalid" | "busy" };
+export type FulfilmentState = { status: "idle" | "saved" | "unchanged" | "invalid" | "busy" | "reason" };
+
+/** A preset reason key, or the store's own words (at least 3 characters); null when neither was given. */
+function cancelReasonFrom(formData: FormData) {
+  const preset = String(formData.get("reason") ?? "");
+  const other = String(formData.get("other") ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
+  const reason = (CANCEL_REASONS as readonly string[]).includes(preset) ? preset : other;
+  return reason.length >= 3 ? reason : null;
+}
+
+/** The timeline column a move to this status stamps (the order's cancel, hand-off or completion time). */
+function stampFor(status: FulfilmentStatus, at = new Date()) {
+  if (status === "cancelled") return { cancelledAt: at };
+  if (status === "completed") return { completedAt: at };
+  if (status === "ready_for_pickup" || status === "out_for_delivery") return { handedOffAt: at };
+  return {};
+}
 
 const schema = z.object({
   orderNumber: z.string().min(1).max(12),
@@ -36,6 +58,9 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
 
   const n = parsed.data.orderNumber;
   const revalidate = () => revalidateOrder(n);
+  // Cancelling a paid order (in the kitchen or on its way) needs a reason the customer sees, as a decline does.
+  const reason = parsed.data.status === "cancelled" && order.paymentStatus === "paid" ? cancelReasonFrom(formData) : null;
+  if (parsed.data.status === "cancelled" && order.paymentStatus === "paid" && !reason) return { status: "reason" };
 
   // Cancelling an unpaid order closes its payment too, so it can't be paid afterwards.
   const closePayment = parsed.data.status === "cancelled" && order.paymentStatus === "awaiting";
@@ -64,7 +89,12 @@ export async function updateFulfilmentStatus(_prev: FulfilmentState, formData: F
     const count = await db.$transaction(async (tx) => {
       const { count } = await tx.order.updateMany({
         where: { id: order.id, fulfilmentStatus: order.fulfilmentStatus, paymentStatus: order.paymentStatus },
-        data: { fulfilmentStatus: parsed.data.status, ...(closePayment ? { paymentStatus: "expired" as const } : {}) },
+        data: {
+          fulfilmentStatus: parsed.data.status,
+          ...stampFor(parsed.data.status),
+          ...(reason ? { cancelReason: reason } : {}),
+          ...(closePayment ? { paymentStatus: "expired" as const } : {}),
+        },
       });
       if (count > 0 && closePayment) {
         await tx.payment.updateMany({ where: { orderId: order.id, status: "awaiting" }, data: { status: "expired" } });
@@ -120,16 +150,14 @@ export async function decideOrder(_prev: DecisionState, formData: FormData): Pro
   const n = String(formData.get("orderNumber") ?? "").slice(0, 12);
   const decision = formData.get("decision");
   if (decision !== "accept" && decision !== "decline") return { status: "changed" };
-  const preset = String(formData.get("reason") ?? "");
-  const other = String(formData.get("other") ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
-  const reason = decision === "decline" ? ((CANCEL_REASONS as readonly string[]).includes(preset) ? preset : other) : null;
-  if (decision === "decline" && (!reason || reason.length < 3)) return { status: "reason" };
+  const reason = decision === "decline" ? cancelReasonFrom(formData) : null;
+  if (decision === "decline" && !reason) return { status: "reason" };
 
   const next: FulfilmentStatus = decision === "accept" ? "baking" : "cancelled";
   const count = await db.$transaction(async (tx) => {
     const { count } = await tx.order.updateMany({
       where: { orderNumber: n, paymentStatus: "paid", fulfilmentStatus: "pending" },
-      data: { fulfilmentStatus: next, cancelReason: reason },
+      data: { fulfilmentStatus: next, cancelReason: reason, ...(next === "baking" ? { acceptedAt: new Date() } : stampFor(next)) },
     });
     // Declined: what its payment took goes back on the shelf, once.
     if (count > 0 && next === "cancelled") {
@@ -142,6 +170,41 @@ export async function decideOrder(_prev: DecisionState, formData: FormData): Pro
   if (count === 0) return { status: "changed" };
   notifyCustomer(n, next);
   return { status: decision === "accept" ? "accepted" : "declined" };
+}
+
+export type RefundState = { status: "idle" | "refunded" | "invalid" };
+
+/**
+ * "Mark as refunded": the store has sent the money of a cancelled, really paid order back (from the
+ * gateway dashboard or by transfer) and records when, with an optional note for itself. Only for a
+ * cancelled order with a paid non-demo payment; a second call changes nothing and sends no email.
+ * The customer gets one "Refund sent" email.
+ */
+export async function markRefunded(_prev: RefundState, formData: FormData): Promise<RefundState> {
+  await requireAdmin();
+  const n = String(formData.get("orderNumber") ?? "").slice(0, 12);
+  const note = String(formData.get("note") ?? "").trim().replace(/\s+/g, " ").slice(0, 200) || null;
+  const order = await db.order.findUnique({
+    where: { orderNumber: n },
+    select: { id: true, fulfilmentStatus: true, refundedAt: true, updatedAt: true, payments: { where: { status: "paid" }, select: { provider: true } } },
+  });
+  if (!order || order.fulfilmentStatus !== "cancelled" || !order.payments.some((p) => p.provider !== DEMO_PROVIDER)) {
+    return { status: "invalid" };
+  }
+  if (order.refundedAt) return { status: "refunded" };
+  const { count } = await db.order.updateMany({
+    where: { id: order.id, fulfilmentStatus: "cancelled", refundedAt: null },
+    // updatedAt stays as it was: cancelledByStore reads it as the cancel time of an unpaid order.
+    data: { refundedAt: new Date(), refundNote: note, updatedAt: order.updatedAt },
+  });
+  revalidateOrder(n);
+  if (count > 0) {
+    deliverLater(async () => {
+      const refunded = await getOrderByNumber(n);
+      if (refunded) await sendOrderRefundedEmail(refunded);
+    });
+  }
+  return { status: "refunded" };
 }
 
 /** Tell the customer about the store's change: accepted, ready, on its way, complete or cancelled. */

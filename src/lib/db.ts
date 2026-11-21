@@ -3,13 +3,19 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "@/generated/prisma/client";
 import { mariadbUrl } from "./db-url";
 
-const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient; prismaClass?: typeof PrismaClient };
 
-export const db =
-  globalForPrisma.prisma ??
-  new PrismaClient({ adapter: new PrismaMariaDb(mariadbUrl()) });
+// Dev keeps one client across reloads. After `prisma generate` (a migration) the reloaded module brings a
+// new PrismaClient class, and the kept client still knows only the old columns: it is replaced then (the
+// old one is left alone, as a module not reloaded yet may still be using it).
+const kept = globalForPrisma.prismaClass === PrismaClient ? globalForPrisma.prisma : undefined;
 
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = db;
+export const db = kept ?? new PrismaClient({ adapter: new PrismaMariaDb(mariadbUrl()) });
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = db;
+  globalForPrisma.prismaClass = PrismaClient;
+}
 
 /**
  * A Prisma `contains` filter that matches the text literally. Prisma sends `contains` to MySQL as

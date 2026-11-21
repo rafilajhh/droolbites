@@ -210,7 +210,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
                 defaultValue={values.opensAt}
                 inputMode="text"
                 pattern="[0-2][0-9]:[0-5][0-9]"
-                placeholder="10:00"
+                placeholder="07:00"
                 maxLength={5}
                 required
                 {...invalid("opensAt")}

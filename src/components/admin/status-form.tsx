@@ -9,6 +9,7 @@ import { useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
 import { ConfirmDialog } from "./confirm-dialog";
+import { CancelReasonFields, type CancelReason } from "./order-decision";
 import { Dropdown, type DropdownOption } from "./dropdown";
 
 /**
@@ -21,13 +22,16 @@ export function StatusForm({
   options,
   cancelOnly,
   paidAmount,
+  paid = false,
 }: {
   orderNumber: string;
   current: string;
   options: DropdownOption[];
   cancelOnly?: { hint: string };
-  /** Set when the order is paid: cancelling it means refunding this amount. */
+  /** Set when the order is paid with real money: cancelling it means refunding this amount. */
   paidAmount?: string;
+  /** The order is paid (demo payments too): cancelling it asks for a reason the customer sees. */
+  paid?: boolean;
 }) {
   const t = useMessages(adminMessages).order;
   const [state, action, pending] = useActionState<FulfilmentState, FormData>(updateFulfilmentStatus, {
@@ -38,6 +42,11 @@ export function StatusForm({
   const [cleared, setCleared] = useState<FulfilmentState | null>(null);
   // Completed and Cancelled close the order for good, so saving one asks first.
   const [confirming, setConfirming] = useState<FormData | null>(null);
+  // Cancelling a paid order: the reason, as in the decline dialog.
+  // Nothing preselected: the customer reads this reason, so the store picks it.
+  const [reason, setReason] = useState<CancelReason | null>(null);
+  const [other, setOther] = useState("");
+  const [missing, setMissing] = useState(false);
   const locked = options.length <= 1;
   const value = options.find((o) => o.value === selected) ?? options[0];
   const messages: Record<FulfilmentState["status"], string> = {
@@ -46,6 +55,7 @@ export function StatusForm({
     unchanged: t.unchanged,
     invalid: t.invalid,
     busy: t.busy,
+    reason: t.decision.otherMissing,
   };
   const message = state === cleared ? "" : messages[state.status];
   const finalStatus = value.value === "completed" || value.value === "cancelled";
@@ -53,15 +63,25 @@ export function StatusForm({
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
-    if (cancelOnly || (finalStatus && value.value !== current)) setConfirming(data);
+    if (cancelOnly || (finalStatus && value.value !== current)) {
+      setMissing(false);
+      setConfirming(data);
+    }
     else startTransition(() => action(data));
   };
+  const cancelling = cancelOnly !== undefined || value.value === "cancelled";
+  const askReason = paid && cancelling && !cancelOnly;
   const confirm = () => {
     const data = confirming;
+    if (askReason && (!reason || (reason === "other" && other.trim().length < 3))) return setMissing(true);
     setConfirming(null);
-    if (data) startTransition(() => action(data));
+    if (!data) return;
+    if (askReason && reason) {
+      data.set("reason", reason);
+      data.set("other", other);
+    }
+    startTransition(() => action(data));
   };
-  const cancelling = cancelOnly !== undefined || value.value === "cancelled";
 
   return (
     <form onSubmit={onSubmit} className="flex w-full flex-col gap-4">
@@ -123,13 +143,29 @@ export function StatusForm({
         tone={cancelling ? "danger" : "neutral"}
         title={cancelling ? t.confirmCancelTitle(orderNumber) : t.confirmCompleteTitle(orderNumber)}
         body={
-          <>
-            <p>{cancelling ? t.confirmCancelBody : t.confirmCompleteBody}</p>
+          <div className={cn("flex flex-col gap-4", askReason && "text-left")}>
+            <p>{cancelling ? (askReason ? t.confirmCancelPaidBody : t.confirmCancelBody) : t.confirmCompleteBody}</p>
             {cancelling && paidAmount ? (
               <p className="font-semibold text-foreground">{t.confirmCancelRefund(paidAmount)}</p>
             ) : null}
-          </>
+            {askReason ? (
+              <CancelReasonFields
+                reason={reason}
+                other={other}
+                missing={missing}
+                onReason={(key) => {
+                  setReason(key);
+                  setMissing(false);
+                }}
+                onOther={(text) => {
+                  setOther(text);
+                  setMissing(false);
+                }}
+              />
+            ) : null}
+          </div>
         }
+        error={missing ? (reason ? t.decision.otherMissing : t.decision.reasonMissing) : undefined}
         cancelLabel={t.goBack}
         confirmLabel={cancelling ? t.confirmCancel : t.confirmComplete}
         onConfirm={confirm}

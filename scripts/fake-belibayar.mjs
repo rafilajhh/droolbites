@@ -58,12 +58,12 @@ function send(res, status, body) {
 const ok = (res, messages, data, status = 200) => send(res, status, { success: true, messages, data });
 const fail = (res, status, code, messages = code) => send(res, status, { success: false, messages, data: { code } });
 
-/** The owner's dashboard rates. */
+/** The owner's dashboard rates (also in belibayarServiceFee, src/lib/payments/belibayar.ts). Percentages in basis points. */
 function feeFor(method, channel, amount) {
   if (method === "virtual_account") return channel === "BCA" ? 4000 : channel === "PERMATA" ? 2500 : 3000;
-  if (method === "qris") return Math.ceil(amount * (amount < 100000 ? 0.007 : 0.0071));
-  const rate = { OVO: 0.035, DANA: 0.025, SPAY: 0.0275 }[channel] ?? 0.03;
-  return Math.ceil(amount * rate);
+  if (method === "qris") return Math.ceil((amount * (amount < 100000 ? 70 : 71)) / 10000);
+  const bp = { OVO: 350, DANA: 250, SPAY: 275 }[channel] ?? 300;
+  return Math.ceil((amount * bp) / 10000);
 }
 
 function digits(seed, n) {

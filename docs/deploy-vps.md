@@ -232,6 +232,8 @@ Kalau dua-duanya kosong, tombol "Continue with Google" otomatis disembunyikan.
 5. Pembayaran demo tercatat dengan provider `demo` (referensi `DB-0042-demo-2`), tanpa biaya layanan. Admin melihat badge **Demo** di halaman pesanan, daftar pesanan dan invoice; CSV menulis metodenya sebagai `QRIS (demo)`; laporan penjualan tetap menghitungnya, dengan baris "Termasuk Rp… pembayaran demo (N pesanan)" di bawah Pendapatan. Pelanggan dan email melihatnya sebagai pesanan lunas biasa.
 6. Matikan lagi dengan mengosongkan `DEMO_PAYMENTS` lalu `up -d` yang sama. Pesanan demo yang sudah ada tetap tercatat lunas (badge Demo tetap tampil); tombolnya saja yang hilang dan aksinya ditolak server.
 
+**Jam pesan** (checkout ikut jam buka toko di admin › Settings, WIB): di luar jam buka, di hari tutup, dan mulai 30 menit sebelum tutup (sama dengan batas ambil di toko, mis. 20:30 untuk tutup 21:00), langkah checkout menampilkan kapan pesanan dibuka lagi dan tombol pesan (termasuk Skip payment demo) mati; server juga menolak. Pesanan yang sudah dibuat tetap bisa dibayar. Jam 00:00–23:59 berarti buka 24 jam (tanpa batas 30 menit). Untuk menguji di luar jam buka, tambahkan `STORE_HOURS_ALWAYS_OPEN="on"` di `.env` lalu `up -d` yang sama; **jangan** dipakai di toko live, kosongkan lagi setelah selesai.
+
 ## 11. Update ke versi terbaru
 
 ```bash

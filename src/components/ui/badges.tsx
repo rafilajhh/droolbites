@@ -51,7 +51,7 @@ const toneClasses: Record<StatusTone, string> = {
   lavender: "bg-tint-lavender", // Baking
   teal: "bg-mint", // Ready for pickup
   cobalt: "bg-mint", // Out for delivery
-  crimson: "bg-tint-salmon", // Payment failed / expired
+  crimson: "bg-tint-salmon", // Expired / cancelled
   muted: "bg-oat", // New order, Cancelled, Hidden
 };
 

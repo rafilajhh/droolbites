@@ -193,6 +193,25 @@ function learnAccepted(method: PaymentMethod, amount: number) {
   if (known && (known.refusedAt >= amount || (known.min !== null && known.min > amount))) floors.delete(method);
 }
 
+/**
+ * The store's service fee rates from its Belibayar dashboard, charged to the customer (the same table
+ * scripts/fake-belibayar.mjs uses). The API names a fee only in a charge's answer, so checkout shows
+ * these before the order is placed; the charge's answer is what the pay page shows and what is paid.
+ * Update this table when the dashboard rates change. Virtual accounts are flat; QRIS and e-wallets a
+ * percentage (in basis points: 70 = 0.7%) rounded up to the rupiah. Retail stores have no known rate.
+ */
+const FLAT_FEES: Partial<Record<PaymentMethod, number>> = { bca_va: 4000, permata_va: 2500 };
+const OTHER_VA_FEE = 3000;
+const RATE_BP: Partial<Record<PaymentMethod, number>> = { ovo: 350, dana: 250, shopeepay: 275 };
+
+export function belibayarServiceFee(method: PaymentMethod, amount: number): number | null {
+  const kind = paymentMethodInfo[method].kind;
+  if (kind === "va") return FLAT_FEES[method] ?? OTHER_VA_FEE;
+  // QRIS: 0.7% below Rp100.000, 0.71% from there.
+  const bp = kind === "qris" ? (amount < 100_000 ? 70 : 71) : RATE_BP[method];
+  return bp === undefined ? null : Math.ceil((amount * bp) / 10_000);
+}
+
 const statusCache = new Map<string, { at: number; status: PaymentStatus }>();
 let channelCache: { at: number; ttl: number; value: Promise<ChannelList> } | null = null;
 
@@ -227,6 +246,7 @@ export const belibayarProvider: PaymentProvider = {
   /** Who bears the fee is an account setting, and the amount depends on the channel (flat or a percentage). */
   mayChargeFee: true,
   feeBearerSetAtGateway: true,
+  serviceFee: belibayarServiceFee,
 
   async createPayment(input) {
     const info = paymentMethodInfo[input.method];

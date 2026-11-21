@@ -25,9 +25,37 @@ export function stockStatus(stocks: (number | null)[]): "low" | "soldOut" | null
   return tracked.some((s) => s <= LOW_STOCK) ? "low" : null;
 }
 
-/** What the storefront may say about a size: its count when 0 to LOW_STOCK are left, else nothing. */
+/** A size's count when 0 to LOW_STOCK are left (the "Only N left" / "Sold out" notes), else nothing. */
 export function stockLeft(stock: number | null): number | undefined {
   return stock !== null && stock <= LOW_STOCK ? Math.max(stock, 0) : undefined;
+}
+
+/**
+ * What the storefront says about stock (owner decision 21 Nov 2026: show it, not only when low).
+ * "plenty" with a count is "20 in stock", without one "In stock"; "low" with a count is "Only 3 left",
+ * without one "Almost gone"; "soldOut" is "Sold out".
+ */
+export type StockLevel = { tone: "plenty" | "low" | "soldOut"; count: number | null };
+
+/** One size: untracked reads as in stock (it can always be ordered), else its count in the right tone. */
+export function stockLevel(stock: number | null): StockLevel {
+  if (stock === null) return { tone: "plenty", count: null };
+  if (stock <= 0) return { tone: "soldOut", count: 0 };
+  return { tone: stock <= LOW_STOCK ? "low" : "plenty", count: stock };
+}
+
+/**
+ * A product card's one line. One size: that size's level. Several sizes carry no number (a total
+ * across trays would promise a count no single size has): "In stock" while any size that can be
+ * ordered has more than LOW_STOCK left (or isn't tracked), "Almost gone" when every one of them is
+ * low, "Sold out" when none can be ordered. Each size's own count is on the product page.
+ */
+export function productStockLevel(stocks: (number | null)[]): StockLevel {
+  if (stocks.length === 1) return stockLevel(stocks[0]);
+  const orderable = stocks.filter((s) => s === null || s > 0);
+  if (stocks.length > 0 && orderable.length === 0) return { tone: "soldOut", count: 0 };
+  const low = orderable.length > 0 && orderable.every((s) => s !== null && s <= LOW_STOCK);
+  return { tone: low ? "low" : "plenty", count: null };
 }
 
 function byId(a: bigint, b: bigint) {

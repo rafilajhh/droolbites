@@ -69,7 +69,7 @@ export const checkoutMessages = defineMessages({
       free: "Free",
       address: "Delivery address",
       pickupNote: (address: string, opens: string, closes: string) =>
-        `Collect your order at ${address}. We're open ${opens}–${closes} and we'll email you when it's ready.`,
+        `Collect your order at ${address}. We're open ${opens}–${closes} WIB and we'll email you when it's ready.`,
       useSaved: "Use saved address",
       fullName: "Full name",
       fullNamePlaceholder: "Enter your full name",
@@ -100,6 +100,18 @@ export const checkoutMessages = defineMessages({
       privacy: "Privacy policy",
       paused: "Online orders are paused right now. Please check back soon or contact us.",
     },
+    /** Checkout outside the store's ordering hours (WIB): the details and payment steps say when it opens again. */
+    closed: {
+      title: "We're closed right now",
+      /** One line for the hours: open–close, and the last order when it's earlier than closing (a 23:59 close has none). */
+      body: (when: string, opens: string, closes: string, lastOrder: string) =>
+        `Orders open again ${when}. Open ${opens}–${closes} WIB${lastOrder === closes ? "" : ` · last order ${lastOrder}`}.`,
+      today: (time: string) => `today at ${time}`,
+      tomorrow: (time: string, day: string) => `tomorrow (${day}) at ${time}`,
+      later: (time: string, day: string) => `on ${day} at ${time}`,
+      never: "Please check back soon or contact us.",
+      days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+    },
     errors: {
       email: "Enter a valid email address.",
       fullName: "Enter your full name.",
@@ -125,17 +137,21 @@ export const checkoutMessages = defineMessages({
       stock: "Sorry, some items just ran low:",
       stockGone: "Some items in this order sold out in the meantime, so it can't be paid now. Please order again from the menu.",
       generic: "Something went wrong. Please try again.",
+      storeClosed: "We're not taking orders right now, so this one wasn't placed. See when we open again at the top of the page.",
     },
     /** What's short when the order is placed: "Red Velvet (sold out)", "Fudgy Brownies · 15 × 15 cm (only 2 left)". */
     stock: {
       soldOut: (name: string) => `${name} (sold out)`,
       left: (name: string, n: number) => `${name} (only ${n} left)`,
       fix: "Fix my cart",
+      /** Before PAY, on both checkout steps: the cart already asks for more than is left. */
+      notice: "Some items in your cart ran low:",
     },
     payment: {
       title: "Payment",
       sub: "You'll get instructions on the next step.",
       contact: "Contact",
+      recipient: "Recipient",
       deliverTo: "Deliver to",
       pickupAt: "Pick up at",
       fulfilment: "Delivery or pickup",
@@ -180,6 +196,10 @@ export const checkoutMessages = defineMessages({
       placeOrder: "PLACE ORDER",
       feeNote: "A payment service fee may be added, depending on the method. You'll see the exact amount to pay on the next step, before you pay.",
       feeNoteShort: "A payment fee may apply. You'll see it before you pay.",
+      /** On a method tile, when the gateway's fee for it is known ahead of the charge. */
+      feeHint: (fee: string) => `+ ${fee} service fee`,
+      /** Under PAY when that total already includes the chosen method's service fee. */
+      feeIncluded: (fee: string) => `Includes the ${fee} payment service fee for this method.`,
       placing: "PLACING ORDER…",
       /** DEMO_PAYMENTS on: place the order and mark it paid without going through the gateway. */
       demoTitle: "Demo mode",
@@ -250,7 +270,7 @@ export const checkoutMessages = defineMessages({
       cancelledTitle: "This order has been cancelled",
       cancelledBody: (n: string) => `The shop cancelled order ${n}, so it can no longer be paid.`,
       cancelledByYouBody: (n: string) => `You cancelled order ${n}, so it can no longer be paid.`,
-      cancelledNote: "If you already paid, contact us and we'll refund you.",
+      cancelledNote: "If you already paid, we'll contact you within 1×24 hours to refund the full amount.",
       change: {
         title: "Choose another payment method",
         sub: "Your order and the time to pay stay the same.",
@@ -274,7 +294,7 @@ export const checkoutMessages = defineMessages({
       titleDone: "Enjoy your treats!",
       subDone: "Your order is complete. Thanks for ordering from Droolbites.",
       titleCancelled: "This order was cancelled",
-      subCancelled: "Contact us below about your refund.",
+      subCancelled: "We'll contact you within 1×24 hours to refund the full amount.",
       subDelivery: "We'll email you when it's out for delivery.",
       subPickup: "We'll email you when it's ready for pickup.",
       orderNumber: "Order number",
@@ -282,6 +302,11 @@ export const checkoutMessages = defineMessages({
       track: "TRACK ORDER",
       viewOrder: "VIEW ORDER",
       continue: "BACK TO MENU",
+      emailed: (email: string) => `We've emailed the details to ${email}.`,
+      /** Guests only: a light offer to create an account with the order's email. */
+      saveTitle: "Save your details for next time",
+      saveBody: "Create an account to check out faster and see this order with your future ones.",
+      saveCta: "Create account",
     },
     fulfilment: {
       localDelivery: "Local delivery",
@@ -549,7 +574,7 @@ export const checkoutMessages = defineMessages({
       free: "Gratis",
       address: "Alamat pengiriman",
       pickupNote: (address: string, opens: string, closes: string) =>
-        `Ambil pesananmu di ${address}. Kami buka ${opens}–${closes} dan akan mengabari lewat email saat pesanan siap.`,
+        `Ambil pesananmu di ${address}. Kami buka ${opens}–${closes} WIB dan akan mengabari lewat email saat pesanan siap.`,
       useSaved: "Pakai alamat tersimpan",
       fullName: "Nama lengkap",
       fullNamePlaceholder: "Masukkan nama lengkapmu",
@@ -580,6 +605,16 @@ export const checkoutMessages = defineMessages({
       privacy: "Kebijakan privasi",
       paused: "Pemesanan online sedang ditutup. Coba lagi nanti atau hubungi kami.",
     },
+    closed: {
+      title: "Kami lagi tutup",
+      body: (when: string, opens: string, closes: string, lastOrder: string) =>
+        `Pemesanan buka lagi ${when}. Buka ${opens}–${closes} WIB${lastOrder === closes ? "" : ` · pesanan terakhir ${lastOrder}`}.`,
+      today: (time: string) => `hari ini pukul ${time}`,
+      tomorrow: (time: string, day: string) => `besok (${day}) pukul ${time}`,
+      later: (time: string, day: string) => `hari ${day} pukul ${time}`,
+      never: "Coba lagi nanti atau hubungi kami, ya.",
+      days: ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"],
+    },
     errors: {
       email: "Masukkan alamat email yang valid.",
       fullName: "Masukkan nama lengkapmu.",
@@ -605,16 +640,19 @@ export const checkoutMessages = defineMessages({
       stock: "Maaf, stok beberapa item barusan menipis:",
       stockGone: "Ada item di pesanan ini yang keburu habis, jadi belum bisa dibayar. Pesan lagi dari menu, ya.",
       generic: "Ada kendala. Coba lagi, ya.",
+      storeClosed: "Kami sedang tidak menerima pesanan, jadi pesanan ini belum dibuat. Cek kapan kami buka lagi di bagian atas halaman, ya.",
     },
     stock: {
       soldOut: (name: string) => `${name} (habis)`,
       left: (name: string, n: number) => `${name} (sisa ${n})`,
       fix: "Perbaiki keranjang",
+      notice: "Stok beberapa item di keranjangmu menipis:",
     },
     payment: {
       title: "Pembayaran",
       sub: "Petunjuknya muncul di langkah berikutnya.",
       contact: "Kontak",
+      recipient: "Penerima",
       deliverTo: "Antar ke",
       pickupAt: "Ambil di",
       fulfilment: "Antar atau ambil",
@@ -657,6 +695,8 @@ export const checkoutMessages = defineMessages({
       placeOrder: "BUAT PESANAN",
       feeNote: "Biaya layanan pembayaran bisa ditambahkan, tergantung metodenya. Jumlah pasti yang dibayar muncul di langkah berikutnya, sebelum kamu bayar.",
       feeNoteShort: "Bisa ada biaya pembayaran, tampil sebelum kamu bayar.",
+      feeHint: (fee: string) => `+ biaya layanan ${fee}`,
+      feeIncluded: (fee: string) => `Sudah termasuk biaya layanan ${fee} untuk metode ini.`,
       placing: "MEMBUAT PESANAN…",
       demoTitle: "Mode demo",
       demoBody: "Tidak ada uang yang berpindah: pesanan dibuat dan langsung ditandai lunas, jadi kamu bisa lihat alur selanjutnya.",
@@ -725,7 +765,7 @@ export const checkoutMessages = defineMessages({
       cancelledTitle: "Pesanan ini sudah dibatalkan",
       cancelledBody: (n: string) => `Toko membatalkan pesanan ${n}, jadi pesanan ini tidak bisa dibayar lagi.`,
       cancelledByYouBody: (n: string) => `Kamu membatalkan pesanan ${n}, jadi pesanan ini tidak bisa dibayar lagi.`,
-      cancelledNote: "Kalau kamu sudah terlanjur bayar, hubungi kami dan dananya akan kami kembalikan.",
+      cancelledNote: "Kalau kamu sudah membayar, kami akan menghubungimu dalam 1×24 jam untuk mengembalikan dana penuh.",
       change: {
         title: "Pilih metode pembayaran lain",
         sub: "Pesanan dan batas waktu bayarmu tetap sama.",
@@ -746,7 +786,7 @@ export const checkoutMessages = defineMessages({
       titleDone: "Selamat menikmati!",
       subDone: "Pesananmu sudah selesai. Terima kasih sudah memesan di Droolbites.",
       titleCancelled: "Pesanan ini dibatalkan",
-      subCancelled: "Hubungi kami di bawah soal pengembalian dana.",
+      subCancelled: "Kami akan menghubungimu dalam 1×24 jam untuk mengembalikan dana penuh.",
       subDelivery: "Kami kabari lewat email saat pesanan diantar.",
       subPickup: "Kami kabari lewat email saat pesanan siap diambil.",
       orderNumber: "Nomor pesanan",
@@ -754,6 +794,10 @@ export const checkoutMessages = defineMessages({
       track: "LACAK PESANAN",
       viewOrder: "LIHAT PESANAN",
       continue: "KEMBALI KE MENU",
+      emailed: (email: string) => `Detail pesanan sudah kami kirim ke ${email}.`,
+      saveTitle: "Simpan datamu untuk pesanan berikutnya",
+      saveBody: "Buat akun biar checkout lebih cepat dan pesanan ini tercatat bareng pesanan berikutnya.",
+      saveCta: "Buat akun",
     },
     fulfilment: {
       localDelivery: "Diantar",

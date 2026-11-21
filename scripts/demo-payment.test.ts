@@ -235,11 +235,11 @@ async function main() {
     await check("the paid email reaches the customer (same markOrderPaid path)", async () => {
       for (let i = 0; i < 20; i++) {
         const j = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()) as { messages: { Subject: string }[] };
-        const hit = j.messages.find((m) => m.Subject === `Payment received for ${a.orderNumber}`);
+        const hit = j.messages.find((m) => m.Subject === `Order ${a.orderNumber} is paid`);
         if (hit) return hit.Subject;
         await sleep(500);
       }
-      throw new Error("no 'Payment received' email in Mailpit");
+      throw new Error("no 'Order … is paid' email in Mailpit");
     });
 
     await check("status poll on a demo-paid order changes nothing", async () => {

@@ -1,7 +1,8 @@
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-export type OrderStep = { label: string; state: "done" | "current" | "todo" };
+/** `time`: when the step was reached ("14:05"), shown small under its label; omitted when unknown. */
+export type OrderStep = { label: string; state: "done" | "current" | "todo"; time?: string };
 
 /**
  * An order's progress as numbered circles on one line, the same language as the checkout header: done
@@ -43,6 +44,7 @@ export function OrderSteps({
     <div className={cn("@container flex w-full flex-col gap-3", className)}>
       <p aria-hidden className="text-[13px] leading-[18px] text-muted-foreground @min-[36rem]:hidden">
         {stepOf(at + 1, steps.length)} · <span className="font-semibold text-foreground">{steps[at]?.label}</span>
+        {steps[at]?.time ? <span className="tabular-nums"> · {steps[at].time}</span> : null}
       </p>
       <ol
         aria-label={label}
@@ -88,6 +90,9 @@ export function OrderSteps({
               )}
             >
               {step.label}
+              {step.time ? (
+                <span className="block text-xs leading-4 font-normal text-muted-foreground tabular-nums">{step.time}</span>
+              ) : null}
               <span className="sr-only">
                 {step.state === "done" ? ` (${doneLabel})` : step.state === "current" ? ` (${currentLabel})` : ""}
               </span>

@@ -9,11 +9,15 @@ type Entry = { en: string; id: string; tone: StatusTone };
 export const paymentStatusInfo: Record<PaymentStatus, Entry> = {
   awaiting: { en: "Awaiting payment", id: "Menunggu pembayaran", tone: "mustard" },
   paid: { en: "Paid", id: "Lunas", tone: "success" },
-  expired: { en: "Payment failed", id: "Pembayaran gagal", tone: "crimson" },
+  // Not paid before the deadline (or the payment was closed): nothing failed on the customer's side.
+  expired: { en: "Expired", id: "Kedaluwarsa", tone: "crimson" },
 };
 
 /** The payment badge of an order the store cancelled before it was paid: nothing failed, it just wasn't paid. */
 export const notPaidInfo: Entry = { en: "Not paid", id: "Tidak dibayar", tone: "muted" };
+
+/** The payment badge once the store marked a cancelled order's money as sent back: settled, like Not paid. */
+export const refundedInfo: Entry = { en: "Refunded", id: "Dikembalikan", tone: "muted" };
 
 export const fulfilmentStatusInfo: Record<FulfilmentStatus, Entry> = {
   pending: { en: "New order", id: "Pesanan baru", tone: "mustard" },
@@ -101,6 +105,19 @@ export const needsActionWhere = {
   paymentStatus: "paid",
   fulfilmentStatus: "pending",
 } satisfies Prisma.OrderWhereInput;
+
+/**
+ * Customers are told a new order is usually accepted within this many minutes during opening hours;
+ * the admin marks a paid order still waiting past it.
+ */
+export const ACCEPT_WITHIN_MIN = 30;
+
+/** Whole minutes a paid order has waited for the store since payment, when that is past ACCEPT_WITHIN_MIN; else null. */
+export function overdueMinutes(paidAt: Date | null | undefined, now: Date) {
+  if (!paidAt) return null;
+  const min = Math.floor((now.getTime() - paidAt.getTime()) / 60_000);
+  return min > ACCEPT_WITHIN_MIN ? min : null;
+}
 
 /** Accepted, paid orders still on their way (baking, ready, out for delivery). */
 export const inProgressWhere = {

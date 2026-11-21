@@ -6,6 +6,15 @@ export const accountMessages = defineMessages({
     metaTitle: "My account",
     eyebrow: "MY ACCOUNT",
     hello: (firstName: string) => `Hi, ${firstName}!`,
+    /** After confirming the "add my past orders" link from the sign-up email (/account/claim). */
+    linked: {
+      added: (n: number) => (n === 1 ? "Your email is verified and your past order is now in your account." : `Your email is verified and your ${n} past orders are now in your account.`),
+      none: "Your email is verified. Your past orders are already in your account.",
+      invalid: "This link has expired or no longer works. If a past order is missing from your account, contact us.",
+      error: "We couldn't add your past orders just now. Open the link in the email again in a moment.",
+      /** Right after every password sign-up (?claim=1), whether or not there are guest orders, so it reveals nothing. */
+      check: "If you've ordered as a guest with this email, we've emailed you a link to add those orders to your account.",
+    },
     nav: {
       label: "Account sections",
       orders: "Order history",
@@ -148,6 +157,13 @@ export const accountMessages = defineMessages({
     metaTitle: "Akun saya",
     eyebrow: "AKUN SAYA",
     hello: (firstName: string) => `Hai, ${firstName}!`,
+    linked: {
+      added: (n: number) => `Emailmu sudah terverifikasi dan ${n} pesanan lamamu sekarang ada di akunmu.`,
+      none: "Emailmu sudah terverifikasi. Pesanan lamamu sudah ada di akunmu.",
+      invalid: "Tautan ini sudah kedaluwarsa atau tidak berlaku lagi. Kalau ada pesanan lama yang belum muncul di akunmu, hubungi kami, ya.",
+      error: "Pesanan lamamu belum bisa ditambahkan sekarang. Buka lagi tautan di email sebentar lagi, ya.",
+      check: "Kalau kamu pernah pesan tanpa akun dengan email ini, kami sudah kirim tautan ke emailmu untuk menambahkan pesanan itu ke akunmu.",
+    },
     nav: {
       label: "Bagian akun",
       orders: "Riwayat pesanan",

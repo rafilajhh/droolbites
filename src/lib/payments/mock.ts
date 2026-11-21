@@ -59,6 +59,10 @@ export const mockProvider: PaymentProvider = {
     return mockServiceFee() > 0;
   },
 
+  serviceFee() {
+    return mockServiceFee();
+  },
+
   async createPayment({ orderNumber, reference, method, amount, expiresAt }) {
     const fee = mockServiceFee();
     return {

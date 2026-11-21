@@ -93,8 +93,13 @@ export const menuMessages = defineMessages({
       decrease: "Decrease quantity",
       increase: "Increase quantity",
     },
-    /** Stock notes on cards, the size picker and the product page (shown only for 0 to 5 left). */
+    /** Stock notes on cards, the size picker and the product page. */
     stock: {
+      /** More than 5 left of a size; an untracked size or a product with several sizes says inStock. */
+      count: (n: number) => `${n} in stock`,
+      inStock: "In stock",
+      /** Several sizes, and every one that can still be ordered has 5 or fewer left. */
+      few: "Almost gone",
       left: (n: number) => `Only ${n} left`,
       soldOut: "Sold out",
       soldOutLabel: (name: string) => `${name} is sold out`,
@@ -159,6 +164,9 @@ export const menuMessages = defineMessages({
       increase: "Tambah jumlah",
     },
     stock: {
+      count: (n: number) => `Stok ${n}`,
+      inStock: "Tersedia",
+      few: "Hampir habis",
       left: (n: number) => `Sisa ${n}`,
       soldOut: "Habis",
       soldOutLabel: (name: string) => `${name} lagi habis`,

@@ -3,7 +3,15 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Store, Truck } from "lucide-react";
-import { addressAt, findPlaces, quoteDelivery, saveCheckoutDetails, type DeliveryQuote, type DetailsState } from "@/app/actions/checkout";
+import {
+  addressAt,
+  findPlaces,
+  quoteDelivery,
+  saveCheckoutDetails,
+  type DeliveryQuote,
+  type DetailsState,
+  type ShortItem,
+} from "@/app/actions/checkout";
 import { OptionTile } from "@/components/ui/choice-tiles";
 import { Button } from "@/components/ui/button";
 import { Field, TextArea, TextInput } from "@/components/ui/form-field";
@@ -12,7 +20,10 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
 import { formatRupiah } from "@/lib/format";
 import type { Place } from "@/lib/geocode";
+import type { StoreClosed } from "@/lib/store-hours";
 import { CheckoutColumns, CheckoutHeading, CheckoutSection, TotalEcho } from "./checkout-section";
+import { ClosedNotice } from "./closed-notice";
+import { StockNotice } from "./stock-notice";
 import { DeliveryPicker, type LatLng, type PinSource, type QuoteState } from "./delivery-picker";
 import { OrderSummary, type SummaryLine } from "./order-summary";
 import { SummaryToggle } from "./summary-toggle";
@@ -46,6 +57,18 @@ type AddressKey = "street" | "city" | "postal";
 
 const initialState: DetailsState = { errors: {}, attempt: 0 };
 
+/** "Jalan Raya Darmo" and "jl. raya darmo no. 5" read alike: lower case, "Jl"/"Gg" for the long forms, no punctuation. */
+const roadWords = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/\bjalan\b/g, "jl")
+    .replace(/\bgang\b/g, "gg")
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+
+/** Whether a typed street is on the road the map found at the pin. No road there: the typed street is left alone. */
+const onRoad = (typed: string, road: string) => road.trim() === "" || roadWords(typed).includes(roadWords(road));
+
 /**
  * Checkout · Details, after pen frame PPHfX with the owner-approved simpler
  * flow: 1 Contact (email, name, phone) and 2 Delivery or pickup (the two
@@ -61,6 +84,8 @@ export function DetailsForm({
   saved,
   signInHref,
   options,
+  storeClosed,
+  short,
   store,
   summary,
 }: {
@@ -70,6 +95,10 @@ export function DetailsForm({
   saved: SavedAddress | null;
   signInHref: string | null;
   options: { delivery: boolean; pickup: boolean };
+  /** Outside ordering hours: the notice under the heading says when orders open again, and Continue is off. */
+  storeClosed: StoreClosed | null;
+  /** Cart lines asking for more than is left: the notice under the heading names them, and Continue is off. */
+  short: ShortItem[];
   store: {
     city: string;
     shortAddress: string;
@@ -100,26 +129,45 @@ export function DetailsForm({
   const pinSeq = useRef(0);
   // What the map last filled in: a field still holding it (or empty) follows the next pin.
   const autoFilled = useRef<Partial<Record<AddressKey, string>>>({});
+  // The kecamatan the map last named: a pin moved into another one takes the whole address along.
+  const mapDistrict = useRef("");
 
   /**
    * Fill the address from the pin. A chosen search result replaces the whole address (the customer
    * picked that place), so a field the result has no value for is cleared rather than left from the
-   * old address; a tap, drag or GPS fix only fills fields that are empty or still hold what the map
-   * filled before, and clears those when the new spot has no value for them.
+   * old address. A tap, drag or GPS fix fills fields that are empty or still hold what the map filled
+   * before (clearing those when the new spot has no value for them), and beyond that keeps the fields
+   * from naming another place than the pin: the city and postal code follow it wherever the map knows
+   * them, and the street does once the pin is on another road (a typed house number on the same road
+   * stays). In another city or kecamatan the whole address follows, cleared where the map knows nothing. The
+   * block/unit and the courier note are the customer's and never change.
    */
-  const fillAddress = (place: Pick<Place, AddressKey | "district">, replace = false) =>
+  const fillAddress = (place: Pick<Place, AddressKey | "district" | "road">, replace = false) => {
+    // Read once, outside the updater: React may run the updater twice, and both runs must agree.
+    const filled = { ...autoFilled.current };
+    const lastDistrict = mapDistrict.current;
+    if (place.district) mapDistrict.current = place.district;
     setValues((v) => {
       // The kecamatan always follows the pin.
       const next = { ...v, district: place.district };
+      // Another city than the map last named (or than the typed one, before the map named any), or another kecamatan.
+      const lastCity = filled.city ?? v.city;
+      const elsewhere =
+        (place.city !== "" && place.city.toLowerCase() !== lastCity.trim().toLowerCase()) ||
+        (place.district !== "" && lastDistrict !== "" && place.district !== lastDistrict);
+      const nowFilled = { ...filled };
       for (const key of ["street", "city", "postal"] as const) {
         const value = place[key];
-        const ours = v[key].trim() === "" || v[key] === autoFilled.current[key];
-        if (!replace && !ours) continue;
+        const ours = v[key].trim() === "" || v[key] === filled[key];
+        const differs = value !== "" && (key === "street" ? !onRoad(v.street, place.road) : value !== v[key]);
+        if (!replace && !ours && !differs && !elsewhere) continue;
         next[key] = value;
-        autoFilled.current[key] = value;
+        nowFilled[key] = value;
       }
+      autoFilled.current = nowFilled;
       return next;
     });
+  };
 
   const movePin = async (at: LatLng, source: PinSource, label?: string) => {
     const seq = ++pinSeq.current;
@@ -152,6 +200,7 @@ export function DetailsForm({
     const { pin: savedAt, ...address } = saved;
     setValues((v) => ({ ...v, ...address }));
     autoFilled.current = {};
+    mapDistrict.current = address.district;
     // Move the pin to the saved address too, so the fee is for where the order goes: its own pin when
     // it was saved with one, else found by search (the customer fine-tunes it on the map). Not found:
     // the pin stays and the label shows where it is.
@@ -232,6 +281,8 @@ export function DetailsForm({
         className="flex w-full flex-col gap-8"
       >
         <CheckoutHeading title={d.title} />
+        {storeClosed ? <ClosedNotice id="checkout-closed" t={t.closed} closed={storeClosed} /> : null}
+        {short.length > 0 ? <StockNotice id="checkout-stock" t={t.stock} short={short} /> : null}
 
         <CheckoutSection
           id="checkout-contact"
@@ -459,7 +510,12 @@ export function DetailsForm({
               amount={formatRupiah(total)}
             />
             {/* Under 360px the full label leaves the total no room, so the button says just "Continue". */}
-            <Button type="submit" className="shrink-0 px-5 sm:px-7" disabled={pending || closed}>
+            <Button
+              type="submit"
+              className="shrink-0 px-5 sm:px-7"
+              disabled={pending || closed || storeClosed !== null || short.length > 0}
+              aria-describedby={[storeClosed && "checkout-closed", short.length > 0 && "checkout-stock"].filter(Boolean).join(" ") || undefined}
+            >
               {pending ? (
                 d.saving
               ) : (

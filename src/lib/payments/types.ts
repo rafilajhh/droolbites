@@ -67,6 +67,11 @@ export interface PaymentProvider {
    * expose before a charge; each charge's answer says it (payments.feeBearer).
    */
   readonly feeBearerSetAtGateway?: boolean;
+  /**
+   * The service fee a charge of `amount` with `method` is expected to carry, so checkout can show it
+   * before the order is placed; null when the rate isn't known ahead. The charge's answer stays final.
+   */
+  serviceFee?(method: PaymentMethod, amount: number): number | null;
   createPayment(input: CreatePaymentInput): Promise<CreatedPayment>;
   getStatus(payment: PaymentSnapshot, now?: Date): Promise<PaymentStatus>;
   /** `reason` is shown on the gateway's dashboard; the default suits a customer switching methods. */
