@@ -244,23 +244,3 @@ export const mobileCardRowClasses =
 export function CellLabel({ until = "md", children }: { until?: "md" | "xl"; children: React.ReactNode }) {
   return <span className={until === "xl" ? "sr-only xl:hidden" : "sr-only md:hidden"}>{children}: </span>;
 }
-
-/**
- * Marks a payment the store marked paid in demo mode (DEMO_PAYMENTS), beside its method: a small
- * Plex Mono pill on lavender, the size of the stock badges, so it reads as a note, not a status.
- * Admin only (order page, orders list, invoice); customers see the method as for any paid order.
- */
-export function DemoBadge({ label, title, className }: { label: string; title: string; className?: string }) {
-  return (
-    <span
-      title={title}
-      className={cn(
-        "inline-flex w-fit shrink-0 items-center rounded-pill bg-tint-lavender px-2 py-0.5 font-mono text-[11px] leading-4 font-semibold whitespace-nowrap text-foreground",
-        className,
-      )}
-    >
-      {label}
-      <span className="sr-only">{` (${title})`}</span>
-    </span>
-  );
-}

@@ -14,11 +14,10 @@ import {
   type NotifiedStatus,
 } from "@/lib/order-emails";
 import { getOrderByNumber, markOrderPaid, paymentSnapshot, withOrderLock } from "@/lib/orders";
-import { DEMO_PROVIDER, demoPaymentsEnabled, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
+import { DEMO_PROVIDER, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { fulfilmentOptions } from "@/components/admin/rules";
 import { CANCEL_REASONS } from "@/lib/order-status";
 import { restoreOrderStock } from "@/lib/stock";
-import { markOrderPaidDemo, type DemoPaidResult } from "@/lib/demo-payment";
 
 export type FulfilmentState = { status: "idle" | "saved" | "unchanged" | "invalid" | "busy" | "reason" };
 
@@ -121,23 +120,6 @@ function revalidateOrder(n: string) {
   for (const p of ["/admin", "/admin/orders", `/admin/orders/${n}`, `/orders/${n}`, "/account"]) revalidatePath(p);
 }
 
-export type DemoPaidState = { status: "idle" | DemoPaidResult };
-
-/**
- * Demo mode only (DEMO_PAYMENTS="on"): mark an unpaid order paid without money moving. Its live
- * gateway payment is closed first; the order then goes through the same paid path as a real payment
- * (see markOrderPaidDemo). Refused when the flag is off, and for an order that isn't unpaid and open.
- */
-export async function markPaidDemo(_prev: DemoPaidState, formData: FormData): Promise<DemoPaidState> {
-  await requireAdmin();
-  if (!demoPaymentsEnabled()) return { status: "off" };
-  const n = String(formData.get("orderNumber") ?? "").slice(0, 12);
-  const status = await markOrderPaidDemo(n);
-  // Refused because the order changed (paid, cancelled): the page shows what it is now.
-  if (status !== "busy") revalidateOrder(n);
-  return { status };
-}
-
 export type DecisionState = { status: "idle" | "accepted" | "declined" | "changed" | "reason" };
 
 /**
@@ -177,7 +159,7 @@ export type RefundState = { status: "idle" | "refunded" | "invalid" };
 /**
  * "Mark as refunded": the store has sent the money of a cancelled, really paid order back (from the
  * gateway dashboard or by transfer) and records when, with an optional note for itself. Only for a
- * cancelled order with a paid non-demo payment; a second call changes nothing and sends no email.
+ * cancelled order with a paid payment that moved money; a second call changes nothing and sends no email.
  * The customer gets one "Refund sent" email.
  */
 export async function markRefunded(_prev: RefundState, formData: FormData): Promise<RefundState> {

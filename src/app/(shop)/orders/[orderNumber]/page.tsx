@@ -121,7 +121,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const placedDay = formatDate(order.createdAt, locale);
   const stamp = (date: Date | null | undefined) =>
     date ? (formatDate(date, locale) === placedDay ? formatTime(date) : formatDateTime(date, locale)) : undefined;
-  const times = [paidPayment?.paidAt, order.acceptedAt, null, order.handedOffAt, order.completedAt];
+  const times = [paidPayment?.paidAt, order.acceptedAt, order.acceptedAt, order.handedOffAt, order.completedAt];
   const steps = [
     t.steps.payment,
     t.steps.confirmed,

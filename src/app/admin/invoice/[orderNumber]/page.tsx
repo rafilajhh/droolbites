@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { DemoBadge } from "@/components/admin/ui";
 import { InvoiceDocument } from "@/components/invoice/invoice-document";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -11,7 +10,6 @@ import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
-import { adminMessages } from "@/i18n/messages/admin";
 
 /** The order number from the URL, or null for a malformed %-sequence (a 404, not a crash). */
 function decodeNumber(raw: string) {
@@ -49,16 +47,12 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
   });
   if (!order) notFound();
 
-  const [m, locale, settings, admin] = await Promise.all([
-    getMessages(adminExtraMessages),
-    getLocale(),
-    getStoreSettings(),
-    getMessages(adminMessages),
-  ]);
+  const [m, locale, settings] = await Promise.all([getMessages(adminExtraMessages), getLocale(), getStoreSettings()]);
   const t = m.invoice;
   // Same attempt the order page shows: the paid one if any, else the latest.
   const payment = shownPayment(order.payments);
-  const demoPaid = payment?.provider === DEMO_PROVIDER;
+  // Paid without money moving (skipped at checkout): nothing is owed back when it's cancelled.
+  const noMoney = payment?.provider === DEMO_PROVIDER;
   const pay = payable(order, payment);
   // The payment's own time only: the order's updatedAt moves with every status change.
   const paidAt =
@@ -66,7 +60,7 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
   // Cancelled by the store: the invoice says so, and a paid one is owed back until it's marked refunded.
   const cancelled = order.fulfilmentStatus === "cancelled";
   const status = cancelled
-    ? order.paymentStatus === "paid" && !demoPaid
+    ? order.paymentStatus === "paid" && !noMoney
       ? order.refundedAt
         ? t.cancelledRefunded(formatDateTime(order.refundedAt, locale))
         : t.cancelledRefund
@@ -83,12 +77,6 @@ export default async function AdminInvoicePage({ params }: PageProps<"/admin/inv
       back={{ href: `/admin/orders/${order.orderNumber}`, label: t.back }}
       paidAt={paidAt}
       method={payment?.method ?? null}
-      // Kept on paper too (outlined there), so a printed demo invoice never passes for a real payment.
-      methodBadge={
-        demoPaid ? (
-          <DemoBadge label={admin.common.demo} title={admin.common.demoLabel} className="print:bg-white print:inset-ring-1 print:inset-ring-neutral-500" />
-        ) : null
-      }
       status={status}
       statusAlert={cancelled}
       amount={pay.amount}

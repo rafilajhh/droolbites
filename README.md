@@ -90,7 +90,7 @@ Emails (order confirmations, password reset, newsletter) are caught by Mailpit a
 
 | Value | What happens |
 |---|---|
-| `mock` (default) | No money moves. VA numbers, payment codes and QRIS strings are derived from the order; the pay page has a "Simulate payment (demo)" button. |
+| `mock` (default) | No money moves. VA numbers, payment codes and QRIS strings are derived from the order; the pay page has a "Simulate payment" button. |
 | `belibayar` | Real payments through the [Belibayar Direct API](https://docs.belibayar.id/docs). A `byr_test_` key uses the sandbox namespace (`/direct/v1/sandbox/…`) and keeps a "Simulate payment" button that calls the sandbox simulate endpoint; a `byr_live_` key charges real money and never shows it. |
 
 Methods: virtual account (BCA, BNI, Mandiri, BRI, Permata, BSI, Muamalat, CIMB Niaga, Sinarmas, Neo Commerce, Maybank), retail (Indomaret, Alfamart; off until switched on in Admin › Store settings), e-wallet (OVO, DANA, ShopeePay) and QRIS. With Belibayar, checkout only offers methods that are both switched on in store settings and active in the gateway's channel list (fetched server-side, cached 10 minutes), and shows the gateway's logos.

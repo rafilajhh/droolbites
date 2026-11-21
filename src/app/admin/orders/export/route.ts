@@ -6,7 +6,7 @@ import { containsText, db } from "@/lib/db";
 import { roundedKm } from "@/lib/format";
 import { fulfilmentBadgeInfo, needsActionWhere, paymentMethodInfo } from "@/lib/order-status";
 import { orderPaymentInfo, payable, paymentStatusWhere } from "@/lib/orders";
-import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
+import { shownPayment } from "@/lib/payments";
 import { rangeWhere, resolveReportRange } from "@/lib/reports";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminExtraMessages } from "@/i18n/messages/admin-extra";
@@ -144,8 +144,7 @@ export async function GET(request: NextRequest) {
       o.email,
       { text: o.phone },
       o.fulfilmentMethod === "delivery" ? t.delivery : t.pickup,
-      // A payment the store marked paid in demo mode (no money) says so: "QRIS (demo)".
-      payment ? `${paymentMethodInfo[payment.method].name}${payment.provider === DEMO_PROVIDER ? " (demo)" : ""}` : "",
+      payment ? paymentMethodInfo[payment.method].name : "",
       orderPaymentInfo(o)[locale],
       fulfilmentBadgeInfo(o)[locale],
       o.items.reduce((sum, item) => sum + item.qty, 0),

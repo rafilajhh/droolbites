@@ -7,6 +7,7 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCurrentUser } from "@/lib/auth";
 import { getCart } from "@/lib/cart";
+import { db } from "@/lib/db";
 import { deliveryFeeFor, quotePin, savedPin, withinRange } from "@/lib/delivery";
 import { readCheckoutDetails, shortStoreAddress } from "@/lib/orders";
 import { getStoreSettings } from "@/lib/settings";
@@ -27,7 +28,13 @@ export default async function CheckoutDetailsPage() {
   ]);
   if (cart.lines.length === 0) redirect("/menu");
 
-  const defaultFulfilment = settings.deliveryEnabled || !settings.pickupEnabled ? "delivery" : "pickup";
+  // A signed-in customer's next checkout starts from their last order where the profile has nothing:
+  // its phone (a Google sign-up has none on file) and the way they got it (delivery or pickup).
+  const last =
+    user && !details
+      ? await db.order.findFirst({ where: { userId: user.id }, orderBy: { id: "desc" }, select: { phone: true, fulfilmentMethod: true } })
+      : null;
+  const defaultFulfilment = last?.fulfilmentMethod ?? (settings.deliveryEnabled || !settings.pickupEnabled ? "delivery" : "pickup");
   const initial: DetailsValues = details
     ? {
         email: details.email,
@@ -47,7 +54,7 @@ export default async function CheckoutDetailsPage() {
         email: user?.email ?? "",
         fulfilment: defaultFulfilment,
         fullName: user?.fullName ?? "",
-        phone: user?.phone ?? "",
+        phone: user?.phone || last?.phone || "",
         street: user?.address ?? "",
         apartment: user?.addressDetail ?? "",
         district: user?.district ?? "",

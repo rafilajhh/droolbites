@@ -23,7 +23,7 @@ export async function generateMetadata({ params, searchParams }: PageProps<"/ord
 
 /**
  * The customer's printable receipt for a paid order: the store's invoice paper (InvoiceDocument) without
- * the store's extras (no gateway ids, no demo badge). Same access as the order page (owner, the browser
+ * the store's extras (no gateway ids). Same access as the order page (owner, the browser
  * that placed it, or the email link's ?t=). Outside the (shop) group so the site header and footer
  * aren't on the paper. An unpaid order has no receipt yet: 404.
  */

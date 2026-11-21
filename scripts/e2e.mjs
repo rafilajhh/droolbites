@@ -620,9 +620,9 @@ try {
   });
 
   // ============================================================ US-009 demo payments (DEMO_PAYMENTS)
-  // Adaptive like US-008: the dev server's env decides. On: the whole flow; off: no button and the
-  // action refused even for the admin. Orders are inserted directly (Red Velvet, its stock tracked
-  // for the run) and deleted afterwards with their emails.
+  // Adaptive like US-008: the dev server's env decides. On: PAY INSTANTLY on /checkout/payment places the
+  // order paid without the gateway; off: no such button. Either way no page says "demo". Orders are
+  // deleted afterwards with their emails; Red Velvet's stock is tracked for the run.
   const DEMO_VARIANT = 3;
   const demoStock = await one("SELECT stock FROM product_variants WHERE id = ?", [DEMO_VARIANT]);
   await q("UPDATE product_variants SET stock = 40 WHERE id = ?", [DEMO_VARIANT]);
@@ -631,7 +631,6 @@ try {
     cleanupLog.push(`variant ${DEMO_VARIANT} stock restored to ${demoStock.stock}`);
   });
   const variantStock = async () => (await one("SELECT stock FROM product_variants WHERE id = ?", [DEMO_VARIANT])).stock;
-  const cookieOf = async (ctx) => (await ctx.cookies()).filter((c) => c.name === "db_session").map((c) => `${c.name}=${c.value}`).join("; ");
   /** An unpaid pickup order of 2 Red Velvet for Alya, with a live mock BCA VA payment unless `live` is false. */
   async function demoOrder({ live = true } = {}) {
     const max = (await one("SELECT MAX(CAST(SUBSTRING(order_number, 4) AS UNSIGNED)) n FROM orders WHERE order_number LIKE 'DB-%'")).n ?? 0;
@@ -663,211 +662,67 @@ try {
   }
   const paymentsOf = (id) => q("SELECT provider, status, method, reference, amount, charged_amount, fee FROM payments WHERE order_id=? ORDER BY id", [id]);
   const orderOf = (id) => one("SELECT payment_status, fulfilment_status, stock_deducted FROM orders WHERE id=?", [id]);
-  /** The demo action's id, from the client chunk of the admin order page (the dev build names its actions). */
-  async function demoActionFromChunks(page) {
-    const srcs = await page.locator("script[src]").evaluateAll((s) => s.map((x) => x.src));
-    for (const src of srcs) {
-      const m = (await (await fetch(src)).text()).match(/"([0-9a-f]{40,})":\{"name":"markPaidDemo"\}/);
-      if (m) return m[1];
-    }
-    return null;
-  }
-  /** Call the action as a browser would (multipart body, Next-Action header), for another order or session. */
-  async function callDemoAction(action, number, cookie) {
-    const body = action.body.split(action.number).join(number);
-    const res = await fetch(BASE + action.path, {
-      method: "POST",
-      redirect: "manual",
-      headers: { "next-action": action.id, "content-type": action.contentType, accept: "text/x-component", origin: BASE, ...(cookie ? { cookie } : {}) },
-      body,
-    });
-    return { status: res.status, text: await res.text() };
-  }
-  const demoButton = (page) => page.getByRole("button", { name: "MARK PAID (DEMO)", exact: true });
-
-  const demoA = await demoOrder();
-  const probe = await open(admin, `/admin/orders/${demoA.number}`);
-  await settle(probe);
-  const demoOn = (await demoButton(probe).count()) > 0;
-  await probe.close();
-
-  await check("US-009.1", `Demo payments ${demoOn ? "on" : "off"}: MARK PAID (DEMO) ${demoOn ? "shown" : "hidden"} on an unpaid order's admin page, next to CANCEL ORDER`, async () => {
-    const page = await open(admin, `/admin/orders/${demoA.number}`);
+  /** A guest with 2 Red Velvet in the cart, through the details step (pickup) onto /checkout/payment. */
+  async function guestOnPaymentStep(ctx) {
+    await ctx.addCookies([{ name: "db_cart", value: encodeURIComponent(JSON.stringify([{ v: String(DEMO_VARIANT), q: 2 }])), url: BASE }]);
+    const page = await open(ctx, "/checkout");
     await settle(page);
-    const cancel = await page.getByRole("button", { name: "CANCEL ORDER", exact: true }).count();
-    const demo = await demoButton(page).count();
+    await page.locator('input[name="fulfilment"][value="pickup"]').check({ force: true });
+    await page.locator("#checkout-email").fill("alya@email.com");
+    await page.locator("#checkout-fullName").fill("Alya Rahmawati");
+    await page.locator("#checkout-phone").fill("0812-3456-7890");
+    await Promise.all([page.waitForURL(/\/checkout\/payment/, { timeout: 60_000 }), page.locator("form button[type=submit]").first().click()]);
+    await settle(page);
+    return page;
+  }
+  const instantButton = (page) => page.getByRole("button", { name: "PAY INSTANTLY", exact: true });
+  /** Visible text of an admin page, for the "never says demo" checks. */
+  const adminText = async (route) => {
+    const page = await open(admin, route);
+    await settle(page);
+    const txt = await page.locator("body").innerText();
     await page.close();
-    assert(cancel === 1, `CANCEL ORDER x${cancel}`);
-    assert(demo === (demoOn ? 1 : 0), `MARK PAID (DEMO) x${demo}`);
-    return `CANCEL ORDER x1, MARK PAID (DEMO) x${demo}`;
+    return txt;
+  };
+
+  let demoOn = false;
+  await check("US-009.1", "Unpaid order's admin page: only CANCEL ORDER, no demo button or wording; /checkout/payment shows a plain PAY INSTANTLY exactly when DEMO_PAYMENTS is on, and never the word demo", async () => {
+    const demoA = await demoOrder();
+    const txt = await adminText(`/admin/orders/${demoA.number}`);
+    assert(/CANCEL ORDER/.test(txt), "no CANCEL ORDER");
+    assert(!/demo/i.test(txt), "admin order page says demo");
+    const ctx = await newCtx();
+    try {
+      const pay = await guestOnPaymentStep(ctx);
+      demoOn = (await instantButton(pay).count()) > 0;
+      const payTxt = await pay.locator("body").innerText();
+      await pay.close();
+      assert(!/demo/i.test(payTxt), "/checkout/payment says demo");
+    } finally {
+      await ctx.close();
+    }
+    return `admin: CANCEL ORDER, no demo; /checkout/payment: PAY INSTANTLY ${demoOn ? "shown" : "hidden"} (DEMO_PAYMENTS ${demoOn ? "on" : "off"}), no demo`;
   });
 
-  if (!demoOn) {
-    await check("US-009.2", "Demo payments off: the action is refused even with the admin session; the order stays unpaid", async () => {
-      const page = await open(admin, `/admin/orders/${demoA.number}`);
-      await settle(page);
-      const id = await demoActionFromChunks(page);
-      await page.close();
-      assert(id, "action id not found in the page's chunks (not a dev build?)");
-      // The body a click sends: [state, FormData{orderNumber}] as React's multipart reply.
-      const boundary = "----e2edemo";
-      const body = [
-        `--${boundary}\r\nContent-Disposition: form-data; name="1_orderNumber"\r\n\r\n${demoA.number}\r\n`,
-        `--${boundary}\r\nContent-Disposition: form-data; name="0"\r\n\r\n[{"status":"idle"},"$K1"]\r\n`,
-        `--${boundary}--\r\n`,
-      ].join("");
-      const action = { id, path: `/admin/orders/${demoA.number}`, contentType: `multipart/form-data; boundary=${boundary}`, body, number: demoA.number };
-      const r = await callDemoAction(action, demoA.number, await cookieOf(admin));
-      assert(r.text.includes('"status":"off"'), `answer ${r.status}: ${r.text.slice(0, 160)}`);
-      const o = await orderOf(demoA.id);
-      const p = await paymentsOf(demoA.id);
-      assert(o.payment_status === "awaiting" && p.length === 1 && p[0].status === "awaiting", `${o.payment_status}, ${p.length} payment(s)`);
-      return `answer {"status":"off"}; ${demoA.number} still awaiting`;
-    });
-  } else {
-    let action = null;
-    await check("US-009.2", "Admin marks an unpaid order paid (demo) after the confirm; live payment expired, demo payment paid, stock taken; the customer's open pay page moves to success by polling", async () => {
-      const stockBefore = await variantStock();
-      const pay = await open(alya, `/checkout/pay/${demoA.number}`);
-      await pay.locator("#pay-va-number").waitFor({ state: "visible" });
-      const page = await open(admin, `/admin/orders/${demoA.number}`);
-      await settle(page);
-      await demoButton(page).click();
-      const dialog = page.getByRole("alertdialog");
-      await dialog.waitFor({ state: "visible" });
-      const dialogText = await dialog.innerText();
-      assert(/No money moves/.test(dialogText) && /closed at the payment gateway/.test(dialogText) && /exactly like a paid one/.test(dialogText), `dialog: ${dialogText.slice(0, 200)}`);
-      const [request] = await Promise.all([
-        page.waitForRequest((r) => r.method() === "POST" && Boolean(r.headers()["next-action"])),
-        dialog.getByRole("button", { name: "MARK PAID", exact: true }).click(),
-      ]);
-      action = {
-        id: request.headers()["next-action"],
-        path: new URL(request.url()).pathname,
-        contentType: request.headers()["content-type"],
-        body: request.postData() ?? "",
-        number: demoA.number,
-      };
-      await page.locator("[role=status]").filter({ hasText: "Marked paid in demo mode" }).waitFor({ timeout: 30_000 });
-      const t0 = Date.now();
-      await pay.waitForURL(new RegExp(`/checkout/success/${demoA.number}`), { timeout: 30_000 });
-      const moved = Date.now() - t0;
-      await pay.close();
-      await page.close();
-      const o = await orderOf(demoA.id);
-      assert(o.payment_status === "paid" && o.fulfilment_status === "pending" && o.stock_deducted === 1, JSON.stringify(o));
-      const p = await paymentsOf(demoA.id);
-      assert(p.length === 2 && p[0].provider === "mock" && p[0].status === "expired", `old payment ${JSON.stringify(p[0])}`);
-      assert(p[1].provider === "demo" && p[1].status === "paid" && p[1].method === "bca_va" && p[1].charged_amount === 10000 && p[1].fee === 0, `demo payment ${JSON.stringify(p[1])}`);
-      const stockAfter = await variantStock();
-      assert(stockAfter === stockBefore - 2, `stock ${stockBefore} -> ${stockAfter}`);
-      return `${p[0].reference} expired, ${p[1].reference} paid; stock ${stockBefore} -> ${stockAfter}; pay page on success ${moved} ms after the admin saw the result`;
-    });
-
-    await check("US-009.3", "Demo badge beside the method on the order page, in the orders list and on the invoice; CSV says (demo)", async () => {
-      const page = await open(admin, `/admin/orders/${demoA.number}`);
-      await settle(page);
-      const method = await page.locator("dt", { hasText: /^Method$/ }).last().locator("xpath=following-sibling::dd[1]").innerText();
-      assert(/BCA VA/.test(method) && /Demo/.test(method), `order page method "${method}"`);
-      assert((await page.getByRole("button", { name: /accept/i }).count()) > 0, "no accept / decline step after the demo payment");
-      await page.close();
-      const list = await open(admin, `/admin/orders?q=${demoA.number}`);
-      await settle(list);
-      const row = await list.locator("tbody tr", { hasText: demoA.number }).innerText();
-      await list.close();
-      assert(/Paid/.test(row) && /Demo/.test(row), `list row "${row.replace(/\s+/g, " ")}"`);
-      const invoice = await open(admin, `/admin/invoice/${demoA.number}`);
-      const inv = await invoice.locator("article").innerText();
-      await invoice.close();
-      assert(/BCA Virtual Account\s*Demo/.test(inv), "invoice lacks the Demo badge beside the method");
-      const csv = await (await admin.request.get(`/admin/orders/export?q=${demoA.number}`)).text();
-      assert(csv.includes("BCA Virtual Account (demo)"), `CSV: ${csv.split("\r\n")[1]}`);
-      return `order page "${method.replace(/\s+/g, " ")}", list row, invoice, CSV "BCA Virtual Account (demo)"`;
-    });
-
-    await check("US-009.4", "Customer order page and the paid email show an ordinary paid order (no demo wording)", async () => {
-      const page = await open(alya, `/orders/${demoA.number}`);
-      const txt = await page.locator("main").innerText();
-      await page.close();
-      assert(/BCA Virtual Account/.test(txt) && /Paid/.test(txt), "order page lacks the paid method");
-      assert(!/demo/i.test(txt), "order page says demo");
-      let mail = null;
-      for (let i = 0; i < 20 && !mail; i++) {
-        const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
-        mail = msgs.find((m) => m.Subject === `Order ${demoA.number} is paid`) ?? null;
-        if (!mail) await sleep(500);
-      }
-      assert(mail, "no 'Order … is paid' email");
-      const body = await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
-      assert(/BCA Virtual Account/.test(body.Text) && !/demo/i.test(body.Text + body.HTML), "email names no method or says demo");
-      return `page and "${mail.Subject}" email: BCA Virtual Account, no demo`;
-    });
-
-    await check("US-009.5", "Second click (same request again) is refused: still one demo payment, stock taken once", async () => {
-      assert(action, "no captured action from US-009.2");
-      const stockBefore = await variantStock();
-      const r = await callDemoAction(action, demoA.number, await cookieOf(admin));
-      assert(r.text.includes('"status":"invalid"'), `answer ${r.status}: ${r.text.slice(0, 160)}`);
-      const p = await paymentsOf(demoA.id);
-      assert(p.length === 2 && p.filter((x) => x.provider === "demo").length === 1, `${p.length} payments`);
-      assert((await variantStock()) === stockBefore, "stock moved");
-      return `answer {"status":"invalid"}; 2 payments; stock ${stockBefore}`;
-    });
-
-    await check("US-009.6", "No session and a customer session can't call the action (order stays unpaid); the admin session can", async () => {
-      assert(action, "no captured action from US-009.2");
-      const b = await demoOrder();
-      const anon = await callDemoAction(action, b.number, "");
-      const customer = await callDemoAction(action, b.number, await cookieOf(alya));
-      let o = await orderOf(b.id);
-      let p = await paymentsOf(b.id);
-      assert(o.payment_status === "awaiting" && p.length === 1 && p[0].status === "awaiting", `after non-admin calls: ${o.payment_status}, ${p.length} payment(s)`);
-      assert(!anon.text.includes('"status":"paid"') && !customer.text.includes('"status":"paid"'), "a non-admin call answered paid");
-      const ok = await callDemoAction(action, b.number, await cookieOf(admin));
-      o = await orderOf(b.id);
-      p = await paymentsOf(b.id);
-      assert(ok.text.includes('"status":"paid"') && o.payment_status === "paid" && p[1]?.provider === "demo", `admin call: ${ok.text.slice(0, 120)}`);
-      return `no session -> ${anon.status}, customer -> ${customer.status}: unpaid; admin -> paid`;
-    });
-
-    await check("US-009.7", "Cancelled order: no MARK PAID (DEMO) button and the action is refused", async () => {
-      assert(action, "no captured action from US-009.2");
-      const c = await demoOrder({ live: false });
-      await q("UPDATE orders SET payment_status='expired', fulfilment_status='cancelled' WHERE id=?", [c.id]);
-      const page = await open(admin, `/admin/orders/${c.number}`);
-      await settle(page);
-      const shown = await demoButton(page).count();
-      await page.close();
-      assert(shown === 0, "button shown on a cancelled order");
-      const r = await callDemoAction(action, c.number, await cookieOf(admin));
-      const o = await orderOf(c.id);
-      assert(r.text.includes('"status":"invalid"') && o.payment_status === "expired" && (await paymentsOf(c.id)).length === 0, `answer ${r.text.slice(0, 120)}; ${o.payment_status}`);
-      return `hidden; answer {"status":"invalid"}; still cancelled, no payment`;
-    });
-
-    await check("US-009.8", "Guest checks out (pickup) and presses Skip payment (demo): no gateway charge, one paid demo payment with the chosen method, stock taken, straight to success", async () => {
+  if (demoOn) {
+    let skipped = null;
+    await check("US-009.2", "Guest checks out (pickup) and presses PAY INSTANTLY: no gateway charge, one paid payment with the chosen method, stock taken, straight to success", async () => {
       const ctx = await newCtx();
       try {
-        await ctx.addCookies([{ name: "db_cart", value: encodeURIComponent(JSON.stringify([{ v: String(DEMO_VARIANT), q: 2 }])), url: BASE }]);
         const stockBefore = await variantStock();
-        const page = await open(ctx, "/checkout");
-        await settle(page);
-        await page.locator('input[name="fulfilment"][value="pickup"]').check({ force: true });
-        await page.locator("#checkout-email").fill("alya@email.com");
-        await page.locator("#checkout-fullName").fill("Alya Rahmawati");
-        await page.locator("#checkout-phone").fill("0812-3456-7890");
-        await Promise.all([page.waitForURL(/\/checkout\/payment/, { timeout: 60_000 }), page.locator("form button[type=submit]").first().click()]);
-        await settle(page);
+        const page = await guestOnPaymentStep(ctx);
         await page.locator('input[name="method"][value="bca_va"]').check({ force: true });
-        const skip = page.getByRole("button", { name: "Skip payment (demo)", exact: true });
-        await Promise.all([page.waitForURL(/\/checkout\/success\//, { timeout: 60_000 }), skip.click()]);
+        await Promise.all([page.waitForURL(/\/checkout\/success\//, { timeout: 60_000 }), instantButton(page).click()]);
         const number = new URL(page.url()).pathname.split("/").pop();
+        await settle(page);
+        const successTxt = await page.locator("body").innerText();
         await page.close();
         const row = await one("SELECT id, payment_status, fulfilment_status, stock_deducted FROM orders WHERE order_number=?", [number]);
         assert(row, `no order ${number}`);
+        skipped = { id: row.id, number };
         undo.push(async () => {
           await q("DELETE FROM orders WHERE id=?", [row.id]);
-          cleanupLog.push(`demo-skip order ${number} deleted`);
+          cleanupLog.push(`instant-paid order ${number} deleted`);
           try {
             const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
             const ids = msgs.filter((m) => m.Subject.includes(number)).map((m) => m.ID);
@@ -879,10 +734,88 @@ try {
         assert(p.length === 1 && p[0].provider === "demo" && p[0].status === "paid" && p[0].method === "bca_va" && p[0].fee === 0, `payments ${JSON.stringify(p)}`);
         const stockAfter = await variantStock();
         assert(stockAfter === stockBefore - 2, `stock ${stockBefore} -> ${stockAfter}`);
-        return `${number}: ${p[0].reference} (demo, bca_va) paid, no gateway payment; stock ${stockBefore} -> ${stockAfter}`;
+        assert(!/demo/i.test(successTxt), "success page says demo");
+        return `${number}: ${p[0].reference} (bca_va) paid, no gateway payment; stock ${stockBefore} -> ${stockAfter}; success page without demo`;
       } finally {
         await ctx.close();
       }
+    });
+
+    await check("US-009.3", "Admin shows that order as an ordinary paid order: order page (BCA VA, accept step), list, overview, invoice, CSV and sales report never say demo", async () => {
+      assert(skipped, "no order from US-009.2");
+      const page = await open(admin, `/admin/orders/${skipped.number}`);
+      await settle(page);
+      const method = await page.locator("dt", { hasText: /^Method$/ }).last().locator("xpath=following-sibling::dd[1]").innerText();
+      const accept = await page.getByRole("button", { name: /accept/i }).count();
+      const txt = await page.locator("body").innerText();
+      await page.close();
+      assert(method.trim() === "BCA VA", `order page method "${method}"`);
+      assert(accept > 0, "no accept / decline step after the instant payment");
+      assert(!/demo/i.test(txt), "order page says demo");
+      const list = await open(admin, `/admin/orders?q=${skipped.number}`);
+      await settle(list);
+      const row = await list.locator("tbody tr", { hasText: skipped.number }).innerText();
+      const listTxt = await list.locator("body").innerText();
+      await list.close();
+      assert(/Paid/.test(row) && !/demo/i.test(listTxt), `list "${row.replace(/\s+/g, " ")}"`);
+      for (const route of ["/admin", `/admin/invoice/${skipped.number}`, "/admin/reports?range=30d", "/admin/reports?range=all"]) {
+        assert(!/demo/i.test(await adminText(route)), `${route} says demo`);
+      }
+      const csv = await (await admin.request.get(`/admin/orders/export?q=${skipped.number}`)).text();
+      assert(csv.includes("BCA Virtual Account") && !/demo/i.test(csv), `CSV: ${csv.split("\r\n")[1]}`);
+      return `order page "${method.trim()}", list row, overview, invoice, reports, CSV: no demo`;
+    });
+
+    await check("US-009.4", "The paid email and the customer's order page show an ordinary paid order (no demo wording)", async () => {
+      assert(skipped, "no order from US-009.2");
+      let mail = null;
+      for (let i = 0; i < 20 && !mail; i++) {
+        const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
+        mail = msgs.find((m) => m.Subject === `Order ${skipped.number} is paid`) ?? null;
+        if (!mail) await sleep(500);
+      }
+      assert(mail, "no 'Order … is paid' email");
+      const body = await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
+      assert(/BCA Virtual Account/.test(body.Text) && !/demo/i.test(body.Text + body.HTML), "email names no method or says demo");
+      // The guest's order page through the email's own link.
+      const link = body.Text.match(/https?:\/\/\S+\/orders\/DB-\d+\?t=\S+/)?.[0];
+      assert(link, "paid email has no order link");
+      const ctx = await newCtx();
+      try {
+        const page = await open(ctx, new URL(link).pathname + new URL(link).search);
+        await settle(page);
+        const txt = await page.locator("main").innerText();
+        await page.close();
+        assert(/BCA Virtual Account/.test(txt) && /Paid/.test(txt), "order page lacks the paid method");
+        assert(!/demo/i.test(txt), "order page says demo");
+      } finally {
+        await ctx.close();
+      }
+      return `"${mail.Subject}" email and order page: BCA Virtual Account, no demo`;
+    });
+
+    await check("US-009.5", "Declining that order: the dialog asks for no refund, then no refund alert or MARK AS REFUNDED, and still no demo wording", async () => {
+      assert(skipped, "no order from US-009.2");
+      const page = await open(admin, `/admin/orders/${skipped.number}`);
+      await settle(page);
+      await page.getByRole("button", { name: "DECLINE ORDER", exact: true }).click();
+      const dialog = page.getByRole("alertdialog");
+      await dialog.waitFor({ state: "visible" });
+      const dialogText = await dialog.innerText();
+      assert(!/refund/i.test(dialogText) && !/demo/i.test(dialogText), `dialog: ${dialogText.slice(0, 200)}`);
+      await dialog.getByText("Some items sold out today").click();
+      await dialog.getByRole("button", { name: "DECLINE ORDER", exact: true }).click();
+      for (let i = 0; i < 30 && (await orderOf(skipped.id)).fulfilment_status !== "cancelled"; i++) await sleep(1000);
+      await page.close();
+      assert((await orderOf(skipped.id)).fulfilment_status === "cancelled", "not declined");
+      const after = await open(admin, `/admin/orders/${skipped.number}`);
+      await settle(after);
+      const txt = await after.locator("body").innerText();
+      const refundButton = await after.getByRole("button", { name: "MARK AS REFUNDED", exact: true }).count();
+      await after.close();
+      assert(refundButton === 0 && !/refund needed/i.test(txt), "refund alert shown for an order that moved no money");
+      assert(!/demo/i.test(txt), "order page says demo");
+      return `${skipped.number}: declined; no refund wording in the dialog, no refund alert, no demo`;
     });
   }
 
@@ -1048,7 +981,7 @@ try {
     const t = await timesOf(life.id);
     assert(t.refunded_at && t.refund_note === "BCA transfer e2e", JSON.stringify(t));
     assert(/Refunded Rp10\.000 on .* WIB\./.test(adminTxt) && !/MARK AS REFUNDED/.test(adminTxt), "admin page still shows the alert / lacks the refunded line");
-    for (const label of ["Placed", "Paid", "Accepted", "Ready for pickup", "Cancelled", "Refunded"]) {
+    for (const label of ["Placed", "Paid", "Accepted, baking started", "Ready for pickup", "Cancelled", "Refunded"]) {
       assert(new RegExp(`${label}\\s+\\d+ \\w+ \\d{4}, \\d{2}:\\d{2} WIB`).test(adminTxt), `timeline lacks ${label}`);
     }
     const mail = await waitMail(`Order ${life.number} was refunded`);
@@ -1068,7 +1001,7 @@ try {
     return `${life.number}: refunded_at + note saved; 1 refund email; admin line + timeline (6 steps); customer page + receipt say refunded`;
   });
 
-  await check("US-011.5", "Customer order page: step times under finished steps; 'usually within 30 minutes' while waiting for the shop", async () => {
+  await check("US-011.5", "Customer order page: step times under reached steps (Baking at the acceptance time); 'usually within 30 minutes' while waiting for the shop", async () => {
     const c = await demoOrder();
     await q("UPDATE payments SET status='paid', paid_at=UTC_TIMESTAMP(3) WHERE order_id=?", [c.id]);
     await q("UPDATE orders SET payment_status='paid' WHERE id=?", [c.id]);
@@ -1080,7 +1013,8 @@ try {
     await page.close();
     assert(/usually within 30 minutes during opening hours/.test(waiting), "confirming text lacks the 30 minutes");
     const times = steps.match(/\d{2}:\d{2}/g) ?? [];
-    assert(times.length === 2, `expected 2 step times (payment, confirmed), saw ${times.length}: ${steps.replace(/\s+/g, " ")}`);
+    assert(times.length === 3, `expected 3 step times (payment, confirmed, baking), saw ${times.length}: ${steps.replace(/\s+/g, " ")}`);
+    assert(/Baking\s+\d{2}:\d{2}/.test(steps), `Baking has no time: ${steps.replace(/\s+/g, " ")}`);
     return `${c.number}: steps show ${times.join(", ")}`;
   });
 
@@ -1217,7 +1151,7 @@ try {
   });
   let payPage = null;
 
-  await check("US-010.1", "Shop closed (today not an open day): both checkout steps say when orders open again, Continue / PAY / demo skip are disabled, a forced submit places nothing", async () => {
+  await check("US-010.1", "Shop closed (today not an open day): both checkout steps say when orders open again, Continue / PAY / PAY INSTANTLY are disabled, a forced submit places nothing", async () => {
     await checkoutCtx.addCookies([{ name: "db_cart", value: encodeURIComponent(JSON.stringify([{ v: String(DEMO_VARIANT), q: 1 }])), url: BASE }]);
     payPage = await open(checkoutCtx, "/checkout");
     await settle(payPage);
@@ -1236,8 +1170,8 @@ try {
       assert(/We're closed right now\. Orders open again tomorrow \(\w+\) at 07:00\. Open 07:00–21:00 WIB · last order 20:30\./.test(notice), `notice: ${notice}`);
       const pay = payPage.locator("[data-pinned-bar] button[type=submit]");
       assert(await pay.isDisabled(), "PAY enabled while closed");
-      const skip = payPage.getByRole("button", { name: "Skip payment (demo)", exact: true });
-      if (await skip.count()) assert(await skip.isDisabled(), "demo skip enabled while closed");
+      const skip = payPage.getByRole("button", { name: "PAY INSTANTLY", exact: true });
+      if (await skip.count()) assert(await skip.isDisabled(), "PAY INSTANTLY enabled while closed");
       // The server refuses too: enable the button by hand and submit.
       await pay.evaluate((b) => {
         b.disabled = false;
@@ -1462,7 +1396,7 @@ try {
     assert(otherSession, "no session cookie for the other account");
     await ownerCtx.addCookies([otherSession]);
     await stale.getByRole("button", { name: "ADD TO MY ACCOUNT" }).click();
-    await stale.getByText("This link is for another account.").waitFor({ timeout: 30_000 });
+    await stale.getByRole("heading", { name: "This link is for another account." }).waitFor({ timeout: 30_000 });
     await stale.close();
     await ownerCtx.clearCookies();
     await ownerCtx.addCookies(ownerCookies);

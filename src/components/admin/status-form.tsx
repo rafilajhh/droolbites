@@ -30,7 +30,7 @@ export function StatusForm({
   cancelOnly?: { hint: string };
   /** Set when the order is paid with real money: cancelling it means refunding this amount. */
   paidAmount?: string;
-  /** The order is paid (demo payments too): cancelling it asks for a reason the customer sees. */
+  /** The order is paid (whatever the payment): cancelling it asks for a reason the customer sees. */
   paid?: boolean;
 }) {
   const t = useMessages(adminMessages).order;

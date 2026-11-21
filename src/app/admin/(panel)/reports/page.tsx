@@ -231,14 +231,7 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           icon={Wallet}
           iconBg="bg-mint"
           value={formatRupiah(report.revenue)}
-          sub={
-            <>
-              {t.kpi.salesSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
-              {report.demoOrders > 0 ? (
-                <span className="mt-0.5 block font-semibold text-foreground">{t.kpi.demoIncluded(formatRupiah(report.demoRevenue))}</span>
-              ) : null}
-            </>
-          }
+          sub={t.kpi.salesSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
         />
         {/* Unpaid and cancelled orders aren't sales: only their counts, as a plain line under Orders. */}
         <StatPane

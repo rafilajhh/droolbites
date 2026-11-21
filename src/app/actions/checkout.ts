@@ -258,7 +258,7 @@ class StockShortError extends Error {
  * the payment. If the gateway refuses, the order stays unpaid without a live
  * payment and the pay page asks for another method, so no order is duplicated.
  *
- * "Skip payment (demo)" (the submit button's demo=1, honoured only while
+ * "PAY INSTANTLY" (the submit button's demo=1, honoured only while
  * DEMO_PAYMENTS is on) places the same order without asking the gateway and
  * marks it paid in demo mode, then goes straight to the success page.
  */
@@ -472,7 +472,7 @@ export async function checkPaymentStatus(prev: PayCheckState, formData: FormData
   return { result: "awaiting", attempt: prev.attempt + 1 };
 }
 
-/** Demo (mock) and gateway sandbox only: pay the latest payment. */
+/** Mock gateway and gateway sandbox only: pay the latest payment. */
 export async function simulatePayment(formData: FormData) {
   const orderNumber = str(formData, "orderNumber");
   const token = str(formData, "t");
@@ -493,24 +493,6 @@ export async function simulatePayment(formData: FormData) {
   }
   revalidatePath(`/orders/${orderNumber}`);
   redirect(withOrderToken(`/checkout/success/${orderNumber}`, token));
-}
-
-/**
- * Demo mode only (DEMO_PAYMENTS="on"): the customer skips paying an order whose payment can't be
- * simulated (a live gateway). Same path as the store's Mark paid (demo): the open gateway payment is
- * closed first, then the order is paid without money moving.
- */
-export async function skipPaymentDemo(formData: FormData) {
-  const orderNumber = str(formData, "orderNumber");
-  const token = str(formData, "t");
-  const order = await getOrderForViewer(orderNumber, token);
-  if (!order) redirect("/menu");
-  const payHref = withOrderToken(`/checkout/pay/${orderNumber}`, token);
-  if (!demoPaymentsEnabled() || order.fulfilmentStatus === "cancelled") redirect(payHref);
-  const result = await markOrderPaidDemo(orderNumber);
-  revalidatePath(`/orders/${orderNumber}`);
-  revalidatePath("/account");
-  redirect(isPaid(result) || order.paymentStatus === "paid" ? withOrderToken(`/checkout/success/${orderNumber}`, token) : payHref);
 }
 
 export type CancelOrderState = { error?: "busy"; attempt: number };

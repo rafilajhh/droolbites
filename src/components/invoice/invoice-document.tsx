@@ -48,8 +48,8 @@ const rule = "border-border-divider print:border-neutral-400";
 
 /**
  * The printable invoice of one order, shared by the store's page (/admin/invoice/…) and the customer's
- * receipt (/orders/…/invoice). Each page decides what the payment block says (status, a demo badge for
- * the store only) and where Back goes; the rest is the same paper.
+ * receipt (/orders/…/invoice). Each page decides what the payment block says (its status) and where
+ * Back goes; the rest is the same paper.
  */
 export function InvoiceDocument({
   order,
@@ -61,7 +61,6 @@ export function InvoiceDocument({
   back,
   paidAt,
   method,
-  methodBadge,
   status,
   statusAlert,
   amount,
@@ -79,7 +78,6 @@ export function InvoiceDocument({
   /** The paid-on line: a WIB date-time, or why there is none. */
   paidAt: string;
   method: PaymentMethod | null;
-  methodBadge?: React.ReactNode;
   status: string;
   /** Crimson status (cancelled). */
   statusAlert: boolean;
@@ -243,10 +241,7 @@ export function InvoiceDocument({
             <h2 className={cn(thClasses, "print:text-neutral-700")}>{t.payment}</h2>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm leading-[21px]">
               <dt className={muted}>{t.method}</dt>
-              <dd className="flex flex-wrap items-center gap-2 font-semibold">
-                {method ? paymentMethodInfo[method].name : t.noPayment}
-                {methodBadge}
-              </dd>
+              <dd className="font-semibold">{method ? paymentMethodInfo[method].name : t.noPayment}</dd>
               <dt className={muted}>{t.status}</dt>
               <dd className={cn("font-semibold", statusAlert && "text-error print:text-black")}>{status}</dd>
             </dl>

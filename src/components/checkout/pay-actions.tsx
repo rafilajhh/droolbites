@@ -8,7 +8,6 @@ import {
   cancelOrder,
   checkPaymentStatus,
   simulatePayment,
-  skipPaymentDemo,
   type CancelOrderState,
   type PayCheckState,
 } from "@/app/actions/checkout";
@@ -146,22 +145,19 @@ export function PaymentWatcher({ statusUrl, successHref }: { statusUrl: string; 
 }
 
 /**
- * Demo / sandbox box: no real money moves, so let the visitor pay the order. "mock" and "sandbox"
- * simulate the gateway's payment; "demo" (DEMO_PAYMENTS on, a gateway that can't simulate) marks the
- * order paid in demo mode instead.
+ * Mock / sandbox box: no real money moves, so let the visitor pay the order by simulating the
+ * gateway's payment.
  */
-export function SimulatePayment({ orderNumber, token, mode }: { orderNumber: string; token: string; mode: "mock" | "sandbox" | "demo" }) {
+export function SimulatePayment({ orderNumber, token, mode }: { orderNumber: string; token: string; mode: "mock" | "sandbox" }) {
   const t = useMessages(checkoutMessages).pay;
   const copy =
-    mode === "demo"
-      ? { title: t.demoModeTitle, body: t.demoModeBody, label: t.demoSkip, pending: t.demoSkipping }
-      : mode === "sandbox"
-        ? { title: t.sandboxTitle, body: t.sandboxBody, label: t.simulate, pending: t.simulating }
-        : { title: t.demoTitle, body: t.demoBody, label: t.simulate, pending: t.simulating };
+    mode === "sandbox"
+      ? { title: t.sandboxTitle, body: t.sandboxBody, label: t.simulate, pending: t.simulating }
+      : { title: t.mockTitle, body: t.mockBody, label: t.simulate, pending: t.simulating };
   return (
     <form
       id="simulate"
-      action={mode === "demo" ? skipPaymentDemo : simulatePayment}
+      action={simulatePayment}
       className="flex w-full flex-col gap-3 pt-6 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-center sm:justify-between"
     >
       <input type="hidden" name="orderNumber" value={orderNumber} />

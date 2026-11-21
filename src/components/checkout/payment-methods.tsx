@@ -22,7 +22,8 @@ export type PaymentFees = Partial<Record<PaymentMethod, number>>;
  * channels); a group without any of them is left out. Banks past the pen's four
  * stay folded until asked for, or while one of them is selected. The group
  * holding `leadMethod` (the preselected one) comes first at every width, so the
- * method the pinned PAY bar names is on screen, not three cards down. Every tile
+ * method the pinned PAY bar names is on screen, not three cards down; it is moved
+ * in the DOM too, so keyboard and screen-reader order match what is seen. Every tile
  * is one column wide, an odd last one included, and the fold toggle sits on the
  * left edge like the rest of the column. From lg to xl, where a tile is about 240px,
  * a bank tile says "Mandiri VA" so the name stays on two lines at most.
@@ -50,9 +51,10 @@ export function PaymentMethodGroups({
   fees?: PaymentFees;
   className?: string;
 }) {
-  const groups = PAYMENT_GROUPS.map((g) => ({ key: g.key, methods: g.methods.filter((m) => methods.includes(m)) })).filter(
-    (g) => g.methods.length > 0,
-  );
+  const leads = (group: readonly PaymentMethod[]) => leadMethod !== null && group.includes(leadMethod);
+  const groups = PAYMENT_GROUPS.map((g) => ({ key: g.key, methods: g.methods.filter((m) => methods.includes(m)) }))
+    .filter((g) => g.methods.length > 0)
+    .sort((a, b) => Number(leads(b.methods)) - Number(leads(a.methods)));
   const extraBanks = groups.find((g) => g.key === "va")?.methods.slice(PRIMARY_VA_COUNT) ?? [];
   const [showMore, setShowMore] = useState(() => selected !== null && extraBanks.includes(selected));
 
@@ -67,10 +69,7 @@ export function PaymentMethodGroups({
             key={group.key}
             role="radiogroup"
             aria-labelledby={titleId}
-            className={cn(
-              "flex w-full flex-col gap-4 pt-8 shadow-[inset_0_1px_0_var(--border-subtle)]",
-              leadMethod && (group.methods as readonly PaymentMethod[]).includes(leadMethod) && "order-first",
-            )}
+            className="flex w-full flex-col gap-4 pt-8 shadow-[inset_0_1px_0_var(--border-subtle)]"
           >
             <h2 id={titleId} className="font-display text-xl leading-7 font-bold text-foreground sm:text-[22px]">
               {t.groups[group.key].title}

@@ -6,7 +6,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import type { PaymentMethod } from "@/generated/prisma/enums";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
-import { PaymentMethodGroups, type BelowMinimum, type PaymentLogos } from "./payment-methods";
+import { PaymentMethodGroups, type BelowMinimum, type PaymentFees, type PaymentLogos } from "./payment-methods";
 
 /**
  * Pay page with ?change=1, or an order without a live payment (the gateway
@@ -23,6 +23,7 @@ export function ChangeMethodForm({
   cancelHref,
   initialError,
   feeMayApply = false,
+  fees = {},
 }: {
   orderNumber: string;
   token: string;
@@ -35,6 +36,8 @@ export function ChangeMethodForm({
   initialError?: ChangeMethodState["error"];
   /** The gateway may add a service fee that differs per method (see serviceFeeMayApply). */
   feeMayApply?: boolean;
+  /** The fee each method adds to this order, where it's known before the charge (as on the Payment step). */
+  fees?: PaymentFees;
 }) {
   const t = useMessages(checkoutMessages);
   const c = t.pay.change;
@@ -70,7 +73,7 @@ export function ChangeMethodForm({
         </p>
       ) : null}
       {/* The group holding the current method first, as on the Payment step. */}
-      <PaymentMethodGroups t={t.payment} methods={methods} logos={logos} selected={method} onSelect={setMethod} leadMethod={current} belowMinimum={belowMinimum} />
+      <PaymentMethodGroups t={t.payment} methods={methods} logos={logos} selected={method} onSelect={setMethod} leadMethod={current} belowMinimum={belowMinimum} fees={fees} />
       <div className="grid w-full gap-4 sm:grid-cols-2">
         <Button type="submit" disabled={pending || !method}>
           {pending ? c.saving : c.confirm}

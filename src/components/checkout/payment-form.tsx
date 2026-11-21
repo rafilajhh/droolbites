@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { FlaskConical } from "lucide-react";
 import { placeOrder, type PlaceOrderState, type ShortItem } from "@/app/actions/checkout";
 import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/generated/prisma/enums";
@@ -64,7 +63,7 @@ export function PaymentForm({
   storeClosed: StoreClosed | null;
   /** Cart lines asking for more than is left: the notice under the heading names them, and nothing can be placed. */
   short: ShortItem[];
-  /** DEMO_PAYMENTS on: a quiet "Skip payment (demo)" under PAY places the order and marks it paid without the gateway. */
+  /** DEMO_PAYMENTS on: a secondary "PAY INSTANTLY" under PAY places the order and marks it paid without the gateway. */
   demo: boolean;
   summary: { lines: SummaryLine[]; itemCount: number; subtotal: number; total: number };
 }) {
@@ -111,7 +110,7 @@ export function PaymentForm({
   ) : null;
   const errorClass = "rounded-sm bg-tint-salmon px-4 py-3 text-sm leading-normal text-foreground outline-hidden";
 
-  // Closed, or the cart asks for more than is left: PAY and the demo skip wait.
+  // Closed, or the cart asks for more than is left: PAY and PAY INSTANTLY wait.
   const closed = storeClosed !== null || short.length > 0;
   // The chosen method's fee when it's known ahead: PAY and the summary then name the total with it.
   const methodFee = method ? fees[method] : undefined;
@@ -197,7 +196,7 @@ export function PaymentForm({
           <ReviewRows rows={rows} className="shadow-none" />
         </CheckoutSection>
 
-        {defaultMethod ? (
+        {methods.length > 0 ? (
           <PaymentMethodGroups
             // React resets the form once the action returns, putting each radio back to the one it was first
             // rendered checked. A fresh set per attempt starts out checked at the chosen method, so the reset
@@ -269,29 +268,23 @@ export function PaymentForm({
               </p>
             ) : null}
           </div>
-        </div>
-
-        {/* Demo mode: low-key under the column (not in the pinned bar), like the pay page's simulate box. */}
-        {demo ? (
-          <div className="flex w-full flex-col gap-3 pt-6 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <FlaskConical className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-              <p className="text-[13px] leading-5 text-pretty text-muted-foreground">
-                <span className="font-bold text-foreground">{p.demoTitle}.</span> {p.demoBody}
-              </p>
+          {/* DEMO_PAYMENTS on: under PAY from lg; below lg at the end of the column (the bar above is pinned). */}
+          {demo ? (
+            <div className="flex w-full pt-6 lg:justify-end lg:pt-4">
+              <Button
+                type="submit"
+                name="demo"
+                value="1"
+                variant="secondary"
+                onClick={() => setSkipping(true)}
+                disabled={pending || !method || closed}
+                className="w-full px-5 sm:w-auto sm:px-7"
+              >
+                {pending && skipping ? p.placing : p.payInstantly}
+              </Button>
             </div>
-            <button
-              type="submit"
-              name="demo"
-              value="1"
-              onClick={() => setSkipping(true)}
-              disabled={pending || !method || closed}
-              className="min-h-11 shrink-0 rounded-sm px-4 py-2.5 text-sm leading-[21px] font-bold text-foreground inset-ring-[1.25px] inset-ring-border transition-colors hover:bg-card disabled:opacity-50"
-            >
-              {pending && skipping ? p.demoSkipping : p.demoSkip}
-            </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </form>
     </CheckoutColumns>
   );

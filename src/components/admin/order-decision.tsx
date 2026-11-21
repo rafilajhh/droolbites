@@ -23,7 +23,7 @@ export function OrderDecision({
   paidAmount,
 }: {
   orderNumber: string;
-  /** What the customer paid, owed back on a decline; null for a demo payment (nothing to refund). */
+  /** What the customer paid, owed back on a decline; null when no money moved (nothing to refund). */
   paidAmount: string | null;
 }) {
   const t = useMessages(adminMessages).order;
@@ -85,7 +85,7 @@ export function OrderDecision({
         title={d.declineTitle(orderNumber)}
         body={
           <div className="flex flex-col gap-4 text-left">
-            <p>{paidAmount === null ? t.demo.declineBody : d.declineBody(paidAmount)}</p>
+            <p>{paidAmount === null ? d.declineBodyNoRefund : d.declineBody(paidAmount)}</p>
             <CancelReasonFields
               reason={reason}
               other={other}
@@ -102,7 +102,7 @@ export function OrderDecision({
           </div>
         }
         error={missing ? (reason ? d.otherMissing : d.reasonMissing) : undefined}
-        cancelLabel={d.back}
+        cancelLabel={t.goBack}
         confirmLabel={pending ? d.declining : d.confirmDecline}
         onConfirm={confirmDecline}
         pending={pending}

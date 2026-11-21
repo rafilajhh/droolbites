@@ -25,9 +25,9 @@ import { cancelledByCustomer, cancelledByStore, getOrderForViewer, itemCount, or
 import {
   canSimulatePayment,
   DEMO_PROVIDER,
-  demoPaymentsEnabled,
   getPaymentOptions,
   getPaymentProvider,
+  serviceFeeEstimates,
   serviceFeeMayApply,
 } from "@/lib/payments";
 import { orderPageMetadata } from "@/lib/order-metadata";
@@ -176,11 +176,12 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
         cancelHref={live ? payHref : null}
         initialError={initialError}
         feeMayApply={feeMayApply}
+        fees={feeMayApply ? serviceFeeEstimates(methods.filter((m) => !(m in belowMinimum)), order.total) : {}}
       />,
     );
   }
 
-  // The store is marking it paid in demo mode (a few seconds): nothing to pay here, the poll moves on.
+  // A skipped payment (demo checkout) is being recorded (a few seconds): nothing to pay here, the poll moves on.
   if (live.provider === DEMO_PROVIDER) {
     return layout(
       p.confirmingTitle,
@@ -364,11 +365,9 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
 
       <PaymentWatcher statusUrl={statusUrl} successHref={successHref} />
       <PayActions orderNumber={orderNumber} token={token} cancellable />
-      {/* Simulating the gateway's payment comes first; with a live gateway, demo mode can still skip it. */}
+      {/* Mock gateway and gateway sandbox only; a live gateway never shows it. */}
       {canSimulatePayment(live.provider) ? (
         <SimulatePayment orderNumber={orderNumber} token={token} mode={provider.id === "mock" ? "mock" : "sandbox"} />
-      ) : demoPaymentsEnabled() ? (
-        <SimulatePayment orderNumber={orderNumber} token={token} mode="demo" />
       ) : null}
     </>,
   );

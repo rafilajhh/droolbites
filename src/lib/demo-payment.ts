@@ -5,10 +5,11 @@ import { markOrderPaid, markPaymentExpired, orderDeadline, paymentSnapshot, with
 import { DEMO_PROVIDER, demoPaymentsEnabled, getPaymentProvider, PaymentGatewayError } from "./payments";
 
 /**
- * Demo payments (DEMO_PAYMENTS="on"): the store marks an unpaid order paid without money moving, so
- * every after-payment flow (emails, stock, the accept / decline step, the status steps) can be tried
- * on the live site with the real gateway configured. The order then goes through markOrderPaid like
- * any payment; only its payment row says provider "demo".
+ * Demo payments (DEMO_PAYMENTS="on"): "PAY INSTANTLY" on /checkout/payment places the order and
+ * marks it paid without money moving, so every after-payment flow (emails, stock, the accept / decline
+ * step, the status steps) can be tried on the live site with the real gateway configured. The order
+ * then goes through markOrderPaid like any payment; only its payment row says provider "demo" (the
+ * admin shows it as an ordinary paid order, and never asks for a refund of it).
  */
 
 /**
@@ -18,7 +19,7 @@ import { DEMO_PROVIDER, demoPaymentsEnabled, getPaymentProvider, PaymentGatewayE
 export type DemoPaidResult = "paid" | "real" | "off" | "invalid" | "busy" | "gateway";
 
 /** Shown on the gateway's dashboard for the payment request the demo closes. */
-export const DEMO_CANCEL_REASON = "Marked paid in demo mode by the store";
+export const DEMO_CANCEL_REASON = "Marked paid in demo mode";
 
 /** Unpaid and still open: not cancelled, not past its payment deadline. */
 export function canMarkPaidDemo(
@@ -30,8 +31,8 @@ export function canMarkPaidDemo(
 
 /**
  * Mark an order paid in demo mode. Under the order's lock (the same one as the customer's method
- * switch and the store's cancel), in this order, so the customer's open pay page keeps polling and
- * then moves to the success page:
+ * switch and the store's cancel), in this order, so an open pay page keeps polling and then moves
+ * to the success page:
  * 1. a "demo" payment row (the last attempt's method, else `method` (the one chosen at checkout when
  *    the customer skipped paying), else QRIS; the order total, no fee) becomes the latest attempt, the
  *    one the status poll looks at;

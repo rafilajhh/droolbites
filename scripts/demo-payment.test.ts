@@ -3,7 +3,7 @@
 // fake Belibayar (scripts/fake-belibayar.mjs on port 4011, sandbox key) for the gateway cases: the
 // flag, eligibility, the paid path (payment rows, stock once), repeats and races, the gateway cancel
 // and a payment that turns out to be real. Needs the db and Mailpit (docker compose up -d db mailpit);
-// deletes everything it created. The admin-session check and the button are covered by scripts/e2e.mjs.
+// deletes everything it created. Its only caller is checkout's PAY INSTANTLY (placeOrder), covered by scripts/e2e.mjs US-009.
 import "dotenv/config";
 import { spawn, type ChildProcess } from "node:child_process";
 import Module from "node:module";
@@ -60,7 +60,9 @@ async function main() {
   const { db } = await import("../src/lib/db");
   const { canMarkPaidDemo, markOrderPaidDemo, DEMO_CANCEL_REASON } = await import("../src/lib/demo-payment");
   const { chargeOrder, getOrderByNumber, orderDeadline, syncPaymentStatus } = await import("../src/lib/orders");
-  const { getPaymentProvider, shownPayment } = await import("../src/lib/payments");
+  const { getPaymentOptions, getPaymentProvider, shownPayment } = await import("../src/lib/payments");
+  const { belibayarServiceFee } = await import("../src/lib/payments/belibayar");
+  const { getStoreSettings } = await import("../src/lib/settings");
 
   const fake = await startFake();
   let productId: bigint | null = null;
@@ -68,7 +70,7 @@ async function main() {
   const orderNumbers: string[] = [];
 
   /** An unpaid pickup order for `qty` of the tracked size (Rp25.000 each, above the fake's minimum). */
-  async function makeOrder(qty: number, over: { createdAt?: Date; fulfilmentStatus?: "cancelled"; paymentStatus?: "expired" } = {}) {
+  async function makeOrder(qty: number, over: { createdAt?: Date; fulfilmentStatus?: "cancelled"; paymentStatus?: "expired"; total?: number } = {}) {
     const n = orderIds.length + 1;
     const orderNumber = `DP${RUN.slice(-6)}${n}`.slice(0, 12);
     const order = await db.order.create({
@@ -170,6 +172,42 @@ async function main() {
       return "real > demo > latest";
     });
 
+    await check("Belibayar fees: percentages grossed up like the gateway (fee = ceil(total × r / (1 − r))), VAs flat; the fake charges the same", async () => {
+      const cases: [Parameters<typeof belibayarServiceFee>[0], number, number][] = [
+        ["qris", 20000, 141],
+        ["qris", 5000, 36],
+        ["qris", 100000, 716],
+        ["dana", 20000, 513],
+        ["bca_va", 20000, 4000],
+        ["mandiri_va", 5000, 3000],
+      ];
+      for (const [method, total, want] of cases) {
+        const got = belibayarServiceFee(method, total);
+        assert(got === want, `${method} on ${total}: ${got}, want ${want}`);
+      }
+      const order = await makeOrder(1, { total: 20000 });
+      const p = await gatewayCharge(order);
+      assert(p.fee === 141 && p.chargedAmount === 20141, `fake charged fee ${p.fee}, amount ${p.chargedAmount}`);
+      return `QRIS 20000 -> 141, 5000 -> 36, 100000 -> 716; DANA 20000 -> 513; VA flat; fake QRIS 20000 charged ${p.chargedAmount}`;
+    });
+
+    await check("Belibayar VA minimum: below Rp10.000 every VA is listed below the minimum (QRIS is not), from Rp10.000 none", async () => {
+      const settings = await getStoreSettings();
+      process.env.PAYMENT_PROVIDER = "belibayar";
+      try {
+        const small = await getPaymentOptions(settings, 5000);
+        const vas = small.methods.filter((m) => m.endsWith("_va"));
+        assert(vas.length > 0, `no VA in ${small.methods.join(",")}`);
+        assert(vas.every((m) => small.belowMinimum[m] === 10000), `belowMinimum ${JSON.stringify(small.belowMinimum)}`);
+        assert(!("qris" in small.belowMinimum), "QRIS marked below minimum");
+        const enough = await getPaymentOptions(settings, 10000);
+        assert(Object.keys(enough.belowMinimum).length === 0, `at 10000: ${JSON.stringify(enough.belowMinimum)}`);
+        return `5000: ${vas.length} VAs min 10000, QRIS open; 10000: none`;
+      } finally {
+        process.env.PAYMENT_PROVIDER = "mock";
+      }
+    });
+
     await check("canMarkPaidDemo: only unpaid, pending and before the payment deadline", async () => {
       const now = new Date();
       const base = { paymentStatus: "awaiting" as const, fulfilmentStatus: "pending" as const, createdAt: now };
@@ -222,7 +260,7 @@ async function main() {
       return `${a.orderNumber}: ${old.reference} expired, ${demo.reference} paid ${demo.amount}; stock ${before} -> ${after}`;
     });
 
-    await check("second click: refused as invalid, nothing changes (one demo row, stock taken once)", async () => {
+    await check("second call: refused as invalid, nothing changes (one demo row, stock taken once)", async () => {
       const before = await stock();
       const r = await markOrderPaidDemo(a.orderNumber);
       assert(r === "invalid", `result ${r}`);
@@ -250,7 +288,7 @@ async function main() {
     });
 
     // ---------------------------------------------------------------- races and refusals
-    await check("two clicks at once: exactly one wins, one demo row, stock taken once (no attempt before: QRIS)", async () => {
+    await check("two calls at once: exactly one wins, one demo row, stock taken once (no attempt before: QRIS)", async () => {
       const b = await makeOrder(1);
       const before = await stock();
       const results = await Promise.all([markOrderPaidDemo(b.orderNumber), markOrderPaidDemo(b.orderNumber)]);

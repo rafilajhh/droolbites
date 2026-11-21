@@ -3,7 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { FulfilmentMethod, PaymentMethod } from "@/generated/prisma/enums";
 import { db } from "@/lib/db";
 import { cancelledByStore } from "@/lib/orders";
-import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
+import { shownPayment } from "@/lib/payments";
 
 /**
  * Admin / Sales report queries. Days are Surabaya days (WIB, UTC+7 all year,
@@ -253,10 +253,6 @@ export async function getSalesReport(range: ReportRange) {
   let revenue = 0;
   let itemRevenue = 0;
   let deliveryRevenue = 0;
-  // Orders the store marked paid in demo mode (DEMO_PAYMENTS): counted like any paid order, and named
-  // under the revenue figure so a demo period never reads as money that came in.
-  let demoRevenue = 0;
-  let demoOrders = 0;
   const fulfilment = new Map<FulfilmentMethod, { method: FulfilmentMethod; orders: number; revenue: number }>();
   const payments = new Map<PaymentMethod, { method: PaymentMethod; orders: number; revenue: number }>();
   let b = 0;
@@ -275,12 +271,7 @@ export async function getSalesReport(range: ReportRange) {
     f.orders += 1;
     f.revenue += o.total;
     fulfilment.set(o.fulfilmentMethod, f);
-    const payment = shownPayment(o.payments);
-    if (payment?.provider === DEMO_PROVIDER) {
-      demoRevenue += o.total;
-      demoOrders += 1;
-    }
-    const method = payment?.method;
+    const method = shownPayment(o.payments)?.method;
     if (method) {
       const p = payments.get(method) ?? { method, orders: 0, revenue: 0 };
       p.orders += 1;
@@ -297,8 +288,6 @@ export async function getSalesReport(range: ReportRange) {
     revenue,
     itemRevenue,
     deliveryRevenue,
-    demoRevenue,
-    demoOrders,
     paidOrders,
     averageOrder: paidOrders ? Math.round(revenue / paidOrders) : 0,
     itemsSold,

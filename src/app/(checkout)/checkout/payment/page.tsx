@@ -34,9 +34,10 @@ export default async function CheckoutPaymentPage() {
   if (fee === null) redirect("/checkout");
   const total = cart.subtotal + fee;
   const [{ methods, logos, belowMinimum }, feeMayApply] = await Promise.all([getPaymentOptions(settings, total), serviceFeeMayApply()]);
-  // BCA VA first, unless the gateway refuses it for this total: then the first method it takes.
+  // BCA VA first, unless the gateway refuses it for this total (VAs have a minimum): then QRIS, which
+  // takes any amount, else the first method it takes.
   const usable = methods.filter((m) => !(m in belowMinimum));
-  const defaultMethod = usable.includes("bca_va") ? "bca_va" : (usable[0] ?? null);
+  const defaultMethod = usable.includes("bca_va") ? "bca_va" : usable.includes("qris") ? "qris" : (usable[0] ?? null);
   // The fee each method adds to this total, where it's known before the charge (only while a fee may apply).
   const fees = feeMayApply ? serviceFeeEstimates(usable, total) : {};
   const recipient = delivery

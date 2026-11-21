@@ -22,8 +22,8 @@ const gateways: Record<string, PaymentProvider> = {
 /**
  * The gateway chosen by PAYMENT_PROVIDER (default: mock), or the one that
  * issued a stored payment (`payments.provider`) so old payments keep being
- * checked where they were created. "demo" (payments the store marked paid in
- * demo mode) is only ever a stored payment's provider, never the configured one.
+ * checked where they were created. "demo" (payments marked paid in demo mode)
+ * is only ever a stored payment's provider, never the configured one.
  */
 export function getPaymentProvider(id?: string | null): PaymentProvider {
   if (id === DEMO_PROVIDER) return demoProvider;

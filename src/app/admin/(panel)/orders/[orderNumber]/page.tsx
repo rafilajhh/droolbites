@@ -4,12 +4,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CircleAlert, CircleCheck, Info, MapPin, Printer, Store, Truck, User } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badges";
-import { DemoPay } from "@/components/admin/demo-pay";
 import { MarkRefunded } from "@/components/admin/mark-refunded";
 import { OrderDecision } from "@/components/admin/order-decision";
 import { StatusForm } from "@/components/admin/status-form";
 import { fulfilmentOptions, paymentMethodShort } from "@/components/admin/rules";
-import { AdminMain, Card, DemoBadge, SectionTitle } from "@/components/admin/ui";
+import { AdminMain, Card, SectionTitle } from "@/components/admin/ui";
 import { buttonClasses } from "@/components/ui/button";
 import { productImageUrl, variantLabel } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
@@ -18,8 +17,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
 import { cancelReasonText, fulfilmentBadgeInfo, notPaidInfo, paymentMethodInfo, paymentStatusInfo, refundedInfo } from "@/lib/order-status";
 import { cancelledByCustomer, cancelledByStore, orderAddress, otherRecipient, payable } from "@/lib/orders";
-import { canMarkPaidDemo } from "@/lib/demo-payment";
-import { DEMO_PROVIDER, demoPaymentsEnabled, shownPayment } from "@/lib/payments";
+import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 import { getLocale, getMessages } from "@/i18n/server";
 import { adminMessages } from "@/i18n/messages/admin";
@@ -73,17 +71,16 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
     getMessages(adminExtraMessages),
   ]);
   const o = t.order;
-  // The paid attempt if any (real money before a demo payment), else the latest one (changing method creates a new attempt).
+  // The paid attempt if any (real money first), else the latest one (changing method creates a new attempt).
   const payment = shownPayment(order.payments);
   const pay = payable(order, payment);
-  // Gateway details only for real gateway payments (the mock and demo providers have nothing to look up).
+  // Gateway details only for real gateway payments (the mock provider and a skipped payment have nothing to look up).
   const gateway = Boolean(payment?.provider && payment.provider !== "mock" && payment.provider !== DEMO_PROVIDER);
-  const demoPaid = payment?.provider === DEMO_PROVIDER;
-  // Demo mode: an unpaid, open order can be marked paid without money moving (beside Cancel order).
-  const demoMode = demoPaymentsEnabled();
+  // Paid without money moving (skipped at checkout): shown like any paid order, but nothing is ever owed back.
+  const noMoney = payment?.provider === DEMO_PROVIDER;
   // Money taken for a cancelled order is owed back: declined or cancelled after payment, or paid after
   // the cancel (that order stays unpaid, see markOrderPaid). Every paid attempt counts.
-  // A demo payment moved no money, so it is never owed back.
+  // A payment that moved no money is never owed back.
   const paidAttempts =
     order.fulfilmentStatus === "cancelled" ? order.payments.filter((p) => p.status === "paid" && p.provider !== DEMO_PROVIDER) : [];
   const refund = paidAttempts[0];
@@ -122,8 +119,6 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   // Why a closed, unpaid order never reached the kitchen (a paid one says it in the refund alert or needs nothing).
   const closedNote =
     closed && order.paymentStatus !== "paid" && !refund ? (storeCancelledUnpaid ? (cancelledByCustomer(order) ? o.customerCancelledNote : o.cancelledUnpaidNote) : o.expiredNote) : null;
-  // Declined or cancelled after a demo payment: where a real one shows the refund alert, a plain line.
-  const demoNoRefund = order.fulfilmentStatus === "cancelled" && demoPaid && !refund;
 
   const address = orderAddress(order);
   const recipient = isDelivery ? otherRecipient(order) : null;
@@ -153,14 +148,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   const paymentRows: { label: string; value: React.ReactNode; mono?: boolean }[] = [
     {
       label: o.method,
-      value: payment ? (
-        <span className="inline-flex flex-wrap items-center justify-end gap-2">
-          {paymentMethodShort(payment.method)}
-          {demoPaid ? <DemoBadge label={t.common.demo} title={t.common.demoLabel} /> : null}
-        </span>
-      ) : (
-        o.noPayment
-      ),
+      value: payment ? paymentMethodShort(payment.method) : o.noPayment,
     },
     { label: o.amount, value: formatRupiah(pay.amount) },
     // The part of that amount that is the gateway's fee, right under it.
@@ -390,7 +378,6 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               <div className="flex flex-col gap-3">
                 {cancelWhy ? <p className="text-[15px] leading-[23px] font-semibold">{cancelWhy}</p> : null}
                 <p className="text-sm leading-[21px] text-muted-foreground">{o.finalNote}</p>
-                {demoNoRefund ? <p className="text-sm leading-[21px] text-muted-foreground">{o.demo.noRefund}</p> : null}
                 {closedNote ? (
                   <p className="flex w-full gap-2 rounded-sm bg-tint-salmon p-3 text-[13px] leading-5 font-semibold">
                     <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -399,7 +386,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                 ) : null}
               </div>
             ) : order.paymentStatus === "paid" && order.fulfilmentStatus === "pending" ? (
-              <OrderDecision orderNumber={order.orderNumber} paidAmount={demoPaid ? null : formatRupiah(pay.amount)} />
+              <OrderDecision orderNumber={order.orderNumber} paidAmount={noMoney ? null : formatRupiah(pay.amount)} />
             ) : (
               <StatusForm
                 orderNumber={order.orderNumber}
@@ -411,12 +398,10 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                     ? { hint: order.paymentStatus === "awaiting" ? o.unpaidHint : o.failedNote }
                     : undefined
                 }
-                paidAmount={order.paymentStatus === "paid" && !demoPaid ? formatRupiah(pay.amount) : undefined}
+                paidAmount={order.paymentStatus === "paid" && !noMoney ? formatRupiah(pay.amount) : undefined}
                 paid={order.paymentStatus === "paid"}
               />
             )}
-            {/* Always in this slot while demo mode is on, so its result line outlives the refresh into the paid order. */}
-            {demoMode ? <DemoPay orderNumber={order.orderNumber} eligible={canMarkPaidDemo(order)} /> : null}
           </section>
           <section aria-labelledby="order-payment-title" className={cn(sectionClasses, "md:max-xl:shadow-[inset_1px_0_0_var(--border-subtle)]")}>
             <div className="flex w-full items-center justify-between gap-3">

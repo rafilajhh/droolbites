@@ -3,7 +3,7 @@ import Link from "next/link";
 import { BellRing, CircleAlert, CircleCheck, Cookie, Hourglass, Receipt, Wallet } from "lucide-react";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badges";
-import { AdminMain, CellLabel, DemoBadge, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
+import { AdminMain, CellLabel, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
 import { categoryStyle, isTrayCategory } from "@/components/admin/rules";
 import { categoryName } from "@/content/products";
 import { requireAdmin } from "@/lib/auth";
@@ -11,7 +11,7 @@ import { db } from "@/lib/db";
 import { formatDate, formatRupiah, formatTime } from "@/lib/format";
 import { ACTIVE_FULFILMENT, fulfilmentBadgeInfo, inProgressWhere, needsActionWhere, overdueMinutes } from "@/lib/order-status";
 import { orderPaymentInfo, payable } from "@/lib/orders";
-import { DEMO_PROVIDER, shownPayment } from "@/lib/payments";
+import { shownPayment } from "@/lib/payments";
 import { keptOrderWhere, rangeWhere, resolveReportRange } from "@/lib/reports";
 import { cn } from "@/lib/cn";
 import { LOW_STOCK } from "@/lib/stock";
@@ -56,21 +56,9 @@ export default async function AdminOverviewPage() {
   } as const;
   // Sales and orders over the last 30 days, counted exactly as the sales report's "30 days" (the pane links there).
   const sales = { ...rangeWhere(resolveReportRange({ range: "30d" })), ...keptOrderWhere };
-  const [awaiting, paid, demoPaid, newOrders, inProgress, recent, categories, lowStock, shortOrders] = await Promise.all([
+  const [awaiting, paid, newOrders, inProgress, recent, categories, lowStock, shortOrders] = await Promise.all([
     db.order.count({ where: { paymentStatus: "awaiting", fulfilmentStatus: { not: "cancelled" } } }),
     db.order.aggregate({ where: sales, _sum: { total: true }, _count: true }),
-    // The part of it paid in demo mode (DEMO_PAYMENTS: no money moved), named under the figure.
-    db.order.aggregate({
-      where: {
-        ...sales,
-        payments: {
-          some: { status: "paid", provider: DEMO_PROVIDER },
-          none: { status: "paid", OR: [{ provider: null }, { provider: { not: DEMO_PROVIDER } }] },
-        },
-      },
-      _sum: { total: true },
-      _count: true,
-    }),
     // The banner leads with new orders (the same count as the sidebar badge); with none, it reminds
     // about accepted orders still on their way.
     db.order.findMany({ where: needsActionWhere, orderBy: { createdAt: "asc" }, select: bannerSelect }),
@@ -218,16 +206,7 @@ export default async function AdminOverviewPage() {
           icon={Wallet}
           iconBg="bg-mint"
           value={formatRupiah(paid._sum.total ?? 0)}
-          sub={
-            <>
-              {o.last30}
-              {demoPaid._count > 0 ? (
-                <span className="mt-0.5 block font-semibold text-foreground">
-                  {o.demoIncluded(formatRupiah(demoPaid._sum.total ?? 0))}
-                </span>
-              ) : null}
-            </>
-          }
+          sub={o.last30}
           href="/admin/reports?range=30d"
         />
         <StatPane
@@ -310,13 +289,9 @@ export default async function AdminOverviewPage() {
                       </th>
                       <td className="py-3.5 pr-4 max-md:order-3 max-md:p-0">
                         <CellLabel>{t.orders.col.payment}</CellLabel>
-                        {/* The Demo chip beside it, as on the orders list. */}
-                        <span className="inline-flex flex-wrap items-center gap-1.5">
-                          <StatusBadge tone={payment.tone} className="whitespace-nowrap">
-                            {payment[locale]}
-                          </StatusBadge>
-                          {shown?.provider === DEMO_PROVIDER ? <DemoBadge label={t.common.demo} title={t.common.demoLabel} /> : null}
-                        </span>
+                        <StatusBadge tone={payment.tone} className="whitespace-nowrap">
+                          {payment[locale]}
+                        </StatusBadge>
                       </td>
                       {/* Unpaid: no status yet. The dash keeps the table column; on phones the payment badge says it alone. */}
                       <td className={cn("py-3.5 pr-4 max-md:order-4 max-md:p-0", unpaid && "max-md:hidden")}>

@@ -39,7 +39,6 @@ export const adminReportsMessages = defineMessages({
     kpi: {
       sales: "Sales",
       salesSub: (items: string, delivery: string) => `${items} products + ${delivery} delivery`,
-      demoIncluded: (amount: string) => `Incl. ${amount} in demo payments`,
       orders: "Orders",
       ordersSub: (unpaid: number, cancelled: number) =>
         ["Paid orders", unpaid ? `${unpaid} unpaid` : "", cancelled ? `${cancelled} cancelled` : ""].filter(Boolean).join(" · "),
@@ -127,7 +126,6 @@ export const adminReportsMessages = defineMessages({
     kpi: {
       sales: "Penjualan",
       salesSub: (items: string, delivery: string) => `${items} produk + ${delivery} ongkir`,
-      demoIncluded: (amount: string) => `Termasuk ${amount} pembayaran demo`,
       orders: "Pesanan",
       ordersSub: (unpaid: number, cancelled: number) =>
         ["Pesanan lunas", unpaid ? `${unpaid} belum dibayar` : "", cancelled ? `${cancelled} dibatalkan` : ""].filter(Boolean).join(" · "),

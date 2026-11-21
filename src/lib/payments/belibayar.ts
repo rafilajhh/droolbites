@@ -198,18 +198,25 @@ function learnAccepted(method: PaymentMethod, amount: number) {
  * scripts/fake-belibayar.mjs uses). The API names a fee only in a charge's answer, so checkout shows
  * these before the order is placed; the charge's answer is what the pay page shows and what is paid.
  * Update this table when the dashboard rates change. Virtual accounts are flat; QRIS and e-wallets a
- * percentage (in basis points: 70 = 0.7%) rounded up to the rupiah. Retail stores have no known rate.
+ * percentage (in basis points: 70 = 0.7%), grossed up the way the gateway charges it: the rate applies
+ * to what the customer pays, fee included, so fee = ceil(total × r / (1 − r)) (Rp20.000 QRIS: 140.98
+ * -> Rp141, not 0.7% of the total = Rp140). Retail stores have no known rate.
+ *
+ * Minimums: virtual accounts are refused below VA_MINIMUM (the order total), so checkout shows them
+ * disabled for a smaller order from the first visit; a minimum learned from a refusal (see floors)
+ * takes its place. QRIS and e-wallets have no known minimum.
  */
 const FLAT_FEES: Partial<Record<PaymentMethod, number>> = { bca_va: 4000, permata_va: 2500 };
 const OTHER_VA_FEE = 3000;
 const RATE_BP: Partial<Record<PaymentMethod, number>> = { ovo: 350, dana: 250, shopeepay: 275 };
+const VA_MINIMUM = 10_000;
 
 export function belibayarServiceFee(method: PaymentMethod, amount: number): number | null {
   const kind = paymentMethodInfo[method].kind;
   if (kind === "va") return FLAT_FEES[method] ?? OTHER_VA_FEE;
   // QRIS: 0.7% below Rp100.000, 0.71% from there.
   const bp = kind === "qris" ? (amount < 100_000 ? 70 : 71) : RATE_BP[method];
-  return bp === undefined ? null : Math.ceil((amount * bp) / 10_000);
+  return bp === undefined ? null : Math.ceil((amount * bp) / (10_000 - bp));
 }
 
 const statusCache = new Map<string, { at: number; status: PaymentStatus }>();
@@ -322,9 +329,16 @@ export const belibayarProvider: PaymentProvider = {
 
   amountFloors() {
     const now = Date.now();
-    const out: Partial<Record<PaymentMethod, AmountFloor>> = {};
+    // The known VA minimum first; anything learned from the gateway since replaces it per method.
+    const out: Partial<Record<PaymentMethod, AmountFloor>> = Object.fromEntries(
+      (Object.keys(paymentMethodInfo) as PaymentMethod[])
+        .filter((m) => paymentMethodInfo[m].kind === "va")
+        .map((m) => [m, { min: VA_MINIMUM, refusedAt: 0 }]),
+    );
     for (const [method, floor] of floors) {
-      if (now - floor.at < FLOOR_TTL_MS) out[method] = { min: floor.min, refusedAt: floor.refusedAt };
+      // A refusal below the known VA minimum must not lower it: a VA keeps at least VA_MINIMUM.
+      const va = paymentMethodInfo[method].kind === "va";
+      if (now - floor.at < FLOOR_TTL_MS) out[method] = { min: va ? Math.max(floor.min ?? 0, VA_MINIMUM) : floor.min, refusedAt: floor.refusedAt };
       else floors.delete(method);
     }
     return out;

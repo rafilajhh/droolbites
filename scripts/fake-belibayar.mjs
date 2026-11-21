@@ -58,12 +58,15 @@ function send(res, status, body) {
 const ok = (res, messages, data, status = 200) => send(res, status, { success: true, messages, data });
 const fail = (res, status, code, messages = code) => send(res, status, { success: false, messages, data: { code } });
 
-/** The owner's dashboard rates (also in belibayarServiceFee, src/lib/payments/belibayar.ts). Percentages in basis points. */
+/**
+ * The owner's dashboard rates (also in belibayarServiceFee, src/lib/payments/belibayar.ts). Percentages in
+ * basis points, grossed up like the real gateway: the rate applies to the amount paid, fee included, so
+ * fee = ceil(amount × r / (1 − r)) (Rp20.000 QRIS -> Rp141).
+ */
 function feeFor(method, channel, amount) {
   if (method === "virtual_account") return channel === "BCA" ? 4000 : channel === "PERMATA" ? 2500 : 3000;
-  if (method === "qris") return Math.ceil((amount * (amount < 100000 ? 70 : 71)) / 10000);
-  const bp = { OVO: 350, DANA: 250, SPAY: 275 }[channel] ?? 300;
-  return Math.ceil((amount * bp) / 10000);
+  const bp = method === "qris" ? (amount < 100000 ? 70 : 71) : ({ OVO: 350, DANA: 250, SPAY: 275 }[channel] ?? 300);
+  return Math.ceil((amount * bp) / (10000 - bp));
 }
 
 function digits(seed, n) {
@@ -176,7 +179,8 @@ const server = http.createServer(async (req, res) => {
     }
     const channel = pm.method === "qris" ? "QRIS" : pm.channel;
     if (control.disabled.includes(channel)) return (entry.code = "CHANNEL_DISABLED"), fail(res, 403, "CHANNEL_DISABLED");
-    if (amount < 10000) return (entry.code = "AMOUNT_BELOW_MINIMUM"), fail(res, 422, "AMOUNT_BELOW_MINIMUM");
+    // Virtual accounts only (QRIS and e-wallets take small amounts), like the real gateway; the app knows it as VA_MINIMUM.
+    if (pm.method === "virtual_account" && amount < 10000) return (entry.code = "AMOUNT_BELOW_MINIMUM"), fail(res, 422, "AMOUNT_BELOW_MINIMUM");
 
     const fee = feeFor(pm.method, channel, amount);
     const ttl = pm.method === "ewallet" ? 30 * 60 : 24 * 60 * 60; // e-wallet requests are short-lived
