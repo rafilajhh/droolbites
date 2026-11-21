@@ -275,12 +275,16 @@ try {
   });
 
   await check("US-005.4", "Overview figures match the DB", async () => {
+    // Sales and Orders cover the last 30 Surabaya days (today and the 29 before), as the report's "30 days".
+    const salesFrom = () => {
+      const today = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+      const from = new Date(Date.parse(`${today}T00:00:00Z`) - 29 * 86400_000).toISOString().slice(0, 10);
+      return new Date(`${from}T00:00:00+07:00`).toISOString().slice(0, 19).replace("T", " ");
+    };
     const dbFigures = async () => ({
       awaiting: (await one("SELECT COUNT(*) c FROM orders WHERE payment_status='awaiting' AND fulfilment_status<>'cancelled'")).c,
       // Cancelled (declined) orders are left out of the overview figures.
-      paid: await one("SELECT COALESCE(SUM(total),0) s, COUNT(*) c FROM orders WHERE payment_status='paid' AND fulfilment_status<>'cancelled'"),
-      products: (await one("SELECT COUNT(*) c FROM products WHERE is_available=1")).c,
-      variants: (await one("SELECT COUNT(*) c FROM product_variants v JOIN products p ON p.id=v.product_id WHERE p.is_available=1")).c,
+      sales: await one("SELECT COALESCE(SUM(total),0) s, COUNT(*) c FROM orders WHERE payment_status='paid' AND fulfilment_status<>'cancelled' AND created_at >= ?", [salesFrom()]),
       recent: (await q("SELECT order_number FROM orders ORDER BY created_at DESC LIMIT 3")).map((r) => r.order_number),
     });
     let last = "";
@@ -296,10 +300,10 @@ try {
         last = "DB changed during read (other writer); retrying";
         continue;
       }
-      const exp = [String(a.awaiting), rp(a.paid.s), String(a.products)];
+      const exp = [rp(a.sales.s), String(a.sales.c), String(a.awaiting)];
       const rows = a.recent.every((n) => body.includes(n));
       if (JSON.stringify(kpis) === JSON.stringify(exp) && rows) {
-        return `KPIs ${JSON.stringify(kpis)} == DB; recent ${a.recent.join(",")}; paid orders ${a.paid.c}, variants ${a.variants}`;
+        return `KPIs ${JSON.stringify(kpis)} == DB (sales, orders in 30 days, awaiting payment); recent ${a.recent.join(",")}`;
       }
       last = `UI ${JSON.stringify(kpis)} vs DB ${JSON.stringify(exp)}; recent rows present=${rows}`;
     }
@@ -540,7 +544,7 @@ try {
     await Promise.all([page.waitForURL(/\/checkout\/payment/, { timeout: 60_000 }), page.locator("form button[type=submit]").first().click()]);
     await settle(page);
     await page.locator('input[name="method"][value="bca_va"]').check({ force: true });
-    await Promise.all([page.waitForURL(/\/checkout\/pay\//, { timeout: 60_000 }), page.locator("form button[type=submit]").last().click()]);
+    await Promise.all([page.waitForURL(/\/checkout\/pay\//, { timeout: 60_000 }), page.locator("[data-pinned-bar] button[type=submit]").click()]);
     orderNumber = new URL(page.url()).pathname.split("/").pop();
     assert(/^DB-\d+$/.test(orderNumber), `order number from URL: ${orderNumber}`);
     undo.push(async () => {
@@ -821,7 +825,79 @@ try {
       assert(r.text.includes('"status":"invalid"') && o.payment_status === "expired" && (await paymentsOf(c.id)).length === 0, `answer ${r.text.slice(0, 120)}; ${o.payment_status}`);
       return `hidden; answer {"status":"invalid"}; still cancelled, no payment`;
     });
+
+    await check("US-009.8", "Guest checks out (pickup) and presses Skip payment (demo): no gateway charge, one paid demo payment with the chosen method, stock taken, straight to success", async () => {
+      const ctx = await newCtx();
+      try {
+        await ctx.addCookies([{ name: "db_cart", value: encodeURIComponent(JSON.stringify([{ v: String(DEMO_VARIANT), q: 2 }])), url: BASE }]);
+        const stockBefore = await variantStock();
+        const page = await open(ctx, "/checkout");
+        await settle(page);
+        await page.locator('input[name="fulfilment"][value="pickup"]').check({ force: true });
+        await page.locator("#checkout-email").fill("alya@email.com");
+        await page.locator("#checkout-fullName").fill("Alya Rahmawati");
+        await page.locator("#checkout-phone").fill("0812-3456-7890");
+        await Promise.all([page.waitForURL(/\/checkout\/payment/, { timeout: 60_000 }), page.locator("form button[type=submit]").first().click()]);
+        await settle(page);
+        await page.locator('input[name="method"][value="bca_va"]').check({ force: true });
+        const skip = page.getByRole("button", { name: "Skip payment (demo)", exact: true });
+        await Promise.all([page.waitForURL(/\/checkout\/success\//, { timeout: 60_000 }), skip.click()]);
+        const number = new URL(page.url()).pathname.split("/").pop();
+        await page.close();
+        const row = await one("SELECT id, payment_status, fulfilment_status, stock_deducted FROM orders WHERE order_number=?", [number]);
+        assert(row, `no order ${number}`);
+        undo.push(async () => {
+          await q("DELETE FROM orders WHERE id=?", [row.id]);
+          cleanupLog.push(`demo-skip order ${number} deleted`);
+          try {
+            const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
+            const ids = msgs.filter((m) => m.Subject.includes(number)).map((m) => m.ID);
+            if (ids.length) await fetch(`${MAILPIT}/api/v1/messages`, { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ IDs: ids }) });
+          } catch {}
+        });
+        assert(row.payment_status === "paid" && row.fulfilment_status === "pending" && row.stock_deducted === 1, JSON.stringify(row));
+        const p = await paymentsOf(row.id);
+        assert(p.length === 1 && p[0].provider === "demo" && p[0].status === "paid" && p[0].method === "bca_va" && p[0].fee === 0, `payments ${JSON.stringify(p)}`);
+        const stockAfter = await variantStock();
+        assert(stockAfter === stockBefore - 2, `stock ${stockBefore} -> ${stockAfter}`);
+        return `${number}: ${p[0].reference} (demo, bca_va) paid, no gateway payment; stock ${stockBefore} -> ${stockAfter}`;
+      } finally {
+        await ctx.close();
+      }
+    });
   }
+
+  await check("US-007.6", "Customer cancels an unpaid order from the pay page (no Pay later; in-page confirm, Keep order backs out): payment closed, order cancelled, order page and email say the customer cancelled", async () => {
+    const c = await demoOrder();
+    const page = await open(alya, `/checkout/pay/${c.number}`);
+    await page.locator("#pay-va-number").waitFor({ state: "visible" });
+    assert((await page.getByText(/PAY LATER/i).count()) === 0, "PAY LATER still shown");
+    const cancel = page.getByRole("button", { name: "CANCEL ORDER", exact: true });
+    const yes = page.getByRole("button", { name: "YES, CANCEL ORDER", exact: true });
+    await cancel.click();
+    await page.getByRole("button", { name: "KEEP ORDER", exact: true }).click();
+    await cancel.waitFor({ state: "visible" });
+    assert((await orderOf(c.id)).fulfilment_status === "pending", "cancelled without confirming");
+    await cancel.click();
+    await Promise.all([page.waitForURL(new RegExp(`/orders/${c.number}`), { timeout: 60_000 }), yes.click()]);
+    const txt = await page.locator("main").innerText();
+    await page.close();
+    const o = await orderOf(c.id);
+    const p = await paymentsOf(c.id);
+    assert(o.fulfilment_status === "cancelled" && o.payment_status === "expired", JSON.stringify(o));
+    assert(p.length === 1 && p[0].status === "expired", `payments ${JSON.stringify(p)}`);
+    assert(/You cancelled this order/.test(txt), "order page lacks 'You cancelled this order'");
+    let mail = null;
+    for (let i = 0; i < 20 && !mail; i++) {
+      const msgs = (await (await fetch(`${MAILPIT}/api/v1/messages?limit=200`)).json()).messages ?? [];
+      mail = msgs.find((m) => m.Subject === `Order ${c.number} cancelled`) ?? null;
+      if (!mail) await sleep(500);
+    }
+    assert(mail, "no 'Order … cancelled' email");
+    const body = await (await fetch(`${MAILPIT}/api/v1/message/${mail.ID}`)).json();
+    assert(/As you asked/.test(body.Text) && !/had to cancel/.test(body.Text), "email doesn't say the customer cancelled");
+    return `${c.number}: cancelled, ${p[0].reference} expired; order page + "${mail.Subject}" email`;
+  });
 
   await check("US-007.4", "Internal links on /, /menu, /our-story (header, nav menu, footer, CTAs) return non-404", async () => {
     const links = new Map(); // path -> first seen on

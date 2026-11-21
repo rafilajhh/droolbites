@@ -44,8 +44,6 @@ export const storyMessages = defineMessages({
     foundersTitle: "Meet Olivia.",
     foundersBody:
       "Olivia spent years tweaking one chocolate chunk recipe until the middle stayed soft all day, then turned it into a shop: the orders, the counter, and a brownie recipe that still isn't for sharing.",
-    firstCookie: "Olivia's cookie",
-    firstBrownie: "Olivia's brownie",
     quote:
       "I never wanted a long menu. I wanted the cookie you think about on the way home, and the brownie that makes you order one more tray.",
     quoteName: "Olivia",
@@ -106,8 +104,6 @@ export const storyMessages = defineMessages({
     foundersTitle: "Kenalan sama Olivia.",
     foundersBody:
       "Bertahun-tahun Olivia mengutak-atik satu resep chocolate chunk sampai bagian tengahnya tetap lembut seharian, lalu menjadikannya toko: urusan pesanan, counter, dan resep brownies yang sampai sekarang nggak dibagi ke siapa pun.",
-    firstCookie: "Cookie Olivia",
-    firstBrownie: "Brownies Olivia",
     quote:
       "Dari awal aku nggak pernah pengin menu yang panjang. Aku cuma pengin bikin cookie yang kepikiran terus di jalan pulang, dan brownies yang bikin kamu pesan satu loyang lagi.",
     quoteName: "Olivia",

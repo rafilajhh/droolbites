@@ -12,8 +12,8 @@ type StepState = "done" | "current" | "todo";
 
 /**
  * The order in progress, first on the account page: what is happening now in one line, a five-step
- * bar (paid → confirmed → baking → on its way / ready → delivered / picked up) and the one action that
- * moves it on: pay while it's unpaid, otherwise follow it.
+ * bar (paid → confirmed → baking → on its way / ready → delivered / picked up) and one way on: the
+ * order's details while it's unpaid (paying starts from there), otherwise tracking it.
  */
 export async function ActiveOrder({ userId }: { userId: bigint }) {
   const [active, counts, t, locale] = await Promise.all([
@@ -74,24 +74,15 @@ export async function ActiveOrder({ userId }: { userId: bigint }) {
 
       <OrderSteps steps={steps} label={a.progress} doneLabel={a.stepDone} currentLabel={a.stepCurrent} stepOf={a.stepOf} />
 
-      {/* The items and total are in the history row below; here only the action that moves the order on. */}
+      {/* The items and total are in the history row below; here only the way on to the order. */}
       <div className="flex w-full justify-end pt-1">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-4 max-sm:w-full">
-          {unpaid ? (
-            <>
-              <ArrowLink href={href} className="max-sm:order-last">
-                {a.details}
-              </ArrowLink>
-              <ButtonLink href={`/checkout/pay/${order.orderNumber}`} className="max-sm:w-full">
-                {a.pay}
-              </ButtonLink>
-            </>
-          ) : (
-            <ButtonLink href={href} className="max-sm:w-full">
-              {a.track}
-            </ButtonLink>
-          )}
-        </div>
+        {unpaid ? (
+          <ArrowLink href={href}>{a.details}</ArrowLink>
+        ) : (
+          <ButtonLink href={href} className="max-sm:w-full">
+            {a.track}
+          </ButtonLink>
+        )}
       </div>
     </section>
   );

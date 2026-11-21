@@ -114,9 +114,17 @@ export const awaitingConfirmationInfo: Entry = { en: "Awaiting confirmation", id
 /** Preset reasons the store gives when it declines an order (anything else is stored as its own words). */
 export const CANCEL_REASONS = ["sold_out", "fully_booked", "closed"] as const;
 export type CancelReasonKey = (typeof CANCEL_REASONS)[number];
-/** The reason as a clause: the sentences around it ("Reason given: ….") bring their own full stop. */
+/**
+ * cancel_reason of an unpaid order the customer cancelled from the pay page. Stored as words so a
+ * screen that shows the raw reason (the admin order page) still reads sensibly.
+ */
+export const CUSTOMER_CANCEL_REASON = "Cancelled by the customer";
+/**
+ * The reason as a clause: the sentences around it ("Reason given: ….") bring their own full stop.
+ * None for a customer's own cancel: the customer-facing wording says who cancelled instead.
+ */
 export function cancelReasonText(reason: string | null, labels: Record<CancelReasonKey, string>) {
-  if (!reason) return null;
+  if (!reason || reason === CUSTOMER_CANCEL_REASON) return null;
   const text = (CANCEL_REASONS as readonly string[]).includes(reason) ? labels[reason as CancelReasonKey] : reason;
   return text.replace(/[\s.!?]+$/, "") || null;
 }

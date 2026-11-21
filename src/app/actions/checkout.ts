@@ -12,7 +12,9 @@ import { placeAt, searchPlaces, type Place } from "@/lib/geocode";
 import { allowRequest, clientIp, perClientMax } from "@/lib/rate-limit";
 import { MAX_QTY, readCartEntries, writeCartEntries, type CartEntry } from "@/lib/cart";
 import { db } from "@/lib/db";
-import { paymentMethodInfo } from "@/lib/order-status";
+import { markOrderPaidDemo, type DemoPaidResult } from "@/lib/demo-payment";
+import { deliverLater } from "@/lib/mail";
+import { CUSTOMER_CANCEL_REASON, paymentMethodInfo } from "@/lib/order-status";
 import {
   chargeOrder,
   checkoutDeliveryFee,
@@ -35,9 +37,9 @@ import {
   writeCheckoutDetails,
   type CheckoutField,
 } from "@/lib/orders";
-import { sendOrderPlacedEmail } from "@/lib/order-emails";
+import { sendOrderCancelledEmail, sendOrderPlacedEmail } from "@/lib/order-emails";
 import { findShortLines, type ShortLine } from "@/lib/stock";
-import { canSimulatePayment, getPaymentOptions, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
+import { canSimulatePayment, demoPaymentsEnabled, getPaymentOptions, getPaymentProvider, PaymentGatewayError } from "@/lib/payments";
 import { getStoreSettings, type StoreSettings } from "@/lib/settings";
 import { getLocale } from "@/i18n/server";
 
@@ -248,9 +250,16 @@ class StockShortError extends Error {
  * totals come from the database, never the client), then ask the gateway for
  * the payment. If the gateway refuses, the order stays unpaid without a live
  * payment and the pay page asks for another method, so no order is duplicated.
+ *
+ * "Skip payment (demo)" (the submit button's demo=1, honoured only while
+ * DEMO_PAYMENTS is on) places the same order without asking the gateway and
+ * marks it paid in demo mode, then goes straight to the success page.
  */
 export async function placeOrder(prev: PlaceOrderState, formData: FormData): Promise<PlaceOrderState> {
   const attempt = prev.attempt + 1;
+  const demo = str(formData, "demo") === "1";
+  // Never trust the button: without the server's flag a demo submit places nothing.
+  if (demo && !demoPaymentsEnabled()) return { error: "generic", attempt };
   const [entries, details, settings, user] = await Promise.all([
     readCartEntries(),
     readCheckoutDetails(),
@@ -280,7 +289,7 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   sweepSubmissions();
   let submission = submissions.get(session);
   if (!submission) {
-    const result = createOrder(entries, details, settings, user?.id ?? null, method).catch((error): Placed => {
+    const result = createOrder(entries, details, settings, user?.id ?? null, method, demo).catch((error): Placed => {
       console.error("[checkout] could not place order", error);
       return { ok: false, error: "generic" };
     });
@@ -298,10 +307,17 @@ export async function placeOrder(prev: PlaceOrderState, formData: FormData): Pro
   await clearCheckoutDetails();
   await rememberOrder(placed.orderNumber);
   revalidatePath("/", "layout");
+  // Skipped in demo mode: paid, or (should the demo not go through) the pay page shows how to pay.
+  if (placed.demo) redirect(isPaid(placed.demo) ? `/checkout/success/${placed.orderNumber}` : `/checkout/pay/${placed.orderNumber}`);
   redirect(placed.charged.ok ? `/checkout/pay/${placed.orderNumber}` : `/checkout/pay/${placed.orderNumber}?change=1&error=${placed.charged.error}`);
 }
 
-type Placed = { ok: true; orderNumber: string; charged: ChargeResult } | { ok: false; error: ErrorKey; short?: ShortItem[] };
+type Placed =
+  | { ok: true; orderNumber: string; charged: ChargeResult; demo?: DemoPaidResult }
+  | { ok: false; error: ErrorKey; short?: ShortItem[] };
+
+/** Demo mode paid the order, or found it really paid at the gateway. */
+const isPaid = (result: DemoPaidResult) => result === "paid" || result === "real";
 
 /**
  * Placed orders per checkout session (hash of the signed db_checkout cookie), kept for
@@ -314,13 +330,17 @@ function sweepSubmissions(now = Date.now()) {
   for (const [key, s] of submissions) if (now - s.at > SUBMISSION_TTL_MS) submissions.delete(key);
 }
 
-/** The order, its items and the first charge. No cookies here: shared by duplicate submits. */
+/**
+ * The order, its items and the first charge (or, with `demo`, no charge: it is marked paid in demo
+ * mode instead). No cookies here: shared by duplicate submits.
+ */
 async function createOrder(
   entries: CartEntry[],
   details: CheckoutDetails,
   settings: StoreSettings,
   userId: bigint | null,
   method: PaymentMethod,
+  demo: boolean,
 ): Promise<Placed> {
   const delivery = details.fulfilment === "delivery";
   // Its emails go out in the language the shopper is browsing in.
@@ -398,6 +418,24 @@ async function createOrder(
   }
   if (!orderNumber) return { ok: false, error: "generic" };
 
+  if (demo) {
+    // No gateway charge: the demo row carries the chosen method. Once it is paid the paid email says
+    // everything, so the "how to pay" email only goes out if the demo didn't go through.
+    // The order exists either way: if the demo fails, the pay page lets the customer choose a method.
+    const result = await markOrderPaidDemo(orderNumber, method).catch((error): DemoPaidResult => {
+      console.error(`[checkout] ${orderNumber}: demo payment failed`, error);
+      return "busy";
+    });
+    if (!isPaid(result)) {
+      const placed = orderNumber;
+      after(async () => {
+        const full = await getOrderByNumber(placed);
+        if (full) await sendOrderPlacedEmail(full);
+      });
+    }
+    return { ok: true, orderNumber, charged: { ok: true }, demo: result };
+  }
+
   const order = (await getOrderByNumber(orderNumber))!;
   const charged = await chargeOrder(order, method);
 
@@ -443,6 +481,94 @@ export async function simulatePayment(formData: FormData) {
   }
   revalidatePath(`/orders/${orderNumber}`);
   redirect(withOrderToken(`/checkout/success/${orderNumber}`, token));
+}
+
+/**
+ * Demo mode only (DEMO_PAYMENTS="on"): the customer skips paying an order whose payment can't be
+ * simulated (a live gateway). Same path as the store's Mark paid (demo): the open gateway payment is
+ * closed first, then the order is paid without money moving.
+ */
+export async function skipPaymentDemo(formData: FormData) {
+  const orderNumber = str(formData, "orderNumber");
+  const token = str(formData, "t");
+  const order = await getOrderForViewer(orderNumber, token);
+  if (!order) redirect("/menu");
+  const payHref = withOrderToken(`/checkout/pay/${orderNumber}`, token);
+  if (!demoPaymentsEnabled() || order.fulfilmentStatus === "cancelled") redirect(payHref);
+  const result = await markOrderPaidDemo(orderNumber);
+  revalidatePath(`/orders/${orderNumber}`);
+  revalidatePath("/account");
+  redirect(isPaid(result) || order.paymentStatus === "paid" ? withOrderToken(`/checkout/success/${orderNumber}`, token) : payHref);
+}
+
+export type CancelOrderState = { error?: "busy"; attempt: number };
+
+/**
+ * The customer cancels their own unpaid order from the pay page. Like the store's cancel, under the
+ * order's lock: the open gateway payment is cancelled first, then the order is cancelled and its
+ * payments closed (paymentStatus "expired", as the store's cancel leaves it). If the gateway won't
+ * cancel because it was paid meanwhile, the order is paid instead and the customer goes to the
+ * success page. If the gateway can't confirm the cancel, nothing changes (as with a method switch),
+ * so a payment that may still go through never belongs to a cancelled order.
+ */
+export async function cancelOrder(prev: CancelOrderState, formData: FormData): Promise<CancelOrderState> {
+  const attempt = prev.attempt + 1;
+  const orderNumber = str(formData, "orderNumber");
+  const token = str(formData, "t");
+  const order = await getOrderForViewer(orderNumber, token);
+  if (!order) redirect("/menu");
+  const payHref = withOrderToken(`/checkout/pay/${orderNumber}`, token);
+  const successHref = withOrderToken(`/checkout/success/${orderNumber}`, token);
+  if (order.paymentStatus === "paid") redirect(successHref);
+  if (order.paymentStatus !== "awaiting" || order.fulfilmentStatus !== "pending") redirect(payHref);
+
+  const outcome = await withOrderLock(order.id, async () => {
+    // Read again under the lock: a payment, a method switch or the store may have landed meanwhile.
+    const fresh = await getOrderByNumber(orderNumber);
+    if (!fresh || fresh.paymentStatus !== "awaiting" || fresh.fulfilmentStatus !== "pending") return "closed" as const;
+    const live = fresh.payments.find((p) => p.status === "awaiting");
+    if (live) {
+      const provider = getPaymentProvider(live.provider);
+      const snapshot = paymentSnapshot(fresh, live);
+      try {
+        await provider.cancel(snapshot, "Order cancelled by the customer");
+      } catch (error) {
+        const code = error instanceof PaymentGatewayError ? error.code : null;
+        if (code === "NOT_CANCELLABLE") {
+          // Not cancellable usually means it was paid meanwhile: then the order is paid, not cancelled.
+          if ((await provider.getStatus(snapshot)) === "paid") {
+            await markOrderPaid(fresh.id, live.id);
+            return "paid" as const;
+          }
+        } else if (code !== "NOT_FOUND") {
+          console.warn(`[checkout] cancel ${live.reference} at the gateway failed, order not cancelled`, code ?? error);
+          return "busy" as const;
+        }
+      }
+    }
+    // Guard against a concurrent change: only from the state read under the lock.
+    const count = await db.$transaction(async (tx) => {
+      const { count } = await tx.order.updateMany({
+        where: { id: fresh.id, paymentStatus: "awaiting", fulfilmentStatus: "pending" },
+        data: { fulfilmentStatus: "cancelled", paymentStatus: "expired", cancelReason: CUSTOMER_CANCEL_REASON },
+      });
+      // Unpaid, so nothing was taken from stock: nothing to give back.
+      if (count > 0) await tx.payment.updateMany({ where: { orderId: fresh.id, status: "awaiting" }, data: { status: "expired" } });
+      return count;
+    });
+    return count > 0 ? ("cancelled" as const) : ("closed" as const);
+  });
+
+  if (!outcome || outcome === "busy") return { error: "busy", attempt };
+  if (outcome === "paid") redirect(successHref);
+  for (const path of [`/orders/${orderNumber}`, "/account", "/admin", "/admin/orders", `/admin/orders/${orderNumber}`]) revalidatePath(path);
+  if (outcome === "cancelled") {
+    deliverLater(async () => {
+      const cancelled = await getOrderByNumber(orderNumber);
+      if (cancelled) await sendOrderCancelledEmail(cancelled, "customer");
+    });
+  }
+  redirect(withOrderToken(`/orders/${orderNumber}`, token));
 }
 
 export type ChangeMethodState = { error?: ErrorKey; attempt: number };

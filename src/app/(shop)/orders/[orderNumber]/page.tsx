@@ -23,7 +23,16 @@ import {
   paymentMethodInfo,
   paymentStatusInfo,
 } from "@/lib/order-status";
-import { cancelledByStore, getOrderForViewer, itemCount, orderAddress, orderDeadline, payable, withOrderToken } from "@/lib/orders";
+import {
+  cancelledByCustomer,
+  cancelledByStore,
+  getOrderForViewer,
+  itemCount,
+  orderAddress,
+  orderDeadline,
+  payable,
+  withOrderToken,
+} from "@/lib/orders";
 import { orderPageMetadata } from "@/lib/order-metadata";
 import { DEMO_PROVIDER } from "@/lib/payments/demo";
 import { getStoreSettings } from "@/lib/settings";
@@ -69,7 +78,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const confirming = paid && f === "pending";
   const completed = f === "completed";
 
-  // The order is closed (no bar): cancelled by the store, cancelled after a payment, or never paid in time.
+  // The order is closed (no bar): cancelled by the store or the customer, cancelled after a payment, or never paid in time.
   const declinedWhy = f === "cancelled" ? cancelReasonText(order.cancelReason, t.reasons) : null;
   const closed = cancelledByStore(order) || f === "cancelled" || (!paid && !awaiting);
   const deadline = payment?.status === "awaiting" ? (payment.expiresAt ?? orderDeadline(order)) : orderDeadline(order);
@@ -81,7 +90,9 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           : t.declinedNoRefundBody(declinedWhy)
         : paidSomething && refundOwed
           ? t.cancelledPaidBody
-          : t.cancelledBody
+          : cancelledByCustomer(order)
+            ? t.cancelledByYouBody
+            : t.cancelledBody
       : order.paymentStatus === "expired"
         ? t.expiredBody(formatDateTime(orderDeadline(order), locale))
         : t.cancelledBody
@@ -247,7 +258,7 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
           className="self-start lg:sticky lg:top-[88px] lg:col-start-2 lg:row-span-2 lg:row-start-1"
         />
 
-        {/* Order again only once the order is done (as in the order history); until then the way on is the history. */}
+        {/* Order again only once the order is done; until then the way on is the history. */}
         <div className="flex w-full min-w-0 flex-col gap-4 self-start pt-8 shadow-[inset_0_1px_0_var(--border-subtle)] lg:col-start-1 lg:row-start-2">
           {/* Two actions share the row in halves; a lone one keeps its own width. */}
           <div className={cn("grid w-full items-start gap-4", completed ? "sm:grid-cols-2" : "sm:flex")}>

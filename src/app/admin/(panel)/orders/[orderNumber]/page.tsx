@@ -16,7 +16,7 @@ import { cn } from "@/lib/cn";
 import { db } from "@/lib/db";
 import { formatDate, formatDateTime, formatDistance, formatItemCount, formatRupiah } from "@/lib/format";
 import { cancelReasonText, fulfilmentBadgeInfo, notPaidInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { cancelledByStore, orderAddress, otherRecipient, payable } from "@/lib/orders";
+import { cancelledByCustomer, cancelledByStore, orderAddress, otherRecipient, payable } from "@/lib/orders";
 import { canMarkPaidDemo } from "@/lib/demo-payment";
 import { DEMO_PROVIDER, demoPaymentsEnabled, shownPayment } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
@@ -120,7 +120,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
   }));
   // Why a closed, unpaid order never reached the kitchen (a paid one says it in the refund alert or needs nothing).
   const closedNote =
-    closed && order.paymentStatus !== "paid" && !refund ? (storeCancelledUnpaid ? o.cancelledUnpaidNote : o.expiredNote) : null;
+    closed && order.paymentStatus !== "paid" && !refund ? (storeCancelledUnpaid ? (cancelledByCustomer(order) ? o.customerCancelledNote : o.cancelledUnpaidNote) : o.expiredNote) : null;
   // Declined or cancelled after a demo payment: where a real one shows the refund alert, a plain line.
   const demoNoRefund = order.fulfilmentStatus === "cancelled" && demoPaid && !refund;
 

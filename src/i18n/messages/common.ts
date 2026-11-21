@@ -33,7 +33,10 @@ export const commonMessages = defineMessages({
       location: "Location",
       faq: "FAQ",
       orderNow: "ORDER NOW",
-      account: "Sign in / My account",
+      /** The drawer's account button, named for where it goes: sign-in, the account page, or the admin panel. */
+      signIn: "SIGN IN",
+      account: "MY ACCOUNT",
+      admin: "ADMIN PANEL",
       search: "Search the menu",
     },
     cart: {
@@ -116,7 +119,9 @@ export const commonMessages = defineMessages({
       location: "Lokasi",
       faq: "FAQ",
       orderNow: "PESAN SEKARANG",
-      account: "Masuk / Akun saya",
+      signIn: "MASUK",
+      account: "AKUN SAYA",
+      admin: "PANEL ADMIN",
       search: "Cari di menu",
     },
     cart: {

@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { ReorderButton } from "@/components/checkout/reorder-button";
 import { StatusBadge } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink } from "@/components/ui/button";
 import { ScrollFade } from "@/components/ui/scroll-fade";
@@ -31,8 +30,8 @@ function orderStatus(order: AccountOrder) {
 
 /**
  * Order history, flat on the page: heading and filters (all / in progress / completed / cancelled) on
- * one line, then a hairline table with the first item's photo and the next thing to do on each order
- * (pay an unpaid one, order a completed one again). Columns size to their content and the items
+ * one line, then a hairline table with the first item's photo and a link to each order's page (where
+ * an unpaid one is paid and a completed one ordered again). Columns size to their content and the items
  * column takes the rest. A table at desktop, stacked rows on phones. Ten orders a page (`?page=`, kept
  * with the filter; choosing a filter starts again at page 1), paged by the database.
  */
@@ -144,7 +143,6 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
           <tbody className="block xl:table-row-group">
             {orders.map((order) => {
               const status = orderStatus(order);
-              const unpaid = order.bucket === "active" && order.paymentStatus === "awaiting";
               return (
                 <tr
                   key={order.orderNumber}
@@ -179,26 +177,10 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
                     {cellLabel(o.total)}
                     {formatRupiah(order.amount)}
                   </td>
-                  <td className={cn(td, "col-start-3 row-start-3 whitespace-nowrap")}>
-                    <span className="flex items-center justify-end gap-5">
-                      {unpaid ? (
-                        <ArrowLink href={`/checkout/pay/${order.orderNumber}`} aria-label={o.payFor(order.orderNumber)} className="text-primary">
-                          {o.pay}
-                        </ArrowLink>
-                      ) : order.bucket === "completed" ? (
-                        <ReorderButton
-                          orderNumber={order.orderNumber}
-                          token=""
-                          label={o.again}
-                          pendingLabel={o.againPending}
-                          failedLabel={o.againFailed}
-                          variant="link"
-                        />
-                      ) : null}
-                      <ArrowLink href={`/orders/${order.orderNumber}`} aria-label={o.detailsFor(order.orderNumber)}>
-                        {o.details}
-                      </ArrowLink>
-                    </span>
+                  <td className={cn(td, "col-start-3 row-start-3 text-right whitespace-nowrap")}>
+                    <ArrowLink href={`/orders/${order.orderNumber}`} aria-label={o.detailsFor(order.orderNumber)}>
+                      {o.details}
+                    </ArrowLink>
                   </td>
                 </tr>
               );

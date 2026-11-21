@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { School, ShoppingBag, Smartphone, Sunrise } from "lucide-react";
 import { Eyebrow } from "@/components/content/eyebrow";
-import { Chip } from "@/components/ui/badges";
 import { ButtonLink } from "@/components/ui/button";
 import { Cutout, Snapshot } from "@/components/ui/snapshot";
 import { storyMessages } from "@/i18n/messages/pages/story";
@@ -111,32 +110,22 @@ export default async function OurStoryPage() {
         className={cn("flex w-full flex-col items-center gap-10 pb-12 lg:flex-row lg:gap-16 lg:pb-20", px)}
         aria-labelledby="story-founders"
       >
-        {/* Phones: a 16px gap and a 12px chip keep "Olivia's brownie" on one line down to 320px. */}
+        {/* Two equal 4:5 photos side by side; 16px apart on phones, 32px from sm up. */}
         <div className="grid w-full max-w-[600px] shrink-0 grid-cols-2 gap-4 sm:gap-8 lg:w-[480px]">
-          <figure className="flex flex-col gap-4">
-            <Snapshot
-              src="/images/products/chocolate-chunk.png"
-              alt=""
-              sizes="(min-width: 1024px) 264px, 45vw"
-              className="aspect-[4/5] w-full"
-              imageClassName="scale-[1.25]"
-            />
-            <figcaption>
-              <Chip className="whitespace-nowrap max-sm:px-2.5 max-sm:text-[12px]">{t.firstCookie}</Chip>
-            </figcaption>
-          </figure>
-          <figure className="flex flex-col gap-4">
-            <Snapshot
-              src="/images/products/fudgy-brownies.png"
-              alt=""
-              sizes="(min-width: 1024px) 264px, 45vw"
-              className="aspect-[4/5] w-full"
-              imageClassName="scale-[1.15]"
-            />
-            <figcaption>
-              <Chip className="whitespace-nowrap max-sm:px-2.5 max-sm:text-[12px]">{t.firstBrownie}</Chip>
-            </figcaption>
-          </figure>
+          <Snapshot
+            src="/images/products/chocolate-chunk.png"
+            alt=""
+            sizes="(min-width: 1024px) 264px, 45vw"
+            className="aspect-[4/5] w-full"
+            imageClassName="scale-[1.25]"
+          />
+          <Snapshot
+            src="/images/products/fudgy-brownies.png"
+            alt=""
+            sizes="(min-width: 1024px) 264px, 45vw"
+            className="aspect-[4/5] w-full"
+            imageClassName="scale-[1.15]"
+          />
         </div>
         <div className="flex w-full min-w-0 flex-1 flex-col items-start gap-8">
           <div className="flex flex-col gap-4">

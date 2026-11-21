@@ -88,6 +88,9 @@ export const emailMessages = defineMessages({
       storeTitle: "Your order was cancelled",
       storeBody: (n: string) => `We've had to cancel order ${n}. Sorry about that.`,
       storePaid: "You'd already paid, so we'll contact you about your refund.",
+      customerSubject: (n: string) => `Order ${n} cancelled`,
+      customerTitle: "You cancelled your order",
+      customerBody: (n: string) => `As you asked, we've cancelled order ${n}. Nothing was charged.`,
       reason: (why: string) => `Reason: ${why}.`,
       reasons: {
         sold_out: "some items sold out today",
@@ -224,6 +227,9 @@ export const emailMessages = defineMessages({
       storeTitle: "Pesananmu dibatalkan",
       storeBody: (n: string) => `Mohon maaf, pesanan ${n} terpaksa kami batalkan.`,
       storePaid: "Kamu sudah membayar, jadi kami akan menghubungimu untuk pengembalian dana.",
+      customerSubject: (n: string) => `Pesanan ${n} dibatalkan`,
+      customerTitle: "Pesananmu sudah dibatalkan",
+      customerBody: (n: string) => `Sesuai permintaanmu, pesanan ${n} sudah kami batalkan. Tidak ada biaya yang ditagih.`,
       reason: (why: string) => `Alasannya: ${why}.`,
       reasons: {
         sold_out: "ada menu yang habis hari ini",

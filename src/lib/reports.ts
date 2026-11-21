@@ -233,14 +233,11 @@ export async function getSalesReport(range: ReportRange) {
   let awaiting = 0;
   let expired = 0;
   let cancelled = 0;
-  let cancelledPaid = 0;
   for (const s of statuses) {
     const n = s._count._all;
     if (s.paymentStatus === "expired") expired += n;
-    else if (s.fulfilmentStatus === "cancelled") {
-      cancelled += n;
-      if (s.paymentStatus === "paid") cancelledPaid += n;
-    } else if (s.paymentStatus === "awaiting") awaiting += n;
+    else if (s.fulfilmentStatus === "cancelled") cancelled += n;
+    else if (s.paymentStatus === "awaiting") awaiting += n;
   }
   // A store cancel also closes the payment (expired), but the payment didn't fail: count it as cancelled.
   const storeCancelled = closedUnpaid.filter(cancelledByStore).length;
@@ -309,7 +306,6 @@ export async function getSalesReport(range: ReportRange) {
     awaiting,
     expired,
     cancelled,
-    cancelledPaid,
     topProducts: [...products.values()].sort((a, b) => b.qty - a.qty || b.revenue - a.revenue).slice(0, 10),
     categories: [...categories.values()].sort((a, b) => b.revenue - a.revenue),
     series: { unit, buckets },

@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { FlaskConical } from "lucide-react";
 import { placeOrder, type PlaceOrderState } from "@/app/actions/checkout";
 import { Button } from "@/components/ui/button";
 import type { PaymentMethod } from "@/generated/prisma/enums";
@@ -25,6 +26,7 @@ export function PaymentForm({
   belowMinimum,
   defaultMethod,
   feeMayApply,
+  demo,
   summary,
 }: {
   review: { email: string; fulfilment: "delivery" | "pickup"; address: string; distance: string | null; fee: number };
@@ -37,12 +39,16 @@ export function PaymentForm({
    * doesn't promise a total, and a line beside it says the exact amount comes before paying.
    */
   feeMayApply: boolean;
+  /** DEMO_PAYMENTS on: a quiet "Skip payment (demo)" under PAY places the order and marks it paid without the gateway. */
+  demo: boolean;
   summary: { lines: SummaryLine[]; itemCount: number; subtotal: number; total: number };
 }) {
   const t = useMessages(checkoutMessages);
   const p = t.payment;
   const [state, formAction, pending] = useActionState(placeOrder, initialState);
   const [method, setMethod] = useState<PaymentMethod | null>(defaultMethod);
+  // Which button sent the order, so only that one says it's working.
+  const [skipping, setSkipping] = useState(false);
   // Picking another method answers a "choose a method" error, so that attempt's error goes away.
   const [answeredAttempt, setAnsweredAttempt] = useState(0);
   const chooseMethod = (next: PaymentMethod) => {
@@ -186,8 +192,14 @@ export function PaymentForm({
                   {method ? paymentMethodInfo[method].name : "—"}
                 </span>
               </p>
-              <Button type="submit" className="shrink-0 px-5 sm:px-7" disabled={pending || !method} aria-describedby={feeMayApply ? "payment-fee-note" : undefined}>
-                {pending ? p.placing : feeMayApply ? p.placeOrder : p.pay(formatRupiah(summary.total))}
+              <Button
+                type="submit"
+                onClick={() => setSkipping(false)}
+                className="shrink-0 px-5 sm:px-7"
+                disabled={pending || !method}
+                aria-describedby={feeMayApply ? "payment-fee-note" : undefined}
+              >
+                {pending && !skipping ? p.placing : feeMayApply ? p.placeOrder : p.pay(formatRupiah(summary.total))}
               </Button>
             </div>
             {feeMayApply ? (
@@ -199,6 +211,28 @@ export function PaymentForm({
             ) : null}
           </div>
         </div>
+
+        {/* Demo mode: low-key under the column (not in the pinned bar), like the pay page's simulate box. */}
+        {demo ? (
+          <div className="flex w-full flex-col gap-3 pt-6 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <FlaskConical className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+              <p className="text-[13px] leading-5 text-pretty text-muted-foreground">
+                <span className="font-bold text-foreground">{p.demoTitle}.</span> {p.demoBody}
+              </p>
+            </div>
+            <button
+              type="submit"
+              name="demo"
+              value="1"
+              onClick={() => setSkipping(true)}
+              disabled={pending || !method}
+              className="min-h-11 shrink-0 rounded-sm px-4 py-2.5 text-sm leading-[21px] font-bold text-foreground inset-ring-[1.25px] inset-ring-border transition-colors hover:bg-card disabled:opacity-50"
+            >
+              {pending && skipping ? p.demoSkipping : p.demoSkip}
+            </button>
+          </div>
+        ) : null}
       </form>
     </CheckoutColumns>
   );

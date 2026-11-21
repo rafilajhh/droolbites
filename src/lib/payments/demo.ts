@@ -5,8 +5,9 @@ import type { PaymentProvider } from "./types";
 export const DEMO_PROVIDER = "demo";
 
 /**
- * DEMO_PAYMENTS="on" lets an admin mark an unpaid order paid without money moving
- * (src/lib/demo-payment.ts), to try every after-payment flow on the live site. Anything else: off.
+ * DEMO_PAYMENTS="on" lets an admin mark an unpaid order paid without money moving, and lets the
+ * customer skip paying at checkout or on the pay page (src/lib/demo-payment.ts), to try every
+ * after-payment flow on the live site. Anything else: off.
  */
 export function demoPaymentsEnabled() {
   return process.env.DEMO_PAYMENTS === "on";

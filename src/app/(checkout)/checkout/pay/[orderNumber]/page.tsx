@@ -21,8 +21,15 @@ import { getLocale, getMessages } from "@/i18n/server";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 import { formatDateTime, formatRupiah } from "@/lib/format";
 import { fulfilmentStatusInfo, paymentMethodInfo, paymentStatusInfo } from "@/lib/order-status";
-import { cancelledByStore, getOrderForViewer, itemCount, orderDeadline, payable, withOrderToken } from "@/lib/orders";
-import { canSimulatePayment, DEMO_PROVIDER, getPaymentOptions, getPaymentProvider, serviceFeeMayApply } from "@/lib/payments";
+import { cancelledByCustomer, cancelledByStore, getOrderForViewer, itemCount, orderDeadline, payable, withOrderToken } from "@/lib/orders";
+import {
+  canSimulatePayment,
+  DEMO_PROVIDER,
+  demoPaymentsEnabled,
+  getPaymentOptions,
+  getPaymentProvider,
+  serviceFeeMayApply,
+} from "@/lib/payments";
 import { orderPageMetadata } from "@/lib/order-metadata";
 import { getStoreSettings } from "@/lib/settings";
 
@@ -47,7 +54,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   const [{ methods, logos, belowMinimum }, feeMayApply] = await Promise.all([getPaymentOptions(settings, order.total), serviceFeeMayApply()]);
   const p = t.pay;
   const payment = order.payments[0] ?? null;
-  // Cancelled by the store: closed, even if a payment still looks open.
+  // Cancelled by the store (or by the customer, from this page): closed, even if a payment still looks open.
   const storeCancelled = cancelledByStore(order);
   const live = payment?.status === "awaiting" && !storeCancelled ? payment : null;
   const orderExpired = order.paymentStatus === "expired";
@@ -116,7 +123,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
   if (storeCancelled) {
     return layout(
       p.cancelledTitle,
-      p.cancelledBody(orderNumber),
+      cancelledByCustomer(order) ? p.cancelledByYouBody(orderNumber) : p.cancelledBody(orderNumber),
       <>
         <div className="flex w-full items-center gap-4 rounded-m bg-tint-salmon px-6 py-[18px]">
           <CircleX className="size-6 shrink-0 text-error" aria-hidden />
@@ -180,7 +187,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
       p.confirmingSub,
       <>
         <PaymentWatcher statusUrl={statusUrl} successHref={successHref} />
-        <PayActions orderNumber={orderNumber} token={token} orderHref={orderHref} />
+        <PayActions orderNumber={orderNumber} token={token} />
       </>,
     );
   }
@@ -288,19 +295,25 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
             />
           </div>
         ) : info.kind === "qris" && (qrSvg || live.payUrl) ? (
-          <div className="flex w-full flex-col items-center gap-4 px-5 py-6 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:flex-row sm:px-6">
+          // The QR is the one thing to act on: centred on the card at a size a phone camera reads from
+          // arm's length, with its one-line caption under it.
+          <div className="flex w-full flex-col items-center gap-3 px-5 py-6 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:px-6 sm:py-8">
             {qrSvg ? (
               <div
                 role="img"
                 aria-label={p.qrAlt(info.name)}
-                className="size-44 shrink-0 rounded-sm bg-white p-2 inset-ring-1 inset-ring-border-subtle [&_svg]:size-full"
+                className="size-52 shrink-0 rounded-sm bg-white p-2.5 inset-ring-1 inset-ring-border-subtle sm:size-60 [&_svg]:size-full"
                 dangerouslySetInnerHTML={{ __html: qrSvg }}
               />
             ) : (
               // eslint-disable-next-line @next/next/no-img-element -- the gateway's QR image, shown as is
-              <img src={live.payUrl!} alt={p.qrAlt(info.name)} className="size-44 shrink-0 rounded-sm bg-white p-2 inset-ring-1 inset-ring-border-subtle" />
+              <img
+                src={live.payUrl!}
+                alt={p.qrAlt(info.name)}
+                className="size-52 shrink-0 rounded-sm bg-white p-2.5 inset-ring-1 inset-ring-border-subtle sm:size-60"
+              />
             )}
-            <p className="text-[15px] leading-[23px] text-muted-foreground">{p.scanQris}</p>
+            <p className="max-w-[320px] text-center text-[15px] leading-[23px] text-balance text-muted-foreground">{p.scanQris}</p>
           </div>
         ) : info.kind === "ewallet" && !ovo && live.payUrl ? (
           <div className="flex w-full flex-col items-start gap-3 px-5 py-5 shadow-[inset_0_-1px_0_var(--border-subtle)] sm:px-6">
@@ -332,14 +345,17 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
               </p>
             ) : null}
           </div>
-          <CopyButton
-            value={String(pay.amount)}
-            label={p.copy}
-            copiedLabel={p.copied}
-            failedLabel={p.copyFailed}
-            ariaLabel={p.copyAmount}
-            selectId="pay-amount"
-          />
+          {/* The QR carries the amount, so there is nothing to type; a transfer to a VA from another bank may ask for it. */}
+          {info.kind === "qris" ? null : (
+            <CopyButton
+              value={String(pay.amount)}
+              label={p.copy}
+              copiedLabel={p.copied}
+              failedLabel={p.copyFailed}
+              ariaLabel={p.copyAmount}
+              selectId="pay-amount"
+            />
+          )}
         </div>
 
         {/* This method's own steps close the card, so the number and the way to pay it stay together. */}
@@ -347,8 +363,13 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
       </section>
 
       <PaymentWatcher statusUrl={statusUrl} successHref={successHref} />
-      <PayActions orderNumber={orderNumber} token={token} orderHref={orderHref} />
-      {canSimulatePayment(live.provider) ? <SimulatePayment orderNumber={orderNumber} token={token} sandbox={provider.id !== "mock"} /> : null}
+      <PayActions orderNumber={orderNumber} token={token} cancellable />
+      {/* Simulating the gateway's payment comes first; with a live gateway, demo mode can still skip it. */}
+      {canSimulatePayment(live.provider) ? (
+        <SimulatePayment orderNumber={orderNumber} token={token} mode={provider.id === "mock" ? "mock" : "sandbox"} />
+      ) : demoPaymentsEnabled() ? (
+        <SimulatePayment orderNumber={orderNumber} token={token} mode="demo" />
+      ) : null}
     </>,
   );
 }

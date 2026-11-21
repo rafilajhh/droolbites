@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Ban, CircleAlert, CircleX, Download, Hourglass, Package, Receipt, ShoppingBag, Wallet } from "lucide-react";
+import { CircleAlert, Download, Package, Receipt, ShoppingBag, Wallet } from "lucide-react";
 import { PrintButton } from "@/components/admin/print-button";
 import { buttonClasses } from "@/components/ui/button";
 import { BarItem, BarList, ColumnChart, type ColumnPoint } from "@/components/admin/report-charts";
@@ -224,30 +224,29 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
         </p>
       ) : null}
 
-      {/* Totals: the four figures in one strip, and what was left out of them as the strip's last row. */}
+      {/* Totals: the four figures in one strip. */}
       <PaneCard as="div" cols="grid-cols-1 md:grid-cols-2 xl:grid-cols-4 print:grid-cols-2" className="print:break-inside-avoid">
         <StatPane
-          label={t.kpi.revenue}
+          label={t.kpi.sales}
           icon={Wallet}
           iconBg="bg-mint"
           value={formatRupiah(report.revenue)}
           sub={
             <>
-              {t.kpi.revenueSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
+              {t.kpi.salesSub(formatRupiah(report.itemRevenue), formatRupiah(report.deliveryRevenue))}
               {report.demoOrders > 0 ? (
-                <span className="mt-0.5 block font-semibold text-foreground">
-                  {t.kpi.demoIncluded(formatRupiah(report.demoRevenue), report.demoOrders)}
-                </span>
+                <span className="mt-0.5 block font-semibold text-foreground">{t.kpi.demoIncluded(formatRupiah(report.demoRevenue))}</span>
               ) : null}
             </>
           }
         />
+        {/* Unpaid and cancelled orders aren't sales: only their counts, as a plain line under Orders. */}
         <StatPane
-          label={t.kpi.paidOrders}
+          label={t.kpi.orders}
           icon={Receipt}
           iconBg="bg-tint-lavender"
           value={String(report.paidOrders)}
-          sub={t.kpi.paidOrdersSub}
+          sub={t.kpi.ordersSub(report.awaiting + report.expired, report.cancelled)}
         />
         <StatPane
           label={t.kpi.average}
@@ -263,39 +262,6 @@ export default async function AdminReportsPage({ searchParams }: PageProps<"/adm
           value={String(report.itemsSold)}
           sub={t.kpi.itemsSoldSub(report.productsSold)}
         />
-        <section
-          aria-labelledby="not-counted-title"
-          className={cn(paneClasses, "col-span-full gap-4 bg-background px-5 py-4 md:px-6 md:py-5 xl:grid xl:grid-cols-4 xl:gap-0 xl:px-0")}
-        >
-          <SectionTitle id="not-counted-title" className="xl:px-6">
-            {t.notCounted.title}
-          </SectionTitle>
-          {/* From xl each figure sits under a column of the strip above. Below md each is a compact row with
-              the figure on the right, like the stat rows above it. */}
-          <dl className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 xl:col-span-3 xl:gap-0 print:grid-cols-3 print:gap-6">
-            {[
-              { label: t.notCounted.awaiting, sub: t.notCounted.awaitingSub, value: report.awaiting, icon: Hourglass },
-              { label: t.notCounted.expired, sub: t.notCounted.expiredSub, value: report.expired, icon: CircleX },
-              {
-                label: t.notCounted.cancelled,
-                sub: t.notCounted.cancelledSub(report.cancelledPaid),
-                value: report.cancelled,
-                icon: Ban,
-              },
-            ].map(({ label, sub, value, icon: Icon }) => (
-              <div key={label} className="flex items-start gap-3 xl:px-6">
-                <Icon className="mt-0.5 size-[18px] shrink-0 text-muted-foreground" aria-hidden />
-                <div className="flex min-w-0 flex-1 flex-col max-md:grid max-md:grid-cols-[minmax(0,1fr)_auto] max-md:gap-x-4">
-                  <dt className="text-sm leading-[21px] font-semibold text-muted-foreground">{label}</dt>
-                  <dd className="font-display text-[22px] leading-[28px] font-bold tabular-nums max-md:col-start-2 max-md:row-span-2 max-md:row-start-1 max-md:self-center">
-                    {value}
-                  </dd>
-                  <dd className="text-[13px] leading-5 text-muted-foreground max-md:col-start-1 max-md:row-start-2">{sub}</dd>
-                </div>
-              </div>
-            ))}
-          </dl>
-        </section>
       </PaneCard>
 
       <Card aria-labelledby="chart-title" className="flex w-full flex-col gap-6 p-5 md:p-6 print:break-inside-avoid">

@@ -1,5 +1,5 @@
 import "server-only";
-import type { FulfilmentStatus, PaymentStatus } from "@/generated/prisma/enums";
+import type { FulfilmentStatus, PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 import { db } from "./db";
 import { markOrderPaid, markPaymentExpired, orderDeadline, paymentSnapshot, withOrderLock } from "./orders";
 import { DEMO_PROVIDER, demoPaymentsEnabled, getPaymentProvider, PaymentGatewayError } from "./payments";
@@ -32,8 +32,9 @@ export function canMarkPaidDemo(
  * Mark an order paid in demo mode. Under the order's lock (the same one as the customer's method
  * switch and the store's cancel), in this order, so the customer's open pay page keeps polling and
  * then moves to the success page:
- * 1. a "demo" payment row (the last attempt's method, else QRIS; the order total, no fee) becomes
- *    the latest attempt, the one the status poll looks at;
+ * 1. a "demo" payment row (the last attempt's method, else `method` (the one chosen at checkout when
+ *    the customer skipped paying), else QRIS; the order total, no fee) becomes the latest attempt, the
+ *    one the status poll looks at;
  * 2. every live gateway payment is closed at the gateway and on our side. If the gateway won't close
  *    one because it was paid, the money is real: the order is paid with that payment, and the demo
  *    row goes (`real`). If the gateway can't be reached or answers with an error, the payment may
@@ -42,7 +43,7 @@ export function canMarkPaidDemo(
  * A second call finds the order paid and changes nothing (`invalid`). If anything throws halfway,
  * the demo row is removed again, so it never stands in front of a live gateway payment.
  */
-export async function markOrderPaidDemo(orderNumber: string): Promise<DemoPaidResult> {
+export async function markOrderPaidDemo(orderNumber: string, method?: PaymentMethod): Promise<DemoPaidResult> {
   if (!demoPaymentsEnabled()) return "off";
   const found = await db.order.findUnique({
     where: { orderNumber },
@@ -72,7 +73,7 @@ export async function markOrderPaidDemo(orderNumber: string): Promise<DemoPaidRe
       (await db.payment.create({
         data: {
           orderId: order.id,
-          method: order.payments[0]?.method ?? "qris",
+          method: order.payments[0]?.method ?? method ?? "qris",
           amount: order.total,
           status: "awaiting",
           provider: DEMO_PROVIDER,

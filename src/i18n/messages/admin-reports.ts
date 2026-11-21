@@ -2,12 +2,12 @@ import { defineMessages } from "../config";
 
 type Unit = "day" | "week" | "month";
 
-/** Admin / Sales report: period controls, totals, revenue chart, best sellers and the splits, print header. */
+/** Admin / Sales report: period controls, totals, sales chart, best sellers and the splits, print header. */
 export const adminReportsMessages = defineMessages({
   en: {
     metaTitle: "Sales report",
     title: "Sales report",
-    sub: "Revenue and best sellers, counted in Surabaya time (WIB).",
+    sub: "Sales, orders and best sellers for the period you pick.",
     allTime: "ALL TIME",
     periods: {
       label: "Report period",
@@ -37,74 +37,65 @@ export const adminReportsMessages = defineMessages({
       generated: (when: string) => `Generated ${when} WIB`,
     },
     kpi: {
-      revenue: "Revenue",
-      revenueSub: (items: string, delivery: string) => `${items} items + ${delivery} delivery`,
-      demoIncluded: (amount: string, n: number) => `Incl. ${amount} in demo payments (${n} ${n === 1 ? "order" : "orders"})`,
-      paidOrders: "Paid orders",
-      paidOrdersSub: "Orders the store cancelled aren't counted",
-      average: "Average order",
-      averageSub: "Revenue divided by paid orders",
+      sales: "Sales",
+      salesSub: (items: string, delivery: string) => `${items} products + ${delivery} delivery`,
+      demoIncluded: (amount: string) => `Incl. ${amount} in demo payments`,
+      orders: "Orders",
+      ordersSub: (unpaid: number, cancelled: number) =>
+        ["Paid orders", unpaid ? `${unpaid} unpaid` : "", cancelled ? `${cancelled} cancelled` : ""].filter(Boolean).join(" · "),
+      average: "Average order value",
+      averageSub: "Per paid order",
       itemsSold: "Items sold",
       itemsSoldSub: (n: number) => `Across ${n} ${n === 1 ? "product" : "products"}`,
     },
-    notCounted: {
-      title: "Not counted as revenue",
-      awaiting: "Awaiting payment",
-      awaitingSub: "Placed but not paid yet",
-      expired: "Payment failed",
-      expiredSub: "Payment window closed",
-      cancelled: "Cancelled by the store",
-      cancelledSub: (paid: number) =>
-        paid === 0 ? "None of them were paid" : `${paid} of them ${paid === 1 ? "was" : "were"} paid (refund)`,
-    },
     chart: {
-      title: "Revenue over time",
+      title: "Sales over time",
       sub: (unit: Unit) =>
         unit === "day"
-          ? "Paid orders by the day they were placed"
+          ? "By the day the order was placed"
           : unit === "week"
-            ? "Paid orders by week placed (Monday to Sunday)"
-            : "Paid orders by month placed",
+            ? "By week, Monday to Sunday"
+            : "By month",
       best: (unit: Unit) => (unit === "day" ? "Best day" : unit === "week" ? "Best week" : "Best month"),
-      columns: (unit: Unit) => (unit === "day" ? "Revenue per day" : unit === "week" ? "Revenue per week" : "Revenue per month"),
+      columns: (unit: Unit) => (unit === "day" ? "Sales per day" : unit === "week" ? "Sales per week" : "Sales per month"),
       weekOf: (range: string) => `Week ${range}`,
-      orders: (n: number) => `${n} paid ${n === 1 ? "order" : "orders"}`,
-      empty: "No paid orders in this period yet.",
+      orders: (n: number) => `${n} ${n === 1 ? "order" : "orders"}`,
+      empty: "No sales in this period.",
     },
     top: {
       title: "Top products",
-      sub: "Most items sold, then highest revenue",
+      sub: "By items sold",
       sold: (n: number) => `${n} sold`,
-      empty: "Nothing sold in this period yet.",
+      empty: "Nothing sold in this period.",
     },
     categories: {
-      title: "Revenue by category",
-      sub: "Item sales, before delivery fees",
-      share: (pct: number) => `${pct}% of item sales`,
+      title: "Sales by category",
+      sub: "Product sales, without delivery",
+      share: (pct: number) => `${pct}% of product sales`,
       items: (n: number) => `${n} ${n === 1 ? "item" : "items"}`,
-      empty: "No category sales in this period yet.",
+      empty: "Nothing sold in this period.",
     },
     fulfilment: {
       title: "Delivery or pickup",
-      sub: "Paid orders by how they reach the customer",
+      sub: "How orders reach the customer",
       orders: (n: number) => `${n} ${n === 1 ? "order" : "orders"}`,
       share: (pct: number) => `${pct}% of orders`,
-      empty: "No paid orders in this period yet.",
+      empty: "No sales in this period.",
     },
     payments: {
       title: "Payment methods",
-      sub: "Paid orders by how they were paid",
+      sub: "How customers paid",
       orders: (n: number) => `${n} ${n === 1 ? "order" : "orders"}`,
       share: (pct: number) => `${pct}% of orders`,
-      empty: "No paid orders in this period yet.",
+      empty: "No sales in this period.",
     },
     footnote:
-      "Revenue is the order total (items plus delivery) of paid orders placed in this period, leaving out orders the store cancelled. Payment gateway fees aren't included.",
+      "Sales are the totals of paid orders (products plus delivery) placed in this period. The customer's payment service fee isn't part of them.",
   },
   id: {
     metaTitle: "Laporan penjualan",
     title: "Laporan penjualan",
-    sub: "Pendapatan dan produk terlaris, dihitung dalam waktu Surabaya (WIB).",
+    sub: "Penjualan, pesanan dan produk terlaris di periode yang kamu pilih.",
     allTime: "SEPANJANG WAKTU",
     periods: {
       label: "Periode laporan",
@@ -134,67 +125,59 @@ export const adminReportsMessages = defineMessages({
       generated: (when: string) => `Dibuat ${when} WIB`,
     },
     kpi: {
-      revenue: "Pendapatan",
-      revenueSub: (items: string, delivery: string) => `${items} produk + ${delivery} ongkir`,
-      demoIncluded: (amount: string, n: number) => `Termasuk ${amount} pembayaran demo (${n} pesanan)`,
-      paidOrders: "Pesanan lunas",
-      paidOrdersSub: "Pesanan yang dibatalkan toko tidak dihitung",
-      average: "Rata-rata pesanan",
-      averageSub: "Pendapatan dibagi jumlah pesanan lunas",
+      sales: "Penjualan",
+      salesSub: (items: string, delivery: string) => `${items} produk + ${delivery} ongkir`,
+      demoIncluded: (amount: string) => `Termasuk ${amount} pembayaran demo`,
+      orders: "Pesanan",
+      ordersSub: (unpaid: number, cancelled: number) =>
+        ["Pesanan lunas", unpaid ? `${unpaid} belum dibayar` : "", cancelled ? `${cancelled} dibatalkan` : ""].filter(Boolean).join(" · "),
+      average: "Rata-rata nilai pesanan",
+      averageSub: "Per pesanan lunas",
       itemsSold: "Item terjual",
       itemsSoldSub: (n: number) => `Dari ${n} produk`,
     },
-    notCounted: {
-      title: "Tidak dihitung sebagai pendapatan",
-      awaiting: "Menunggu pembayaran",
-      awaitingSub: "Sudah dipesan, belum dibayar",
-      expired: "Pembayaran gagal",
-      expiredSub: "Batas waktu pembayaran habis",
-      cancelled: "Dibatalkan toko",
-      cancelledSub: (paid: number) => (paid === 0 ? "Tidak ada yang sudah dibayar" : `${paid} di antaranya sudah dibayar (perlu refund)`),
-    },
     chart: {
-      title: "Pendapatan dari waktu ke waktu",
+      title: "Penjualan dari waktu ke waktu",
       sub: (unit: Unit) =>
         unit === "day"
-          ? "Pesanan lunas, menurut hari pesanan dibuat"
+          ? "Menurut hari pesanan dibuat"
           : unit === "week"
-            ? "Pesanan lunas, per minggu (Senin sampai Minggu)"
-            : "Pesanan lunas, per bulan",
+            ? "Per minggu, Senin sampai Minggu"
+            : "Per bulan",
       best: (unit: Unit) => (unit === "day" ? "Hari terbaik" : unit === "week" ? "Minggu terbaik" : "Bulan terbaik"),
-      columns: (unit: Unit) => (unit === "day" ? "Pendapatan per hari" : unit === "week" ? "Pendapatan per minggu" : "Pendapatan per bulan"),
+      columns: (unit: Unit) => (unit === "day" ? "Penjualan per hari" : unit === "week" ? "Penjualan per minggu" : "Penjualan per bulan"),
       weekOf: (range: string) => `Minggu ${range}`,
-      orders: (n: number) => `${n} pesanan lunas`,
-      empty: "Belum ada pesanan lunas di periode ini.",
+      orders: (n: number) => `${n} pesanan`,
+      empty: "Belum ada penjualan di periode ini.",
     },
     top: {
       title: "Produk terlaris",
-      sub: "Paling banyak terjual, lalu pendapatan tertinggi",
+      sub: "Menurut jumlah terjual",
       sold: (n: number) => `${n} terjual`,
       empty: "Belum ada produk yang terjual di periode ini.",
     },
     categories: {
-      title: "Pendapatan per kategori",
-      sub: "Penjualan produk, belum termasuk ongkir",
+      title: "Penjualan per kategori",
+      sub: "Penjualan produk, tanpa ongkir",
       share: (pct: number) => `${pct}% dari penjualan produk`,
       items: (n: number) => `${n} item`,
-      empty: "Belum ada penjualan per kategori di periode ini.",
+      empty: "Belum ada produk yang terjual di periode ini.",
     },
     fulfilment: {
       title: "Diantar atau diambil",
-      sub: "Pesanan lunas, menurut cara sampai ke pelanggan",
+      sub: "Cara pesanan sampai ke pelanggan",
       orders: (n: number) => `${n} pesanan`,
       share: (pct: number) => `${pct}% dari pesanan`,
-      empty: "Belum ada pesanan lunas di periode ini.",
+      empty: "Belum ada penjualan di periode ini.",
     },
     payments: {
       title: "Metode pembayaran",
-      sub: "Pesanan lunas, menurut cara pembayarannya",
+      sub: "Cara pelanggan membayar",
       orders: (n: number) => `${n} pesanan`,
       share: (pct: number) => `${pct}% dari pesanan`,
-      empty: "Belum ada pesanan lunas di periode ini.",
+      empty: "Belum ada penjualan di periode ini.",
     },
     footnote:
-      "Pendapatan adalah total pesanan (produk ditambah ongkir) dari pesanan lunas yang dibuat di periode ini, tanpa pesanan yang dibatalkan toko. Biaya payment gateway tidak termasuk.",
+      "Penjualan adalah total pesanan lunas (produk ditambah ongkir) yang dibuat di periode ini. Biaya layanan pembayaran dari pelanggan tidak termasuk.",
   },
 });

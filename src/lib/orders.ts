@@ -11,7 +11,7 @@ import { sendOrderCancelledEmail, sendOrderPaidEmail, sendStoreNewOrderEmail } f
 import { getPaymentProvider, PAYMENT_WINDOW_MS, PaymentGatewayError } from "./payments";
 import { signToken, verifyToken } from "./session";
 import { deductOrderStock, findShortLines } from "./stock";
-import { notPaidInfo, paymentStatusInfo } from "./order-status";
+import { CUSTOMER_CANCEL_REASON, notPaidInfo, paymentStatusInfo } from "./order-status";
 
 export const ORDER_NUMBER_RE = /^DB-\d{4,9}$/;
 
@@ -332,7 +332,9 @@ export async function expireOrder(orderId: bigint) {
  * expireOrder only cancels once the deadline has passed, so an unpaid
  * cancelled order last changed before its deadline was cancelled from the
  * admin. An awaiting one is a store cancel from before cancelling closed the
- * payment. (A store cancel after the deadline counts as expiry.)
+ * payment. (A store cancel after the deadline counts as expiry.) The
+ * customer's own cancel from the pay page is closed the same way and counts
+ * here too; cancelledByCustomer tells the two apart for the wording.
  */
 export function cancelledByStore(order: {
   paymentStatus: PaymentStatus;
@@ -343,6 +345,11 @@ export function cancelledByStore(order: {
   if (order.fulfilmentStatus !== "cancelled") return false;
   if (order.paymentStatus !== "expired") return true;
   return !order.updatedAt || order.updatedAt < orderDeadline(order);
+}
+
+/** The customer cancelled this unpaid order themselves (cancelCustomerOrder), not the store. */
+export function cancelledByCustomer(order: { fulfilmentStatus: FulfilmentStatus; cancelReason: string | null }) {
+  return order.fulfilmentStatus === "cancelled" && order.cancelReason === CUSTOMER_CANCEL_REASON;
 }
 
 /**

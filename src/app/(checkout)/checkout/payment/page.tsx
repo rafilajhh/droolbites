@@ -8,7 +8,7 @@ import { checkoutMessages } from "@/i18n/messages/checkout";
 import { getCart } from "@/lib/cart";
 import { formatDistance } from "@/lib/format";
 import { checkoutDeliveryFee, formatAddress, joinStreet, readCheckoutDetails } from "@/lib/orders";
-import { getPaymentOptions, serviceFeeMayApply } from "@/lib/payments";
+import { demoPaymentsEnabled, getPaymentOptions, serviceFeeMayApply } from "@/lib/payments";
 import { getStoreSettings } from "@/lib/settings";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -61,6 +61,7 @@ export default async function CheckoutPaymentPage() {
           belowMinimum={belowMinimum}
           defaultMethod={defaultMethod}
           feeMayApply={feeMayApply}
+          demo={demoPaymentsEnabled()}
           summary={{
             lines: cartSummaryLines(cart, locale),
             itemCount: cart.count,

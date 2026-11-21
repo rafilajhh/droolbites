@@ -110,15 +110,9 @@ export function NavMenu({ accountHref }: { accountHref: string }) {
           <Link href="/menu" onClick={close} className={buttonClasses("primary", "w-full")}>
             {t.orderNow}
           </Link>
-          <div className="flex w-full flex-wrap justify-between gap-2 text-[15px] leading-normal">
-            <Link
-              href={accountHref}
-              onClick={close}
-              className="relative font-semibold text-foreground after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-[''] hover:text-primary"
-            >
-              {t.account}
-            </Link>
-          </div>
+          <Link href={accountHref} onClick={close} className={buttonClasses("secondary", "w-full")}>
+            {accountHref === "/sign-in" ? t.signIn : accountHref === "/admin" ? t.admin : t.account}
+          </Link>
         </div>
       </div>
     </div>

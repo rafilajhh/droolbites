@@ -232,8 +232,8 @@ export async function sendOrderStatusEmail(order: FullOrder, status: NotifiedSta
   await sendMail({ to: order.email, subject: s.subject(order.orderNumber), text, html });
 }
 
-/** Closed at the payment deadline ("expired") or cancelled by the store ("store"). */
-export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" | "store") {
+/** Closed at the payment deadline ("expired"), cancelled by the store ("store") or by the customer on the pay page ("customer"). */
+export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" | "store" | "customer") {
   const { lang, t, link, items, footer, itemsText, signature } = await context(order);
   const c = t.cancelled;
   const n = order.orderNumber;
@@ -242,7 +242,11 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
   // The message adds its own full stop, so one typed at the end of a custom reason is dropped.
   const reason = why === "store" ? cancelReasonText(order.cancelReason, c.reasons)?.replace(/[\s.!?]+$/, "") || null : null;
   const lines =
-    why === "expired" ? [c.expiredBody(n)] : [c.storeBody(n), ...(reason ? [c.reason(reason)] : []), ...(paid ? [c.storePaid] : [])];
+    why === "expired"
+      ? [c.expiredBody(n)]
+      : why === "customer"
+        ? [c.customerBody(n)]
+        : [c.storeBody(n), ...(reason ? [c.reason(reason)] : []), ...(paid ? [c.storePaid] : [])];
   const menu = appUrl("/menu");
 
   const text = [
@@ -263,7 +267,7 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
     baseUrl: appUrl("/"),
     preheader: lines[0],
     eyebrow: `${t.common.orderEyebrow(n)} · ${c.tag}`,
-    title: why === "expired" ? c.expiredTitle : c.storeTitle,
+    title: why === "expired" ? c.expiredTitle : why === "customer" ? c.customerTitle : c.storeTitle,
     body: [
       paragraph(t.common.hi(order.customerName)),
       ...lines.map((line) => paragraph(line)),
@@ -276,7 +280,8 @@ export async function sendOrderCancelledEmail(order: FullOrder, why: "expired" |
     reason: t.common.orderReason,
   });
 
-  await sendMail({ to: order.email, subject: why === "expired" ? c.expiredSubject(n) : c.storeSubject(n), text, html });
+  const subject = why === "expired" ? c.expiredSubject(n) : why === "customer" ? c.customerSubject(n) : c.storeSubject(n);
+  await sendMail({ to: order.email, subject, text, html });
 }
 
 /**

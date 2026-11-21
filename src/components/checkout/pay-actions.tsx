@@ -1,34 +1,98 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
-import { FlaskConical } from "lucide-react";
-import { checkPaymentStatus, simulatePayment, type PayCheckState } from "@/app/actions/checkout";
-import { buttonClasses, ButtonLink } from "@/components/ui/button";
+import { CircleX, FlaskConical } from "lucide-react";
+import {
+  cancelOrder,
+  checkPaymentStatus,
+  simulatePayment,
+  skipPaymentDemo,
+  type CancelOrderState,
+  type PayCheckState,
+} from "@/app/actions/checkout";
+import { Button, buttonClasses } from "@/components/ui/button";
 import { useMessages } from "@/i18n/client";
 import { checkoutMessages } from "@/i18n/messages/checkout";
 
 const initialState: PayCheckState = { attempt: 0 };
+const initialCancel: CancelOrderState = { attempt: 0 };
 
-/** "I've paid — check status" + "Pay later · view order" (KKqcJ Actions). */
-export function PayActions({ orderNumber, token, orderHref }: { orderNumber: string; token: string; orderHref: string }) {
+/**
+ * "I've paid — check status" and, while the order can still be cancelled, "Cancel order" (KKqcJ
+ * Actions). Cancel asks first in place of the two buttons: what cancelling does, then "Yes, cancel"
+ * or "Keep order", which brings the buttons back.
+ */
+export function PayActions({ orderNumber, token, cancellable = false }: { orderNumber: string; token: string; cancellable?: boolean }) {
   const t = useMessages(checkoutMessages).pay;
   const [state, formAction, pending] = useActionState(checkPaymentStatus, initialState);
+  const [cancelState, cancelAction, cancelling] = useActionState(cancelOrder, initialCancel);
+  const [confirming, setConfirming] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLParagraphElement>(null);
+  // Moves focus with the swap: onto the question when it opens, back to Cancel order when kept.
+  const opened = useRef(false);
+
+  useEffect(() => {
+    if (confirming) confirmRef.current?.focus();
+    else if (opened.current) cancelRef.current?.focus();
+    opened.current = confirming;
+  }, [confirming]);
+
+  const hidden = (
+    <>
+      <input type="hidden" name="orderNumber" value={orderNumber} />
+      <input type="hidden" name="t" value={token} />
+    </>
+  );
+
+  if (cancellable && confirming) {
+    return (
+      <div className="flex w-full flex-col gap-4 rounded-m bg-tint-salmon p-5 sm:p-6">
+        <div className="flex items-start gap-3">
+          <CircleX className="mt-0.5 size-5 shrink-0 text-error" aria-hidden />
+          <div className="flex min-w-0 flex-col gap-1">
+            <p ref={confirmRef} tabIndex={-1} className="text-base leading-6 font-bold text-foreground outline-hidden">
+              {t.cancelConfirmTitle(orderNumber)}
+            </p>
+            <p className="text-[15px] leading-[23px] text-pretty text-foreground">{t.cancelConfirmBody}</p>
+          </div>
+        </div>
+        <div className="grid w-full gap-3 sm:grid-cols-2">
+          <form action={cancelAction} className="flex">
+            {hidden}
+            <button type="submit" disabled={cancelling} className={buttonClasses("primary", "w-full")}>
+              {cancelling ? t.cancelling : t.cancelConfirm}
+            </button>
+          </form>
+          <Button variant="secondary" onClick={() => setConfirming(false)} disabled={cancelling}>
+            {t.cancelKeep}
+          </Button>
+        </div>
+        {cancelState.error ? (
+          <p key={cancelState.attempt} role="alert" className="text-sm leading-[21px] text-error">
+            {t.cancelBusy}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full flex-col gap-3">
       <div className="grid w-full gap-4 sm:grid-cols-2">
         <form action={formAction} className="flex">
-          <input type="hidden" name="orderNumber" value={orderNumber} />
-          <input type="hidden" name="t" value={token} />
+          {hidden}
           <button type="submit" disabled={pending} className={buttonClasses("primary", "w-full")}>
             {pending ? t.checking : t.checkStatus}
           </button>
         </form>
-        <ButtonLink href={orderHref} variant="secondary">
-          {t.payLater}
-        </ButtonLink>
+        {cancellable ? (
+          <button ref={cancelRef} type="button" onClick={() => setConfirming(true)} className={buttonClasses("secondary")}>
+            {t.cancelOrder}
+          </button>
+        ) : null}
       </div>
       <p aria-live="polite" className="text-sm leading-[21px] text-muted-foreground empty:hidden">
         {state.result === "awaiting" ? t.notYet : ""}
@@ -80,13 +144,23 @@ export function PaymentWatcher({ statusUrl, successHref }: { statusUrl: string; 
   return null;
 }
 
-/** Demo / sandbox box: no real money moves, so let the visitor pay the order. */
-export function SimulatePayment({ orderNumber, token, sandbox = false }: { orderNumber: string; token: string; sandbox?: boolean }) {
+/**
+ * Demo / sandbox box: no real money moves, so let the visitor pay the order. "mock" and "sandbox"
+ * simulate the gateway's payment; "demo" (DEMO_PAYMENTS on, a gateway that can't simulate) marks the
+ * order paid in demo mode instead.
+ */
+export function SimulatePayment({ orderNumber, token, mode }: { orderNumber: string; token: string; mode: "mock" | "sandbox" | "demo" }) {
   const t = useMessages(checkoutMessages).pay;
+  const copy =
+    mode === "demo"
+      ? { title: t.demoModeTitle, body: t.demoModeBody, label: t.demoSkip, pending: t.demoSkipping }
+      : mode === "sandbox"
+        ? { title: t.sandboxTitle, body: t.sandboxBody, label: t.simulate, pending: t.simulating }
+        : { title: t.demoTitle, body: t.demoBody, label: t.simulate, pending: t.simulating };
   return (
     <form
       id="simulate"
-      action={simulatePayment}
+      action={mode === "demo" ? skipPaymentDemo : simulatePayment}
       className="flex w-full flex-col gap-3 pt-6 shadow-[inset_0_1px_0_var(--border-subtle)] sm:flex-row sm:items-center sm:justify-between"
     >
       <input type="hidden" name="orderNumber" value={orderNumber} />
@@ -94,10 +168,10 @@ export function SimulatePayment({ orderNumber, token, sandbox = false }: { order
       <div className="flex items-start gap-3">
         <FlaskConical className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
         <p className="text-[13px] leading-5 text-pretty text-muted-foreground">
-          <span className="font-bold text-foreground">{sandbox ? t.sandboxTitle : t.demoTitle}.</span> {sandbox ? t.sandboxBody : t.demoBody}
+          <span className="font-bold text-foreground">{copy.title}.</span> {copy.body}
         </p>
       </div>
-      <SimulateButton label={t.simulate} pendingLabel={t.simulating} />
+      <SimulateButton label={copy.label} pendingLabel={copy.pending} />
     </form>
   );
 }
