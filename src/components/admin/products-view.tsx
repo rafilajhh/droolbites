@@ -125,7 +125,7 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                 ) : (
                   products.map((p) => {
                     const from = p.variants[0]?.price;
-                    // Stock: plenty shows the total of the tracked sizes; running low or sold out shows the badge,
+                    // Stock badge: plenty shows the total of the tracked sizes; running low or sold out says so,
                     // with what's left under it (one size) or which sizes are low (several).
                     const tracked = p.variants.filter((v): v is typeof v & { stock: number } => v.stock !== null);
                     const stock = stockStatus(p.variants.map((v) => v.stock));
@@ -182,21 +182,23 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                             {t.products.optionsCount(p.variants.length)}
                           </span>
                         </td>
-                        <td className={cn("py-3 pr-4 max-xl:order-4 max-xl:p-0", !stock && "max-xl:hidden")}>
+                        {/* Untracked stock says so in the table; the card below xl has nothing to show for it. */}
+                        <td className={cn("py-3 pr-4 max-xl:order-4 max-xl:p-0", tracked.length === 0 && "max-xl:hidden")}>
                           <CellLabel until="xl">{c.stock}</CellLabel>
                           {tracked.length === 0 ? (
                             <span className="text-sm leading-[21px] text-muted-foreground">{t.products.notTracked}</span>
-                          ) : stock ? (
-                            // Below xl the row is one wrapping line: the note follows the badge instead of hanging under it.
+                          ) : (
+                            // The storefront's stock tones. Below xl the row is one wrapping line: the note follows
+                            // the badge instead of hanging under it.
                             <span className="inline-flex flex-col items-start gap-1 max-xl:flex-row max-xl:items-center max-xl:gap-2">
-                              <Badge size="sm" tone={stock === "soldOut" ? "danger" : "warning"}>
-                                {stock === "soldOut" ? t.products.soldOut : t.products.lowStock}
+                              <Badge size="sm" tone={stock === "soldOut" ? "danger" : stock === "low" ? "warning" : "success"}>
+                                {stock === "soldOut"
+                                  ? t.products.soldOut
+                                  : stock === "low"
+                                    ? t.products.lowStock
+                                    : t.products.stockLeft(tracked.reduce((sum, v) => sum + v.stock, 0))}
                               </Badge>
                               {stockNote ? <span className="text-[13px] leading-5 text-muted-foreground">{stockNote}</span> : null}
-                            </span>
-                          ) : (
-                            <span className="text-[15px] leading-[23px] font-medium tabular-nums">
-                              {t.products.stockLeft(tracked.reduce((sum, v) => sum + v.stock, 0))}
                             </span>
                           )}
                         </td>

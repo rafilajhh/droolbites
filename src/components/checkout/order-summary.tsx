@@ -1,3 +1,4 @@
+import { Badge } from "@/components/ui/badges";
 import { OrderLine, SummaryRow } from "@/components/ui/order-bits";
 import type { CheckoutMessages } from "@/i18n/messages/checkout";
 import { cn } from "@/lib/cn";
@@ -56,11 +57,14 @@ export function OrderSummary({
       aria-labelledby="order-summary-title"
       className={cn("flex w-full flex-col gap-5 rounded-m bg-card p-5 sm:p-7", className)}
     >
-      <div className="flex w-full items-center justify-between gap-3">
+      {/* The count is the cart drawer's badge, beside the title. */}
+      <div className="flex w-full items-center gap-2.5">
         <h2 id="order-summary-title" className="font-display text-[22px] leading-7 font-bold text-foreground">
           {t.title}
         </h2>
-        <span className="font-mono text-[13px] leading-5 font-semibold text-muted-foreground">{t.items(itemCount)}</span>
+        <Badge size="sm" tone="highlight">
+          {t.items(itemCount)}
+        </Badge>
       </div>
       <ul className="flex w-full flex-col gap-3.5">
         {lines.map((line) => (

@@ -85,14 +85,19 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   const cell = "py-3 text-[15px] leading-[23px] font-medium max-xl:p-0";
   const muted = "max-xl:text-sm max-xl:leading-[21px] max-xl:text-muted-foreground";
   // Below md a row stacks its cells (flex-wrap, placed with max-md:order-*). From md to xl, where the table
-  // doesn't fit beside the sidebar yet, a row is two lines on four tracks: number, payment, status, total
-  // over customer, date, method, View. Fixed tracks so the columns line up from row to row.
+  // doesn't fit beside the sidebar yet, a row is four fixed tracks (so the columns line up from row to
+  // row), each its own stack: number over customer, payment over date, status over "Waiting 45 min" over
+  // method, total (and its fee) over View. Three row lines: the first line (23px), the notes, the second
+  // line. Customer and date span the notes and the second line, so they sit right under their first line
+  // whether a note is there or not; method and View follow the notes.
   // From xl the cells line up on their first line (baseline), so a "Waiting 5 d" under the status badge
   // hangs below the row's badges instead of lifting its own badge above the others.
-  // Cells line up at the top below xl, so the payment badge shares a line with the status badge even
-  // when "Waiting 45 min" hangs under the status.
+  // Below xl the status cell is display: contents, so its badge and its waiting note are placed on their own:
+  // below md the note gets a line of its own from the row's left edge.
   const row =
-    "xl:align-baseline max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-start max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:items-start md:max-xl:gap-x-5 md:max-xl:gap-y-1.5";
+    "xl:align-baseline max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-start max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:grid-rows-[23px_auto_1fr] md:max-xl:items-start md:max-xl:gap-x-5 md:max-xl:gap-y-0";
+  // A second-line cell from md to xl: 6px under the line (or the note) above it.
+  const line2 = "md:max-xl:mt-1.5";
 
   return (
     <AdminMain>
@@ -163,15 +168,15 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                           {order.customerName}
                         </span>
                       </th>
-                      <td className={cn(cell, muted, "max-xl:order-6 md:max-xl:col-start-2 md:max-xl:row-start-2")}>
+                      <td className={cn(cell, muted, line2, "max-xl:order-6 md:max-xl:col-start-2 md:max-xl:row-span-2 md:max-xl:row-start-2")}>
                         <CellLabel until="xl">{c.placed}</CellLabel>
                         {formatDate(order.createdAt, locale)}
                       </td>
-                      <td className={cn(cell, "pr-3 max-xl:order-5 max-xl:basis-full md:max-xl:col-start-1 md:max-xl:row-start-2 md:max-xl:truncate xl:max-[1400px]:hidden")}>
+                      <td className={cn(cell, line2, "pr-3 max-xl:order-5 max-xl:basis-full md:max-xl:col-start-1 md:max-xl:row-span-2 md:max-xl:row-start-2 md:max-xl:truncate xl:max-[1400px]:hidden")}>
                         <CellLabel until="xl">{c.customer}</CellLabel>
                         {order.customerName}
                       </td>
-                      <td className={cn(cell, muted, "pr-3 whitespace-nowrap max-xl:order-7 max-md:before:mr-2 max-md:before:content-['·'] md:max-xl:col-start-3 md:max-xl:row-start-2")}>
+                      <td className={cn(cell, muted, line2, "pr-3 whitespace-nowrap max-xl:order-7 max-md:before:mr-2 max-md:before:content-['·'] md:max-xl:col-start-3 md:max-xl:row-start-3")}>
                         <CellLabel until="xl">{c.method}</CellLabel>
                         {order.fulfilmentMethod === "delivery" ? t.common.delivery : t.common.pickup}
                       </td>
@@ -179,20 +184,24 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                         <CellLabel until="xl">{c.payment}</CellLabel>
                         <Badge size="sm" tone={ps.tone}>{ps[locale]}</Badge>
                       </td>
-                      <td className={cn("py-3 pr-3 max-xl:order-4 max-xl:p-0 md:max-xl:col-start-3 md:max-xl:row-start-1", unpaid && "max-md:hidden")}>
+                      <td className="py-3 pr-3 max-xl:contents">
                         <CellLabel until="xl">{c.status}</CellLabel>
                         {unpaid ? (
-                          <span className="text-muted-foreground" aria-label={fs[locale]}>—</span>
+                          <span className="text-muted-foreground max-xl:order-4 max-md:hidden md:max-xl:col-start-3 md:max-xl:row-start-1" aria-label={fs[locale]}>
+                            —
+                          </span>
                         ) : (
-                          <Badge size="sm" tone={fs.tone}>{fs[locale]}</Badge>
+                          <Badge size="sm" tone={fs.tone} className="max-xl:order-4 md:max-xl:col-start-3 md:max-xl:row-start-1">
+                            {fs[locale]}
+                          </Badge>
                         )}
                         {waited !== null ? (
-                          <span className="mt-1 block text-[13px] leading-5 font-semibold text-error">
+                          <span className="mt-1 block text-[13px] leading-5 font-semibold text-error max-xl:order-4 max-md:-mt-1 max-md:basis-full md:max-xl:col-start-3 md:max-xl:row-start-2">
                             {t.orders.waiting(waited)}
                           </span>
                         ) : null}
                       </td>
-                      <td className={cn(cell, "pr-6 text-right whitespace-nowrap tabular-nums max-xl:order-2 max-xl:grow max-xl:basis-[calc(45%-0.5rem)] max-xl:text-base max-xl:font-bold md:max-xl:col-start-4 md:max-xl:row-start-1")}>
+                      <td className={cn(cell, "pr-6 text-right whitespace-nowrap tabular-nums max-xl:order-2 max-xl:grow max-xl:basis-[calc(45%-0.5rem)] max-xl:text-base max-xl:font-bold md:max-xl:col-start-4 md:max-xl:row-span-2 md:max-xl:row-start-1")}>
                         <CellLabel until="xl">{c.total}</CellLabel>
                         {formatRupiah(pay.amount)}
                         {pay.serviceFee > 0 ? (
@@ -201,7 +210,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                           </span>
                         ) : null}
                       </td>
-                      <td className="py-3 pr-4 text-right max-xl:order-8 max-xl:ml-auto max-xl:p-0 md:max-xl:col-start-4 md:max-xl:row-start-2">
+                      <td className={cn(line2, "py-3 pr-4 text-right max-xl:order-8 max-xl:ml-auto max-xl:p-0 md:max-xl:col-start-4 md:max-xl:row-start-3")}>
                         <ArrowLink
                           href={`/admin/orders/${order.orderNumber}`}
                           aria-label={t.orders.viewLabel(order.orderNumber)}
