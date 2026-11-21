@@ -6,7 +6,7 @@ import {
   productContent,
   productImageUrl,
   productShort,
-  type BadgeTone,
+  type StickerTone,
 } from "@/content/products";
 import type { Locale } from "@/i18n/config";
 import { pickMessages } from "@/i18n/config";
@@ -44,12 +44,12 @@ export type ShopProduct = {
 
 export type ShopCategory = { slug: string; name: string; products: ShopProduct[] };
 
-/** Badge fills, marked important so they override the Chip's default --card fill. */
-const badgeFill: Record<BadgeTone, string> = {
-  mustard: "bg-tint-mustard!",
-  salmon: "bg-tint-salmon!",
-  lime: "bg-tint-lime!",
-  lavender: "bg-tint-lavender!",
+/** Photo sticker fills (the Sticker's paper fill gives way through cn). */
+const stickerFill: Record<StickerTone, string> = {
+  mustard: "bg-tint-mustard",
+  salmon: "bg-tint-salmon",
+  lime: "bg-tint-lime",
+  lavender: "bg-tint-lavender",
 };
 
 type ProductInput = Pick<MenuProduct, "id" | "slug" | "name" | "description" | "imageUrl" | "variants"> & {
@@ -79,11 +79,11 @@ export function toShopProduct(product: ProductInput, locale: Locale): ShopProduc
 
   // Sold out says so instead of Bestseller/New or the size count.
   const badge = soldOut
-    ? { label: m.stock.soldOut, className: "bg-oat!" }
+    ? { label: m.stock.soldOut, className: "bg-oat" }
     : content?.badge
-    ? { label: content.badge.label[locale], className: badgeFill[content.badge.tone] }
+    ? { label: content.badge.label[locale], className: stickerFill[content.badge.tone] }
     : multi
-      ? { label: t.sizes(variants.length), className: badgeFill.lavender }
+      ? { label: t.sizes(variants.length), className: stickerFill.lavender }
       : undefined;
 
   return {

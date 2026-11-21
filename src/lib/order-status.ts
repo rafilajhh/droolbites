@@ -1,31 +1,31 @@
-import type { StatusTone } from "@/components/ui/badges";
+import type { BadgeTone } from "@/components/ui/badges";
 import type { Locale } from "@/i18n/config";
 import type { Prisma } from "@/generated/prisma/client";
 import type { FulfilmentStatus, PaymentMethod, PaymentStatus } from "@/generated/prisma/enums";
 
 /** Labels and badge tones for order states. Shared by checkout, account and admin. */
-type Entry = { en: string; id: string; tone: StatusTone };
+type Entry = { en: string; id: string; tone: BadgeTone };
 
 export const paymentStatusInfo: Record<PaymentStatus, Entry> = {
-  awaiting: { en: "Awaiting payment", id: "Menunggu pembayaran", tone: "mustard" },
+  awaiting: { en: "Awaiting payment", id: "Menunggu pembayaran", tone: "warning" },
   paid: { en: "Paid", id: "Lunas", tone: "success" },
   // Not paid before the deadline (or the payment was closed): nothing failed on the customer's side.
-  expired: { en: "Expired", id: "Kedaluwarsa", tone: "crimson" },
+  expired: { en: "Expired", id: "Kedaluwarsa", tone: "danger" },
 };
 
 /** The payment badge of an order the store cancelled before it was paid: nothing failed, it just wasn't paid. */
-export const notPaidInfo: Entry = { en: "Not paid", id: "Tidak dibayar", tone: "muted" };
+export const notPaidInfo: Entry = { en: "Not paid", id: "Tidak dibayar", tone: "neutral" };
 
 /** The payment badge once the store marked a cancelled order's money as sent back: settled, like Not paid. */
-export const refundedInfo: Entry = { en: "Refunded", id: "Dikembalikan", tone: "muted" };
+export const refundedInfo: Entry = { en: "Refunded", id: "Dikembalikan", tone: "neutral" };
 
 export const fulfilmentStatusInfo: Record<FulfilmentStatus, Entry> = {
-  pending: { en: "New order", id: "Pesanan baru", tone: "mustard" },
-  baking: { en: "Baking", id: "Dipanggang", tone: "lavender" },
-  ready_for_pickup: { en: "Ready for pickup", id: "Siap diambil", tone: "teal" },
-  out_for_delivery: { en: "Out for delivery", id: "Sedang diantar", tone: "cobalt" },
+  pending: { en: "New order", id: "Pesanan baru", tone: "warning" },
+  baking: { en: "Baking", id: "Dipanggang", tone: "info" },
+  ready_for_pickup: { en: "Ready for pickup", id: "Siap diambil", tone: "success" },
+  out_for_delivery: { en: "Out for delivery", id: "Sedang diantar", tone: "success" },
   completed: { en: "Completed", id: "Selesai", tone: "success" },
-  cancelled: { en: "Cancelled", id: "Dibatalkan", tone: "crimson" },
+  cancelled: { en: "Cancelled", id: "Dibatalkan", tone: "danger" },
 };
 
 export type PaymentKind = "va" | "retail" | "ewallet" | "qris";
@@ -126,7 +126,7 @@ export const inProgressWhere = {
 } satisfies Prisma.OrderWhereInput;
 
 /** What the customer sees while a paid order waits for the store to accept it. */
-export const awaitingConfirmationInfo: Entry = { en: "Awaiting confirmation", id: "Menunggu konfirmasi", tone: "mustard" };
+export const awaitingConfirmationInfo: Entry = { en: "Awaiting confirmation", id: "Menunggu konfirmasi", tone: "warning" };
 
 /** Preset reasons the store gives when it declines an order (anything else is stored as its own words). */
 export const CANCEL_REASONS = ["sold_out", "fully_booked", "closed"] as const;
@@ -147,7 +147,7 @@ export function cancelReasonText(reason: string | null, labels: Record<CancelRea
 }
 
 const unpaidFulfilmentInfo: Record<Exclude<PaymentStatus, "paid">, Entry> = {
-  awaiting: { en: "Unpaid", id: "Belum dibayar", tone: "muted" },
+  awaiting: { en: "Unpaid", id: "Belum dibayar", tone: "neutral" },
   expired: notPaidInfo,
 };
 

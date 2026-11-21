@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@/generated/prisma/client";
 import type { PaymentStatus } from "@/generated/prisma/enums";
 import { ArrowLink } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { Pagination } from "@/components/admin/pagination";
 import { ORDER_PAGE_SIZE } from "@/components/admin/rules";
 import { OrdersToolbar } from "@/components/admin/toolbars";
@@ -89,8 +89,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   // over customer, date, method, View. Fixed tracks so the columns line up from row to row.
   // From xl the cells line up on their first line (baseline), so a "Waiting 5 d" under the status badge
   // hangs below the row's badges instead of lifting its own badge above the others.
+  // Cells line up at the top below xl, so the payment badge shares a line with the status badge even
+  // when "Waiting 45 min" hangs under the status.
   const row =
-    "xl:align-baseline max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-center max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:items-center md:max-xl:gap-x-5 md:max-xl:gap-y-1.5";
+    "xl:align-baseline max-xl:py-4 max-xl:shadow-[inset_0_-1px_0_var(--border-subtle)] max-xl:last:shadow-none max-md:flex max-md:flex-wrap max-md:items-start max-md:gap-x-2 max-md:gap-y-2.5 md:max-xl:grid md:max-xl:grid-cols-[minmax(0,1fr)_168px_152px_112px] md:max-xl:items-start md:max-xl:gap-x-5 md:max-xl:gap-y-1.5";
 
   return (
     <AdminMain>
@@ -175,14 +177,14 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
                       </td>
                       <td className="py-3 pr-3 max-xl:order-3 max-xl:p-0 md:max-xl:col-start-2 md:max-xl:row-start-1">
                         <CellLabel until="xl">{c.payment}</CellLabel>
-                        <StatusBadge tone={ps.tone} className="whitespace-nowrap">{ps[locale]}</StatusBadge>
+                        <Badge size="sm" tone={ps.tone}>{ps[locale]}</Badge>
                       </td>
                       <td className={cn("py-3 pr-3 max-xl:order-4 max-xl:p-0 md:max-xl:col-start-3 md:max-xl:row-start-1", unpaid && "max-md:hidden")}>
                         <CellLabel until="xl">{c.status}</CellLabel>
                         {unpaid ? (
                           <span className="text-muted-foreground" aria-label={fs[locale]}>—</span>
                         ) : (
-                          <StatusBadge tone={fs.tone} className="whitespace-nowrap">{fs[locale]}</StatusBadge>
+                          <Badge size="sm" tone={fs.tone}>{fs[locale]}</Badge>
                         )}
                         {waited !== null ? (
                           <span className="mt-1 block text-[13px] leading-5 font-semibold text-error">

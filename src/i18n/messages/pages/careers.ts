@@ -24,7 +24,7 @@ export const careersMessages = defineMessages({
         title: "Morning baker",
         type: "Full-time",
         shift: "06:00–14:00",
-        body: "Mix and scoop the day’s cookie dough, bake the brownie trays and layer the tiramisu before the doors open at ten.",
+        body: "Mix and scoop the day’s cookie dough, bake the brownie trays and layer the tiramisu before the doors open at seven.",
         fit: "You’re happy up early. Kitchen experience helps; we teach the recipes.",
       },
       {
@@ -104,7 +104,7 @@ export const careersMessages = defineMessages({
         title: "Baker pagi",
         type: "Penuh waktu",
         shift: "06:00–14:00",
-        body: "Mengaduk dan menyendok adonan cookies hari itu, memanggang brownies dan menyusun tiramisu sebelum toko buka jam sepuluh.",
+        body: "Mengaduk dan menyendok adonan cookies hari itu, memanggang brownies dan menyusun tiramisu sebelum toko buka jam tujuh.",
         fit: "Kamu biasa bangun pagi. Pengalaman dapur membantu, resepnya kami ajari.",
       },
       {

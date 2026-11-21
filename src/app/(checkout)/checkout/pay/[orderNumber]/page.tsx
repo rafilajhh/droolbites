@@ -14,7 +14,7 @@ import { OrderSummary } from "@/components/checkout/order-summary";
 import { PayActions, PaymentWatcher, SimulatePayment } from "@/components/checkout/pay-actions";
 import { orderSummaryLines } from "@/components/checkout/summary-lines";
 import { SummaryToggle } from "@/components/checkout/summary-toggle";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { buttonClasses, ButtonLink } from "@/components/ui/button";
 import { PaymentMark } from "@/components/ui/choice-tiles";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -106,7 +106,7 @@ export default async function PayPage({ params, searchParams }: PageProps<"/chec
             <CheckoutHeading
               lead={
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <StatusBadge tone={status.tone}>{status[locale]}</StatusBadge>
+                  <Badge tone={status.tone}>{status[locale]}</Badge>
                   <span className="font-mono text-[13px] leading-[17px] font-semibold text-muted-foreground">{p.order(orderNumber)}</span>
                 </div>
               }

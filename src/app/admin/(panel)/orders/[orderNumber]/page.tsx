@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CircleAlert, CircleCheck, Info, MapPin, Printer, Store, Truck, User } from "lucide-react";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { MarkRefunded } from "@/components/admin/mark-refunded";
 import { OrderDecision } from "@/components/admin/order-decision";
 import { StatusForm } from "@/components/admin/status-form";
@@ -176,9 +176,13 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
 
       <div className="flex w-full flex-wrap items-end justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <h1 className="font-display text-[34px] leading-none font-bold tracking-[-1px] lg:text-[44px]">
-            {o.title(order.orderNumber)}
-          </h1>
+          {/* The status badge beside the title, as on the customer's order page. */}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <h1 className="font-display text-[34px] leading-none font-bold tracking-[-1px] lg:text-[44px]">
+              {o.title(order.orderNumber)}
+            </h1>
+            <Badge tone={fs.tone}>{fs[locale]}</Badge>
+          </div>
           <p className="text-[15px] leading-[23px] text-muted-foreground">{subParts.filter(Boolean).join(" · ")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -190,7 +194,6 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             <Printer className="size-[18px]" aria-hidden />
             {tx.invoice.openInvoice}
           </Link>
-          <StatusBadge tone={fs.tone}>{fs[locale]}</StatusBadge>
         </div>
       </div>
 
@@ -406,7 +409,7 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
           <section aria-labelledby="order-payment-title" className={cn(sectionClasses, "md:max-xl:shadow-[inset_1px_0_0_var(--border-subtle)]")}>
             <div className="flex w-full items-center justify-between gap-3">
               <SectionTitle id="order-payment-title">{o.payment}</SectionTitle>
-              <StatusBadge tone={ps.tone}>{ps[locale]}</StatusBadge>
+              <Badge tone={ps.tone}>{ps[locale]}</Badge>
             </div>
             <dl className="flex w-full flex-col gap-3 text-[15px] leading-[23px]">
               {paymentRows.map((row) => (

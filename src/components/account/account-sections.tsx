@@ -1,6 +1,6 @@
 import { KeyRound } from "lucide-react";
 import { GoogleMark } from "@/components/auth/google-sign-in";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import type { CurrentUser } from "@/lib/auth";
 import { getLocale, getMessages } from "@/i18n/server";
 import { accountMessages } from "@/i18n/messages/account";
@@ -49,7 +49,7 @@ export async function ProfileSection({ user }: { user: CurrentUser }) {
               icon={<GoogleMark />}
               title={s.google}
               sub={s.googleSub(user.email)}
-              badge={<StatusBadge tone="success">{s.connected}</StatusBadge>}
+              badge={<Badge size="sm" tone="success">{s.connected}</Badge>}
             />
           ) : null}
           {user.hasPassword ? (

@@ -33,15 +33,15 @@ export function paymentMethodShort(method: PaymentMethod): string {
   return info.kind === "va" ? info.name.replace(" Virtual Account", " VA") : info.name;
 }
 
-/** Category colors from the admin frames (filter dots, table pills, "Your menu"). */
-const categoryStyles: Record<string, { dot: string; tint: string }> = {
-  "soft-cookies": { dot: "bg-accent-magenta", tint: "bg-tint-mustard" },
-  brownies: { dot: "bg-accent-lavender", tint: "bg-tint-lavender" },
-  tiramisu: { dot: "bg-accent-salmon", tint: "bg-tint-salmon" },
+/** Category dot colors (filter dots, the products list, "Your menu"). */
+const categoryStyles: Record<string, { dot: string }> = {
+  "soft-cookies": { dot: "bg-accent-magenta" },
+  brownies: { dot: "bg-accent-lavender" },
+  tiramisu: { dot: "bg-accent-salmon" },
 };
 
 export function categoryStyle(slug: string) {
-  return categoryStyles[slug] ?? { dot: "bg-accent-teal", tint: "bg-mint" };
+  return categoryStyles[slug] ?? { dot: "bg-accent-teal" };
 }
 
 export { isTrayCategory } from "@/content/products";

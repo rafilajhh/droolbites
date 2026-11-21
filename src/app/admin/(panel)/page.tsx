@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { BellRing, CircleAlert, CircleCheck, Cookie, Hourglass, Receipt, Wallet } from "lucide-react";
 import { ArrowLink, buttonClasses } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { AdminMain, CellLabel, PageHead, PaneCard, paneClasses, SectionTitle, StatPane, thClasses } from "@/components/admin/ui";
 import { categoryStyle, isTrayCategory } from "@/components/admin/rules";
 import { categoryName } from "@/content/products";
@@ -289,9 +289,9 @@ export default async function AdminOverviewPage() {
                       </th>
                       <td className="py-3.5 pr-4 max-md:order-3 max-md:p-0">
                         <CellLabel>{t.orders.col.payment}</CellLabel>
-                        <StatusBadge tone={payment.tone} className="whitespace-nowrap">
+                        <Badge size="sm" tone={payment.tone}>
                           {payment[locale]}
-                        </StatusBadge>
+                        </Badge>
                       </td>
                       {/* Unpaid: no status yet. The dash keeps the table column; on phones the payment badge says it alone. */}
                       <td className={cn("py-3.5 pr-4 max-md:order-4 max-md:p-0", unpaid && "max-md:hidden")}>
@@ -301,9 +301,9 @@ export default async function AdminOverviewPage() {
                             —
                           </span>
                         ) : (
-                          <StatusBadge tone={status.tone} className="whitespace-nowrap">
+                          <Badge size="sm" tone={status.tone}>
                             {status[locale]}
-                          </StatusBadge>
+                          </Badge>
                         )}
                       </td>
                       <td className="py-3.5 pr-4 text-right text-base leading-6 font-bold whitespace-nowrap tabular-nums max-md:order-2 max-md:grow max-md:basis-[calc(45%-0.5rem)] max-md:p-0">
@@ -357,9 +357,9 @@ export default async function AdminOverviewPage() {
                       <span className="min-w-0 flex-1 truncate font-semibold group-hover:underline">
                         {v.product._count.variants > 1 ? `${v.product.name} · ${v.name}` : v.product.name}
                       </span>
-                      <StatusBadge tone={v.stock === 0 ? "crimson" : "mustard"} className="whitespace-nowrap">
+                      <Badge size="sm" tone={v.stock === 0 ? "danger" : "warning"}>
                         {v.stock === 0 ? t.products.soldOut : t.products.stockLeft(v.stock ?? 0)}
-                      </StatusBadge>
+                      </Badge>
                     </Link>
                   </li>
                 ))}

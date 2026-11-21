@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import type { Prisma } from "@/generated/prisma/client";
 import { ButtonLink } from "@/components/ui/button";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { categoryName, productImageUrl } from "@/content/products";
 import { containsText, db } from "@/lib/db";
 import { formatRupiah } from "@/lib/format";
@@ -162,12 +162,9 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                         </th>
                         <td className="py-3 max-xl:order-3 max-xl:p-0">
                           <CellLabel until="xl">{c.category}</CellLabel>
-                          <span
-                            className={cn(
-                              "inline-flex rounded-pill px-2.5 py-1 text-xs leading-4 font-bold",
-                              categoryStyle(p.category.slug).tint,
-                            )}
-                          >
+                          {/* A category is not a status: its logo-colour dot and name, as in the overview's Your menu. */}
+                          <span className="inline-flex items-center gap-2 text-sm leading-[21px] font-medium whitespace-nowrap">
+                            <span aria-hidden className={cn("size-2.5 shrink-0 rounded-full", categoryStyle(p.category.slug).dot)} />
                             {categoryName(p.category.slug, p.category.name, locale)}
                           </span>
                         </td>
@@ -190,10 +187,11 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                           {tracked.length === 0 ? (
                             <span className="text-sm leading-[21px] text-muted-foreground">{t.products.notTracked}</span>
                           ) : stock ? (
-                            <span className="inline-flex flex-col items-start gap-1">
-                              <StatusBadge tone={stock === "soldOut" ? "crimson" : "mustard"} className="whitespace-nowrap">
+                            // Below xl the row is one wrapping line: the note follows the badge instead of hanging under it.
+                            <span className="inline-flex flex-col items-start gap-1 max-xl:flex-row max-xl:items-center max-xl:gap-2">
+                              <Badge size="sm" tone={stock === "soldOut" ? "danger" : "warning"}>
                                 {stock === "soldOut" ? t.products.soldOut : t.products.lowStock}
-                              </StatusBadge>
+                              </Badge>
                               {stockNote ? <span className="text-[13px] leading-5 text-muted-foreground">{stockNote}</span> : null}
                             </span>
                           ) : (
@@ -204,9 +202,9 @@ export async function ProductsView({ query, children }: { query: ProductsQuery; 
                         </td>
                         <td className="py-3 max-xl:order-4 max-xl:p-0">
                           <CellLabel until="xl">{c.availability}</CellLabel>
-                          <StatusBadge tone={p.isAvailable ? "success" : "muted"} className="whitespace-nowrap">
+                          <Badge size="sm" tone={p.isAvailable ? "success" : "neutral"}>
                             {p.isAvailable ? t.products.available : t.products.unavailable}
-                          </StatusBadge>
+                          </Badge>
                         </td>
                         <td className="py-3 pr-4 text-right max-xl:order-2 max-xl:basis-[4.5rem] max-xl:p-0">
                           <Link

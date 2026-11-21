@@ -193,10 +193,25 @@ typography:
     lineHeight: 1.3
   badge:
     fontFamily: "Manrope, sans-serif"
+    fontSize: "13px"
+    fontWeight: 600
+    lineHeight: "16px"
+  badge-sm:
+    fontFamily: "Manrope, sans-serif"
+    fontSize: "12px"
+    fontWeight: 600
+    lineHeight: "16px"
+  count:
+    fontFamily: "Manrope, sans-serif"
+    fontSize: "11px"
+    fontWeight: 700
+    lineHeight: 1
+  payment-mark:
+    fontFamily: "Manrope, sans-serif"
     fontSize: "10px"
     fontWeight: 700
     lineHeight: 1.5
-  badge-xs:
+  payment-mark-xs:
     fontFamily: "Manrope, sans-serif"
     fontSize: "9px"
     fontWeight: 700
@@ -238,11 +253,34 @@ components:
     rounded: "{rounded.pill}"
     padding: "8px 14px"
     typography: "{typography.label}"
-  status-badge:
+  badge:
     backgroundColor: "{colors.tint-mustard}"
     textColor: "{colors.ink}"
     rounded: "{rounded.pill}"
-    padding: "6px 12px"
+    height: "28px"
+    padding: "0 12px"
+    typography: "{typography.badge}"
+  badge-sm:
+    backgroundColor: "{colors.mint}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    height: "22px"
+    padding: "0 10px"
+    typography: "{typography.badge-sm}"
+  sticker:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    height: "38px"
+    padding: "0 16px"
+    typography: "{typography.label}"
+  sticker-sm:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    height: "28px"
+    padding: "0 12px"
+    typography: "{typography.label-sm}"
   input:
     backgroundColor: "{colors.white}"
     textColor: "{colors.ink}"
@@ -292,7 +330,7 @@ A warm-paper neutral base with one deep green and a rotating confectionery accen
 - **Moss Deep** (`colors.moss-deep`): primary hover, and text on the white inverse hero button.
 
 ### Secondary
-- **Mustard** (`colors.mustard`, the logo's B): the highlight. The `--highlight` token is the same mustard 2% lighter (`#dda81e`) so mustard icons on moss keep 3:1. Hero chip fill, cart count badge, cart item-count pill. Tint-mustard is the awaiting-payment badge fill.
+- **Mustard** (`colors.mustard`, the logo's B): the highlight. The `--highlight` token is the same mustard 2% lighter (`#dda81e`) so mustard icons on moss keep 3:1. Hero chip fill and the `highlight` badge tone (counts: cart bubble, cart item count, admin new-orders count). Tint-mustard is the `warning` badge fill.
 - **Mint** (`colors.mint`): selected option tile fill, success/ready/delivery badge fill, secondary text on moss.
 
 ### Tertiary
@@ -320,14 +358,15 @@ A warm-paper neutral base with one deep green and a rotating confectionery accen
 
 **Character:** A chunky, slightly quirky grotesque for voice, a clean humanist sans for reading, and a mono for prices-adjacent labels, chips and table headers.
 
-**Full ramp:** The six named roles below are the core. The pen is laid out per frame, so it also uses intermediate display steps (24–88px, plus the 160/96px 404 numeral), a 17–20px lede/body-large, and 9–12px badge and micro-label sizes. Every one of those steps is in the frontmatter `typography` map and was copied from the pen at 1440. Before adding a new size, pick the nearest existing step.
+**Full ramp:** The six named roles below are the core. The pen is laid out per frame, so it also uses intermediate display steps (24–88px, plus the 160/96px 404 numeral), a 17–20px lede/body-large, 9–12px micro-label and payment-mark sizes, and the 11–13px badge steps. Every one of those steps is in the frontmatter `typography` map and was copied from the pen at 1440. Before adding a new size, pick the nearest existing step.
 
 ### Hierarchy
 - **Display** (700, `type-hero`: 44 / 64 / 80px, line-height 44 / 64 / 78px, tracking -1 to -2.5px): landing hero h1 only. Scaled down on 1 Nov 2026 after measuring levainbakery.com, crumblcookies.com and milkbarstore.com (their largest headings are 53–60px); the pen's 112px is retired.
 - **Headline** (700): page h1s use `type-page` (40 / 56px), section h2s `type-section` (32 / 44px), checkout, pay and success h1s `type-checkout` (32 / 40px). The utilities live in `src/app/globals.css`; never set a heading size per file.
 - **Title** (600-700, 20-30px, line-height 1.1-1.2): cart title, empty states, order-line names, brand name.
 - **Body** (Manrope 400, 16-17px, line-height normal to 26px; 15px for secondary and admin text, 13px for helper/error): paragraphs; keep measure near 560-600px (`max-w-[560px]`/`[600px]`).
-- **Label** (Plex Mono 600, 13px chips and badges, 11-12px table headers and chart axes, tracking 1px where uppercase-free eyebrow-style text exists): chips, stickers, table column headers, cart counts.
+- **Label** (Plex Mono 600, 13px chips and stickers, 11-12px table headers and chart axes, tracking 1px where uppercase-free eyebrow-style text exists): chips, stickers, table column headers, order numbers, the counts inside filter chips.
+- **Badge** (Manrope 600, 13px `md` / 12px `sm`, 16px line, tabular figures): every status, stock and count pill. Mono is the brand's voice for labels; a badge states a fact that sits beside prices and 15-16px text, where Plex Mono at 11-12px read tiny and cramped (owner note 21 Nov 2026).
 - **Button** (Bricolage 600, 15px, tracking 0.5px): all buttons and arrow links.
 
 ### Named Rules
@@ -357,7 +396,7 @@ Flat by default. Depth is tonal: paper under oat under white, mint and tint pane
 
 ## Shapes
 
-Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the pen's `--radius-s`; do not use Tailwind's logical `rounded-s`), 20px for cards and large panels (`rounded-m`), and full pill (999px) for chips, badges, steppers, icon buttons and the logo badge. Full strokes are 1.25-1.5px inset rings (`inset-ring-[1.5px] inset-ring-border`; subtle 1.25px for unselected tiles; 1px for admin cards). Stickers are pills rotated -8deg (the small card/gallery variant, `Sticker size="sm"`, rotates -10deg); they are the only resting tilt on the site, and the rating stickers (Google Maps rating, product rating) stand straight so the numbers read at a glance. Full-bleed panels with content over the photo (landing hero, auth photo panel) keep only their 20px radius, no ring. Every other photo sits flat in the one shared frame, `photoFrame` in `src/components/ui/snapshot.tsx` (also used by `Snapshot`): 20px radius and no outline, since the photo's oat ground already separates it from the paper (owner decision 2026-11-01; rings stay on interactive things: buttons, inputs, chips, stickers, choice tiles). Thumbnails under about 80px use `rounded-sm` and round avatars `rounded-pill`. The landing brownies image sits flat on the oat plate in the same frame. Decorative `Cutout` cookies, the logo badge and icons get no frame and no tilt. Functional rotation stays (chevrons and accordion icons turning on open). Icons are lucide line icons at 18-24px.
+Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the pen's `--radius-s`; do not use Tailwind's logical `rounded-s`), 20px for cards and large panels (`rounded-m`), and full pill (999px) for chips, badges, steppers, icon buttons and the logo badge. Full strokes are 1.25-1.5px inset rings (`inset-ring-[1.5px] inset-ring-border`; subtle 1.25px for unselected tiles; 1px for admin cards). Stickers are pills rotated -8deg at every size (the card hover leans them to -12deg); they are the only resting tilt on the site, and the rating stickers (Google Maps rating, product rating) stand straight so the numbers read at a glance. Full-bleed panels with content over the photo (landing hero, auth photo panel) keep only their 20px radius, no ring. Every other photo sits flat in the one shared frame, `photoFrame` in `src/components/ui/snapshot.tsx` (also used by `Snapshot`): 20px radius and no outline, since the photo's oat ground already separates it from the paper (owner decision 2026-11-01; rings stay on interactive things: buttons, inputs, chips, stickers, choice tiles). Thumbnails under about 80px use `rounded-sm` and round avatars `rounded-pill`. The landing brownies image sits flat on the oat plate in the same frame. Decorative `Cutout` cookies, the logo badge and icons get no frame and no tilt. Functional rotation stays (chevrons and accordion icons turning on open). Icons are lucide line icons at 18-24px.
 
 ## Components
 
@@ -371,11 +410,17 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 - **Casing:** button labels are uppercase, written so in the strings ("ADD PRODUCT", "EXPORT CSV", "PREVIOUS"), in the storefront and the admin, including the small in-row buttons and pagination; arrow links, text links and chips stay sentence case. An icon carries a "+", not the label. Admin page-head actions are one size (`min-h-11 px-5 py-3`, secondary for the second action); `smallButtonClasses` is only for in-row actions (Edit, Rename).
 - Disabled: 50% opacity, not-allowed cursor.
 
-### Chips, Stickers, Status Badges
-- **Chip:** pill, oat fill, Plex Mono 600 13px, 8/14px padding. Hero chip overrides to mustard.
-- **Sticker:** pill, paper fill, 1.25px moss ring, rotated -8deg; rating stickers sit at 0deg.
-- **Status badge:** pill, tinted fill, 13px 600 label, no dot (owner rule, 28 Oct 2026: the site shows no status dots anywhere, including open/closed indicators and admin status filters; the pen still draws them). Tone map: tint-mustard awaiting payment, new order and awaiting confirmation, mint paid/completed/ready/out for delivery, lavender baking, salmon failed/expired/cancelled, oat new/hidden.
-- **Stock** (owner decision 16 Nov 2026: a number per size, empty = not tracked; it drops when an order is paid and comes back when the store declines or cancels it). The storefront shows it (owner decision 21 Nov 2026) as `StockNote` (`src/components/shop/stock.tsx`), a small Plex Mono 11px pill in three tones: mint "20 in stock" / "Stok 20" (an untracked size, or a product with several sizes, says "In stock" / "Tersedia"), mustard "Only 3 left" / "Sisa 3" at 5 or fewer, oat "Sold out" / "Habis". Every product card carries one under the description (`productStockLevel`): a one-size product its count; several sizes never a total across sizes (it would promise a count no single tray has), so "In stock", mustard "Almost gone" / "Hampir habis" only when every size that can still be ordered has 5 or fewer, and "Sold out" only on a card without the photo sticker. The product page shows the chosen size's pill beside the price and unit, changing with the size (a polite live region). The banner size rows and the size tiles (size modal, product page, home brownies) keep only the low and sold-out notes (`StockBadge`) on their second line. A sold-out size tile is disabled and the picker starts on the first size in stock; the stepper stops at the chosen size's stock (at most 99). A product with every size sold out swaps its photo sticker for an oat "Sold out", gets an oat disabled "+" and a disabled "SOLD OUT" button. Pages render per request (`no-store`), so a paid or declined order shows on the next visit without any revalidation. Cart drawer lines that ran short say so in crimson 13px under the meta ("Only 2 left. Lower the quantity…"), the last units get a muted "That's all 4 we have left.", and the footer adds one crimson line; checkout refuses with the short items listed and a "Fix my cart" link to `/menu?cart=open`, which opens the drawer. Admin: products list Stock column (total left, or a mustard "Low stock" / salmon "Sold out" status badge with what's low on a muted line under it; "Sold out" only when every size is tracked and at 0, since an untracked size can still be ordered; "Not tracked" muted), a Stock input (88px) after each size's price in the product form with one hint line, a "Running low" list in the overview's Your menu pane (mono label, rows linking to the product with the same badges) and, for paid orders that came up short, a salmon banner under the orders banner plus a salmon alert and a crimson "only 0 of 1 were in stock" line on the order page.
+### Chips, Stickers, Badges
+Three pill kinds, all in `src/components/ui/badges.tsx`; nothing else draws a small tinted pill.
+- **Chip** (`Chip`): a label in the brand's voice. Pill, oat fill, Plex Mono 600 13/17px, 8/14px padding. The hero chip and the admin sign-in "STORE ADMIN" tag override the fill to `highlight`.
+- **Sticker** (`Sticker`): a label slapped on a photo or beside a heading. Paper fill (product stickers take a tint: mustard Bestseller, salmon Fan favorite, lime New, lavender "4 sizes", oat Sold out), 1.25px moss ring, Plex Mono 600, one line. Two sizes with fixed heights: `md` 38px, 14/18px, 16px padding (hero, product page photo, rating stickers) and `sm` 28px, 12/16px, 12px padding, 32px and 13px from sm (product cards, careers role). Every tilted sticker leans -8deg; rating stickers (`tilt={false}`: Google rating on home and location, product rating) stand straight with a 16px star. A sticker on a photo corner takes `stickerCorner` (`-top-3 -left-2`, `-top-3.5 -left-3` from sm) on cards and the product page alike, outside the photo's clip so it is never cut.
+- **Badge** (`Badge`): a fact. Pill, Manrope 600, one line (`whitespace-nowrap`), tabular figures, ink text, fixed height so it centres in any row. No dot and no icon (owner rule, 28 Oct 2026: the site shows no status dots anywhere, including open/closed indicators and admin status filters; the pen still draws them).
+  - Sizes: `md` 28px, 13px, 12px side padding: beside a page title (order page, pay page, admin order detail), in a card's heading row (admin Payment) and beside the product page price. `sm` 22px, 12px, 10px side padding: in a line of 13-15px text: product cards, size tiles, the banner card's size rows, cart lines and the cart count, every table and list row (admin lists, overview, account history, the Sign-in method row) and the admin new-orders count. Inside a 13px text line (size tiles) the badge hangs 2px over the line (`-my-0.5`) so a tile with a badge is never taller than its neighbours.
+  - Tones (`BadgeTone`, one meaning each, everywhere): `success` mint (paid, completed, ready for pickup, out for delivery, available, in stock, connected); `warning` tint-mustard (awaiting payment, new order, awaiting confirmation, low stock, "Only 3 left"); `danger` tint-salmon (expired, cancelled, sold out); `neutral` oat (unpaid, not paid, refunded, hidden); `info` tint-lavender (baking); `highlight` mustard (counts). Order labels and tones live in `src/lib/order-status.ts`.
+  - Alignment: in a row a badge centres on the text beside it (`items-center`). Where a cell has a line under its badge ("Waiting 45 min"), the admin orders row aligns to the top below xl so the row's badges share one line; the products list puts the stock note beside its badge below xl. Beside a price, price and unit share a baseline and the badge centres on that line. A page's status badge sits beside its title (customer and admin order pages alike).
+- **Count bubble** (`CountBubble`): an 18px mustard circle, Manrope 700 11px, on an icon (header cart, the admin menu button). A count standing in a row is a `highlight` `sm` badge instead (cart title, admin sidebar). Counts inside filter chips (menu categories, order history filters) are plain muted Plex Mono 12px numbers, not badges.
+- **Category** is not a status: the admin products list shows the category's logo-colour dot and its name (as the overview's Your menu does), never a tinted pill.
+- **Stock** (owner decision 16 Nov 2026: a number per size, empty = not tracked; it drops when an order is paid and comes back when the store declines or cancels it). The storefront shows it (owner decision 21 Nov 2026) as `StockNote` (`src/components/shop/stock.tsx`), a `Badge` in three tones: success "20 in stock" / "Stok 20" (an untracked size, or a product with several sizes, says "In stock" / "Tersedia"), warning "Only 3 left" / "Sisa 3" at 5 or fewer, danger "Sold out" / "Habis". Every product card carries an `sm` one (`productStockLevel`) directly above the price row, the two pinned to the card's bottom, so in a row of cards the badges share one line and the prices another however the names and descriptions wrap (a landscape banner card keeps it under its description): a one-size product its count; several sizes never a total across sizes (it would promise a count no single tray has), so "In stock", mustard "Almost gone" / "Hampir habis" only when every size that can still be ordered has 5 or fewer, and "Sold out" only on a card without the photo sticker. The product page shows the chosen size's `md` badge beside the price and unit, centred on their line, changing with the size (a polite live region). The banner size rows and the size tiles (size modal, product page, home brownies) keep only the low and sold-out notes (`StockBadge`) on their second line. A sold-out size tile is disabled and the picker starts on the first size in stock; the stepper stops at the chosen size's stock (at most 99). A product with every size sold out swaps its photo sticker for an oat "Sold out", gets an oat disabled "+" and a disabled "SOLD OUT" button. Pages render per request (`no-store`), so a paid or declined order shows on the next visit without any revalidation. Cart drawer lines that ran short say so in crimson 13px under the meta ("Only 2 left. Lower the quantity…"), the last units get a muted "That's all 4 we have left.", and the footer adds one crimson line; checkout refuses with the short items listed and a "Fix my cart" link to `/menu?cart=open`, which opens the drawer. Admin: products list Stock column (total left, or a warning "Low stock" / danger "Sold out" `sm` badge with what's low on a muted line under it, beside it below xl; "Sold out" only when every size is tracked and at 0, since an untracked size can still be ordered; "Not tracked" muted), a Stock input (88px) after each size's price in the product form with one hint line, a "Running low" list in the overview's Your menu pane (mono label, rows linking to the product with the same badges) and, for paid orders that came up short, a salmon banner under the orders banner plus a salmon alert and a crimson "only 0 of 1 were in stock" line on the order page.
 
 ### Cards / Containers
 - Storefront cards: oat fill, 20px radius, no border. Admin `Card`: white, 20px radius, 1px subtle inset ring.
@@ -390,7 +435,7 @@ Three radii: 12px for buttons, inputs, tiles and small panels (`rounded-sm`, the
 - Quantity stepper: pill with 1.25px moss ring, 36px buttons (28px `sm` in the drawer), bold tabular numerals.
 
 ### Navigation
-- **Site header:** paper, sticky, always 56px tall (64px from md) with a bottom hairline, never resizing on scroll; centered 44px logo badge (48px from md), 40px circular icon links (menu, search, account, cart) with oat hover; mustard cart-count pill. Menu opens a dialog.
+- **Site header:** paper, sticky, always 56px tall (64px from md) with a bottom hairline, never resizing on scroll; centered 44px logo badge (48px from md), 40px circular icon links (menu, search, account, cart) with oat hover; the cart count is a `CountBubble`. Menu opens a dialog.
 - **Admin sidebar:** moss, 272px, white 15px 600 items with 20px icons; active item flips to a paper pill with moss text; hover white 10%. The foot of the sidebar is a white 16% hairline over two mint rows: View storefront, then Sign out with the EN/ID switch beside it (no store status block; owner decision 15 Nov 2026). Hidden on paper.
 - **Announcement bar:** static moss strip above the header, white Plex Mono 600 at 12/13px, store news and hours only, spaced by gap (no dot separators, no link). Freshness is said once, in the hero chip. No motion.
 - **USP marquee:** oat band, two identical halves translated -50% over 55s linear; static grid under reduced motion; pause control present.
@@ -454,7 +499,7 @@ Durations 150-300ms, `ease-out`, on color, transform and opacity only. Photo hov
 - **Do** draw strokes as inset rings or inset shadows so sizes match the design.
 - **Do** write line-height in whole px and letter-spacing in px.
 - **Do** set `[--focus-ring:var(--white)]` on moss and photo containers; use `outline-hidden`, never `outline-none`.
-- **Do** use `cn()` (tailwind-merge) so a later class wins; use `Button`/`ButtonLink`/`Chip`/`Field`/`StatusBadge` rather than re-styling.
+- **Do** use `cn()` (tailwind-merge) so a later class wins; use `Button`/`ButtonLink`/`Chip`/`Sticker`/`Badge`/`Field` rather than re-styling.
 - **Do** give every new animation a `motion-reduce:` variant.
 - **Do** keep prices as `Rp` plus dot thousands and product names in English.
 

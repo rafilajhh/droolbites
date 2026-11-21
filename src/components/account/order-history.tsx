@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink } from "@/components/ui/button";
 import { ScrollFade } from "@/components/ui/scroll-fade";
 import { photoFrame } from "@/components/ui/snapshot";
@@ -171,7 +171,7 @@ export async function OrderHistory({ userId, filter, page }: { userId: bigint; f
                   </td>
                   <td className={cn(td, "col-span-2 row-start-3 whitespace-nowrap xl:pr-6")}>
                     {cellLabel(o.status)}
-                    <StatusBadge tone={status.tone}>{statusLabel(status, locale)}</StatusBadge>
+                    <Badge size="sm" tone={status.tone}>{statusLabel(status, locale)}</Badge>
                   </td>
                   <td className={cn(td, "col-start-3 row-start-1 text-right text-base leading-normal font-bold whitespace-nowrap text-foreground tabular-nums xl:pr-6")}>
                     {cellLabel(o.total)}

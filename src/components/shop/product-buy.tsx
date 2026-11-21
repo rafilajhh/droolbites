@@ -84,19 +84,22 @@ export function ProductBuy({
       <div className="flex w-full flex-col gap-3.5">
         <p className="font-mono text-[13px] leading-[20px] font-semibold tracking-[1px] text-primary">{eyebrow}</p>
         <h1 className="type-page font-display text-balance font-bold text-foreground">{product.name}</h1>
-        <p className="flex flex-wrap items-end gap-x-2.5 gap-y-1.5">
-          <span className="font-display text-[28px] leading-[31px] font-bold text-foreground lg:text-[32px] lg:leading-[35px]">
-            {formatRupiah(variant.price)}
-          </span>
-          {unit ? <span className="text-[15px] leading-[23px] text-muted-foreground">{unit}</span> : null}
+        {/* Price and unit share a baseline; the stock badge is centred on that line (it wraps under on a narrow phone). */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p className="flex items-baseline gap-x-2.5">
+            <span className="font-display text-[28px] leading-[31px] font-bold text-foreground lg:text-[32px] lg:leading-[35px]">
+              {formatRupiah(variant.price)}
+            </span>
+            {unit ? <span className="text-[15px] leading-[23px] text-muted-foreground">{unit}</span> : null}
+          </p>
           {/* The chosen size's stock sits with its price and changes with it (sold out is the photo's sticker
               and the button). Polite live region: picking another size reads the new count. */}
           {soldOut ? null : (
-            <span aria-live="polite" className="mb-[3px] inline-flex">
-              <StockNote level={stockLevel(variant.stock)} />
+            <span aria-live="polite" className="inline-flex">
+              <StockNote size="md" level={stockLevel(variant.stock)} />
             </span>
           )}
-        </p>
+        </div>
         {rating ? (
           <a
             href="#reviews"

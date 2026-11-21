@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ChevronRight, CircleX } from "lucide-react";
 import { ReviewRows } from "@/components/checkout/checkout-section";
 import { StoreContact } from "@/components/checkout/order-info";
 import { OrderSummary } from "@/components/checkout/order-summary";
 import { ReorderButton } from "@/components/checkout/reorder-button";
 import { orderSummaryLines } from "@/components/checkout/summary-lines";
-import { StatusBadge } from "@/components/ui/badges";
+import { Badge } from "@/components/ui/badges";
 import { ArrowLink, ButtonLink } from "@/components/ui/button";
 import { OrderSteps, type OrderStep } from "@/components/ui/order-steps";
 import { getLocale, getMessages } from "@/i18n/server";
@@ -54,7 +54,12 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
   const token = typeof query.t === "string" ? query.t : "";
 
   const order = await getOrderForViewer(orderNumber, token);
-  if (!order) notFound();
+  if (!order) {
+    // Signed out without a link: the sign-in page (which also offers "find your order"), whether or not
+    // the order exists, so nothing is revealed. Signed in: it isn't theirs, so a plain 404.
+    if (!(await getCurrentUser())) redirect(`/sign-in?next=${encodeURIComponent(`/orders/${orderNumber}`)}`);
+    notFound();
+  }
 
   const [t, ct, locale, settings, user] = await Promise.all([
     getMessages(ordersMessages),
@@ -214,9 +219,9 @@ export default async function OrderDetailPage({ params, searchParams }: PageProp
               room beside it), instead of wrapping there in one language and not the other. */}
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
             <h1 className="font-display type-page font-bold text-foreground">{t.title(orderNumber)}</h1>
-            <StatusBadge tone={badge.tone} className="shrink-0">
+            <Badge tone={badge.tone}>
               {badge[locale]}
-            </StatusBadge>
+            </Badge>
           </div>
           <p className="text-base leading-6 text-muted-foreground">
             {t.placed(formatDate(order.createdAt, locale))} · {formatItemCount(itemCount(order), locale)}

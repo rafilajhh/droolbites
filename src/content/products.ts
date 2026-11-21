@@ -7,7 +7,7 @@ import type { Locale } from "@/i18n/config";
  */
 type Text = { en: string; id: string };
 
-export type BadgeTone = "mustard" | "salmon" | "lime" | "lavender";
+export type StickerTone = "mustard" | "salmon" | "lime" | "lavender";
 
 /** Brownies are sold by tray size; everything else by flavor or piece. */
 export function isTrayCategory(slug: string | undefined) {
@@ -15,7 +15,7 @@ export function isTrayCategory(slug: string | undefined) {
 }
 
 export type ProductContent = {
-  badge?: { label: Text; tone: BadgeTone };
+  badge?: { label: Text; tone: StickerTone };
   short?: Text; // card description (EN equals products.description)
   long?: Text; // product detail paragraph
   ingredients?: Text;
@@ -214,13 +214,6 @@ export function productImageUrl(slug: string, imageUrl: string | null) {
   if (imageUrl) return imageUrl;
   return BUNDLED_PHOTOS.has(slug) ? `/images/products/${slug}.png` : PRODUCT_PLACEHOLDER_IMAGE;
 }
-
-export const badgeToneClass: Record<BadgeTone, string> = {
-  mustard: "bg-tint-mustard",
-  salmon: "bg-tint-salmon",
-  lime: "bg-tint-lime",
-  lavender: "bg-tint-lavender",
-};
 
 export function localized(text: Text | undefined, locale: Locale): string | undefined {
   return text ? text[locale] : undefined;

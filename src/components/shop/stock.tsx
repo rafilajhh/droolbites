@@ -3,21 +3,21 @@
 import { useState } from "react";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
-import { cn } from "@/lib/cn";
+import { Badge, type BadgeSize, type BadgeTone } from "@/components/ui/badges";
 import { stockLevel, type StockLevel } from "@/lib/stock";
 import type { ShopProduct } from "./shop-product";
 
-const toneFill: Record<StockLevel["tone"], string> = {
-  plenty: "bg-mint",
-  low: "bg-tint-mustard",
-  soldOut: "bg-oat",
+const toneOf: Record<StockLevel["tone"], BadgeTone> = {
+  plenty: "success",
+  low: "warning",
+  soldOut: "danger",
 };
 
 /**
- * Stock pill: mint "20 in stock" / "In stock", mustard "Only 3 left" / "Almost gone", oat "Sold out".
- * Plex Mono like the other badges, small enough to sit inside a line of text.
+ * Stock badge: mint "20 in stock" / "In stock", mustard "Only 3 left" / "Almost gone", salmon "Sold out".
+ * `sm` on cards, size tiles and cart lines; `md` beside the product page price.
  */
-export function StockNote({ level, className }: { level: StockLevel; className?: string }) {
+export function StockNote({ level, size = "sm", className }: { level: StockLevel; size?: BadgeSize; className?: string }) {
   const t = useMessages(menuMessages).stock;
   const label =
     level.tone === "soldOut"
@@ -30,30 +30,27 @@ export function StockNote({ level, className }: { level: StockLevel; className?:
           ? t.inStock
           : t.count(level.count);
   return (
-    <span
-      className={cn(
-        "inline-flex w-fit shrink-0 items-center rounded-pill px-2 py-0.5 font-mono text-[11px] leading-4 font-semibold whitespace-nowrap text-foreground tabular-nums",
-        toneFill[level.tone],
-        className,
-      )}
-    >
+    <Badge tone={toneOf[level.tone]} size={size} className={className}>
       {label}
-    </span>
+    </Badge>
   );
 }
 
-/** Stock note for a size with 0 to 5 left: "Only 3 left" on a mustard tint, "Sold out" on oat. */
+/** Stock badge for a size with 0 to 5 left: "Only 3 left" on mustard, "Sold out" on salmon. */
 export function StockBadge({ left, className }: { left: number; className?: string }) {
   return <StockNote level={stockLevel(left)} className={className} />;
 }
 
-/** A size tile's second line: the serving note and the stock badge. */
+/**
+ * A size tile's second line: the serving note and the stock badge. The badge is taller than the 13px
+ * line, so it hangs 2px over it on each side instead of making that one tile taller than the others.
+ */
 export function SizeSub({ serves, left }: { serves?: string; left?: number }) {
   if (left === undefined) return serves ?? null;
   return (
     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
       {serves ? <span>{serves}</span> : null}
-      <StockBadge left={left} />
+      <StockBadge left={left} className="-my-0.5" />
     </span>
   );
 }

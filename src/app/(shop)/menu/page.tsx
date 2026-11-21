@@ -27,7 +27,8 @@ export default async function MenuPage() {
           {t.sub}
         </p>
       </div>
-      <Suspense>
+      {/* The browser reads ?q= and ?category= on the client; until then hold its space so the footer doesn't jump up. */}
+      <Suspense fallback={<div className="min-h-svh w-full" aria-hidden />}>
         <MenuBrowser categories={categories} />
       </Suspense>
     </div>

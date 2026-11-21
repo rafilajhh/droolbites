@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { AdminSignInForm } from "@/components/admin/sign-in-form";
+import { Chip } from "@/components/ui/badges";
 import { adminNext, getCurrentUser } from "@/lib/auth";
 import { getStoreSettings } from "@/lib/settings";
 import { getMessages } from "@/i18n/server";
@@ -42,9 +43,7 @@ export default async function AdminSignInPage({ searchParams }: PageProps<"/admi
             quality={100}
             className="size-14 rounded-full sm:size-[72px]"
           />
-          <span className="rounded-pill bg-highlight px-3 py-1.5 font-mono text-xs leading-[18px] font-semibold tracking-[1px] text-foreground">
-            {s.tag}
-          </span>
+          <Chip className="bg-highlight tracking-[1px] text-ink">{s.tag}</Chip>
         </div>
         <div className="relative mt-16 flex w-full flex-col gap-3 lg:mt-0">
           <p className="font-display text-[32px] leading-[1.05] font-bold tracking-[-0.5px] text-white lg:text-[40px]">

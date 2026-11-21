@@ -47,7 +47,7 @@ export function ReviewBand({
             <h2 id="home-reviews" className="font-display type-section font-bold text-balance text-foreground-inverse">
               {t.title}
             </h2>
-            <Sticker className="rotate-0 gap-2 whitespace-nowrap">
+            <Sticker tilt={false}>
               <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
               <span className="sm:hidden">{t.ratingShort}</span>
               <span className="max-sm:hidden">{t.rating}</span>

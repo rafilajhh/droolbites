@@ -8,6 +8,7 @@ import { setCartQty, removeFromCart } from "@/app/actions/cart";
 import { useMessages } from "@/i18n/client";
 import { commonMessages } from "@/i18n/messages/common";
 import { isTrayCategory } from "@/content/products";
+import { Badge } from "@/components/ui/badges";
 import { Button, buttonClasses } from "@/components/ui/button";
 import { SummaryRow } from "@/components/ui/order-bits";
 import { QuantityStepper } from "@/components/ui/quantity-stepper";
@@ -120,7 +121,9 @@ export function CartDrawer({
               {t.title}
             </h2>
             {count > 0 ? (
-              <span className="rounded-pill bg-highlight px-2.5 py-1 text-xs leading-[1.2] font-bold">{t.items(count)}</span>
+              <Badge size="sm" tone="highlight">
+                {t.items(count)}
+              </Badge>
             ) : null}
           </div>
           <button

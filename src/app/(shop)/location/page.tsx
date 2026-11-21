@@ -172,7 +172,7 @@ export default async function LocationPage() {
             </h2>
             <p className={sectionSub}>{t.reviewsSub}</p>
           </div>
-          <Sticker className="shrink-0 rotate-0 gap-2 whitespace-nowrap sm:mb-2">
+          <Sticker tilt={false} className="sm:mb-2">
             <Star className="size-4 shrink-0 fill-highlight text-foreground" aria-hidden />
             <span className="sm:hidden">{t.ratingShort}</span>
             <span className="max-sm:hidden">{t.rating}</span>

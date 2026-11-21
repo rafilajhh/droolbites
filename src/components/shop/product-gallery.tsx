@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Sticker } from "@/components/ui/badges";
+import { Sticker, stickerCorner } from "@/components/ui/badges";
 import { photoFrame } from "@/components/ui/snapshot";
 import { useMessages } from "@/i18n/client";
 import { productMessages } from "@/i18n/messages/product";
@@ -106,13 +106,7 @@ export function ProductGallery({
           />
         </div>
         {badge && index === 0 ? (
-          <Sticker
-            size="sm"
-            className={cn(
-              "absolute -top-2.5 -left-1.5 sm:-top-3.5 sm:-left-3 sm:px-4 sm:py-2.5 sm:text-sm sm:leading-[18px]",
-              badge.className,
-            )}
-          >
+          <Sticker className={cn(stickerCorner, badge.className)}>
             {badge.label}
           </Sticker>
         ) : null}

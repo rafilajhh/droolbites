@@ -8,6 +8,7 @@ import { ChartColumn, Cookie, ExternalLink, LayoutDashboard, LogOut, Menu, Recei
 import { adminSignOut } from "@/app/actions/admin/auth";
 import { useModal } from "@/components/layout/shop-ui";
 import { LanguageSwitch } from "@/components/layout/language-switch";
+import { Badge, CountBubble } from "@/components/ui/badges";
 import { useMessages } from "@/i18n/client";
 import { adminMessages } from "@/i18n/messages/admin";
 import { cn } from "@/lib/cn";
@@ -75,10 +76,10 @@ function SidebarContent({ storeName, newOrders, onNavigate }: Props & { onNaviga
                     <Icon className="size-5 shrink-0" aria-hidden />
                     <span className="flex-1">{t[key]}</span>
                     {key === "orders" && newOrders > 0 ? (
-                      <span className="flex h-6 min-w-6 items-center justify-center rounded-pill bg-highlight px-2 font-mono text-xs leading-none font-semibold text-ink tabular-nums">
+                      <Badge size="sm" tone="highlight" className="min-w-[22px] px-1.5">
                         <span aria-hidden>{newOrders}</span>
                         <span className="sr-only">{t.newOrders(newOrders)}</span>
-                      </span>
+                      </Badge>
                     ) : null}
                   </Link>
                 </li>
@@ -142,11 +143,8 @@ export function AdminSidebar(props: Props) {
           <Menu className="size-6" aria-hidden />
           {/* New orders wait inside the menu: a mustard count on the button says so. */}
           {props.newOrders > 0 ? (
-            <span
-              aria-hidden
-              className="absolute top-1 right-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-pill bg-highlight px-1 font-mono text-[11px] leading-none font-semibold text-ink"
-            >
-              {props.newOrders}
+            <span aria-hidden className="absolute top-1 right-0.5">
+              <CountBubble>{props.newOrders}</CountBubble>
             </span>
           ) : null}
         </button>

@@ -72,7 +72,7 @@ export default async function CareersPage() {
             return (
               <li key={role.title} className="relative flex flex-col gap-4 rounded-m bg-card p-5 md:row-span-4 md:grid md:grid-rows-subgrid md:gap-5 md:p-6 lg:p-8">
                 {i === 1 ? (
-                  <Sticker size="sm" className="absolute -top-3 right-5 lg:right-7">
+                  <Sticker size="sm" className="absolute -top-3 right-5 sm:-top-3.5 lg:right-7">
                     {t.rolesSticker}
                   </Sticker>
                 ) : null}

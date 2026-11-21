@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Sticker } from "@/components/ui/badges";
+import { Sticker, stickerCorner } from "@/components/ui/badges";
 import { photoFrame } from "@/components/ui/snapshot";
 import { useMessages } from "@/i18n/client";
 import { menuMessages } from "@/i18n/messages/menu";
@@ -62,9 +62,9 @@ export function MenuItemCard({
   const badge = showBadge ? product.badge : undefined;
   const banner = layout === "banner";
   // Every card says its stock: one size its count, several sizes "In stock" (see productStockLevel).
-  // Sold out is the photo's sticker, so the line only says it on cards without one.
+  // Sold out is the photo's sticker, so the badge only says it on cards without one.
   const stock = productStockLevel(product.variants.map((v) => v.stock));
-  const showStock = !(stock.tone === "soldOut" && badge);
+  const stockNote = stock.tone === "soldOut" && badge ? null : <StockNote level={stock} />;
 
   const text = (
     <>
@@ -81,7 +81,8 @@ export function MenuItemCard({
           </Link>
         </h3>
         <p className={cn("text-muted-foreground", s.desc)}>{product.description}</p>
-        {showStock ? <StockNote level={stock} className="mt-0.5" /> : null}
+        {/* A landscape card has no neighbour to line up with: its badge stays with the description. */}
+        {banner && stockNote ? <div className="mt-1">{stockNote}</div> : null}
       </div>
       {/* A landscape card has the height of a portrait one beside it. Its sizes and the price row sit together
           at the bottom (level with the neighbours' prices), and any spare height goes under the description. */}
@@ -98,16 +99,22 @@ export function MenuItemCard({
                   {/* The banner's text column is narrowest from lg to xl: the size alone keeps each row on one line. */}
                   {v.serves ? <span className="text-muted-foreground lg:max-xl:hidden"> · {v.serves}</span> : null}
                 </span>
-                {v.left !== undefined ? <StockBadge left={v.left} /> : null}
+                {v.left !== undefined ? <StockBadge left={v.left} className="-my-px" /> : null}
               </span>
               <span className="shrink-0 font-semibold text-foreground tabular-nums">{formatRupiah(v.price)}</span>
             </li>
           ))}
         </ul>
       ) : null}
-      <div className={cn("flex w-full items-center justify-between gap-2", banner && multi ? "max-sm:mt-auto" : "mt-auto")}>
-        <p className={cn("font-display font-semibold text-foreground", s.price)}>{multi ? t.from(price) : price}</p>
-        <AddButton product={product} />
+      {/* The stock badge rides on top of the price row, both pinned to the card's bottom: in a row of cards
+          the badges and the prices each sit on one line, however long the names and descriptions run. */}
+      <div className={cn("flex w-full flex-col gap-2.5", banner && multi ? "max-sm:mt-auto" : "mt-auto")}>
+        {!banner && stockNote}
+        {/* Below sm a narrow card wraps "From Rp15.000" onto two lines (42px): every price row takes that height. */}
+        <div className="flex w-full items-center justify-between gap-2 max-sm:min-h-[42px]">
+          <p className={cn("font-display font-semibold text-foreground", s.price)}>{multi ? t.from(price) : price}</p>
+          <AddButton product={product} />
+        </div>
       </div>
     </>
   );
@@ -146,7 +153,8 @@ export function MenuItemCard({
           <Sticker
             size="sm"
             className={cn(
-              "pointer-events-none absolute -top-2 -left-1.5 transition-[rotate,scale] duration-300 ease-out group-hover/card:scale-105 group-hover/card:rotate-[-14deg] motion-reduce:transition-none motion-reduce:group-hover/card:scale-100 motion-reduce:group-hover/card:rotate-[-10deg] sm:-top-3 sm:-left-2.5",
+              stickerCorner,
+              "pointer-events-none transition-[rotate,scale] duration-300 ease-out group-hover/card:scale-105 group-hover/card:-rotate-12 motion-reduce:transition-none motion-reduce:group-hover/card:scale-100 motion-reduce:group-hover/card:-rotate-8",
               badge.className,
             )}
           >
